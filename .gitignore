@@ -1,0 +1,28 @@
+# Python
+*.pyc
+__pycache__/
+.env
+
+# VSCode
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Byte-compiled / cache
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+
+# FastAPI logs or artifacts
+*.log
+
+# Flutter (frontend)
+frontend/build/
+frontend/.dart_tool/
+frontend/.idea/
+frontend/.packages
+frontend/pubspec.lock
