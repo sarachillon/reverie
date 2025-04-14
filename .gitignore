@@ -21,8 +21,27 @@ env/
 *.log
 
 # Flutter (frontend)
-frontend/build/
 frontend/.dart_tool/
 frontend/.idea/
 frontend/.packages
 frontend/pubspec.lock
+
+# Flutter & Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Builds
+build/
+frontend/build/
+
+# Ignorar archivos .env
+frontend/.env
+backend/.env
+
+# entorno local
+.idea/
+.vs/
+*.iml
