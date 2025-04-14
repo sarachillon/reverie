@@ -14,6 +14,15 @@ class MockApiService implements ApiService {
   }
 
   @override
+  Future<bool> checkUserExists({required String email}) async {
+    if(email == "testing.reverie@gmail.com") {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @override
   Future<String> ping() async {
     return 'Pong!';
   }

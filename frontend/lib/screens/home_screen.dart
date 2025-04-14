@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/launcher_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_manager.dart';
@@ -9,6 +10,10 @@ import 'armario_screen.dart';
 import 'outfits_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  final String? userEmail;
+
+  const HomeScreen({Key? key, this.userEmail}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -25,16 +30,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _logout() async {
     final GoogleSignIn _googleSignIn = GoogleSignIn();
-    await _googleSignIn.signOut(); // Cierra sesión de Google
+    await _googleSignIn.signOut();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('email'); // Esto hará que no entre directamente a HomeScreen
-    ApiManager.reset(); // Reseteamos la instancia de la API
+    await prefs.clear(); 
+    ApiManager.reset();
 
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => AuthScreen()),
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
         (route) => false,
       );
     }
@@ -44,10 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reverie'),
+        title: const Text('Reverie'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: _logout,
             tooltip: 'Cerrar sesión',
           )
@@ -57,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: Color(0xFFC9A86A),
+        selectedItemColor: const Color(0xFFC9A86A),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [

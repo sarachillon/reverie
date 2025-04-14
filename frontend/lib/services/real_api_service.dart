@@ -34,6 +34,21 @@ class RealApiService implements ApiService {
   }
 
 
+  @override
+  Future<bool> checkUserExists({required String email}) async {
+    final url = Uri.parse('$_baseUrl/auth/users/$email');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      print('Usuario existe: ${response.body}');
+      return true;
+    } else if (response.statusCode == 404) {
+      return false;
+    } else {
+      throw Exception('Error al verificar usuario: ${response.body}');
+    }
+  }
+
 
 
   Future<String> ping() async {

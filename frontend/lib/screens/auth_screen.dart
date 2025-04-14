@@ -29,17 +29,27 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) return;
-      _currentUser = account;
 
-      final email = _currentUser!.email;
-      ApiManager.getInstance(email: email);
+      final email = account.email;
 
+      // Guarda el email en SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('email', email);
 
-      if (mounted) setState(() {});
-    } catch (error) {
-      print("Error al iniciar sesión: $error");
+      // Valida si el usuario existe en la base de datos
+      final api = ApiManager.getInstance(email: email);
+      final exists = await api.checkUserExists(email: email);
+      print('Usuario existe en la base de datos: $exists');
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => exists ? HomeScreen(userEmail: email) : const AuthScreen(),
+        ),
+      );
+    } catch (e) {
+      print('Error durante el inicio de sesión: $e');
     }
   }
 
@@ -70,8 +80,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 }
-
-
 
 
 

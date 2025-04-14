@@ -23,5 +23,8 @@ class ApiManager {
   static void reset() {
     _instance = null;
   }
-}
 
+  Future<bool> checkUserExists({required String email}) {
+    return _instance!.checkUserExists(email: email);
+  }
+}

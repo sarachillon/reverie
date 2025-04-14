@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
+
+import 'package:frontend/screens/launcher_screen.dart';
+
 import 'screens/auth_screen.dart'; 
 import 'screens/home_screen.dart';
+import 'services/api_manager.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -11,31 +15,51 @@ const int _primaryValue = 0xFFC9A86A;
 const MaterialColor customReverieColor = MaterialColor(
   _primaryValue,
   <int, Color>{
-    50: Color(0xFFFFF3E0), // Un tono más claro
-    100: Color(0xFFFFE0B2), // Otro tono más claro
-    200: Color(0xFFFFCC80), // Tono intermedio
-    300: Color(0xFFFFB74D), // Tono más oscuro
-    400: Color(0xFFFFA726), // Tono más oscuro
-    500: Color(_primaryValue), // Tu color principal
-    600: Color(0xFFB97745), // Marrón medio
-    700: Color(0xFF9C6A3F), // Marrón más oscuro
-    800: Color(0xFF815735), // Marrón aún más oscuro
-    900: Color(0xFF65442A), // Marrón más profundo
+    50: Color(0xFFFFF3E0), 
+    100: Color(0xFFFFE0B2), 
+    200: Color(0xFFFFCC80), 
+    300: Color(0xFFFFB74D), 
+    400: Color(0xFFFFA726), 
+    500: Color(_primaryValue), 
+    600: Color(0xFFB97745), 
+    700: Color(0xFF9C6A3F), 
+    800: Color(0xFF815735), 
+    900: Color(0xFF65442A), 
   },
 );
 
-void main() async {
+/*void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load();  
   final prefs = await SharedPreferences.getInstance();
   final email = prefs.getString('email');
+  Widget home;
 
-  runApp(ReverieApp(initialRoute: email != null ? 'home' : 'auth'));
+  if (email != null) {
+    final api = ApiManager.getInstance(email: email);
+    final exists = await api.checkUserExists(email: email);
+    home = exists ? HomeScreen(userEmail: email) : const AuthScreen();
+  } else {
+    home = const AuthScreen();
+  }
+
+
+  runApp(ReverieApp(initialRoute: home is HomeScreen ? 'home' : 'auth', userEmail: email));
+}*/
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();  
+  runApp(ReverieApp());
 }
 
+
 class ReverieApp extends StatelessWidget {
-  final String initialRoute;
-  ReverieApp({required this.initialRoute});
+  /*final String initialRoute;
+  final String? userEmail;
+
+  ReverieApp({required this.initialRoute, this.userEmail});
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +76,12 @@ class ReverieApp extends StatelessWidget {
       ),
       scaffoldBackgroundColor: Colors.white,
     ),
-      home: initialRoute == 'home' ? HomeScreen() : AuthScreen(),
+      home: const LauncherScreen(),
     );
   }
 }
+
+
 
 
 

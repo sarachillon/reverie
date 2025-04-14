@@ -8,6 +8,8 @@ abstract class ApiService {
     required String genero_pref,
   });
 
+  Future<bool> checkUserExists({required String email});
+  
   Future<String> ping();
 
 }
