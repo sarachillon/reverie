@@ -61,3 +61,8 @@ class TipoInteraccionEnum(str, Enum):
     CONSULTAR = "Consultar artículo"
     GUARDAR = "Guardar en coleccion"
     ENLACE = "Enlace de compra"
+
+class GeneroPrefEnum(str, Enum):
+    HOMBRE = "Hombre"
+    MUJER = "Mujer"
+    AMBOS = "Ambos"

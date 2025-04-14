@@ -1,4 +1,4 @@
 from starlette.config import Config
-config = Config(".env")
+config = Config("../.env")
 
 GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID")
