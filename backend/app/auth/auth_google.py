@@ -1,62 +1,80 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
-from starlette.config import Config
-from starlette.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi.security import OAuth2PasswordBearer
 import httpx
-from urllib.parse import urlencode
-from app.auth.oauth_config import GOOGLE_CLIENT_ID
+from typing import Annotated
+from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/auth",  # Añade prefix aquí
+    tags=["Google Auth"],  # Etiqueta más descriptiva
+    responses={404: {"description": "No encontrado"}}  # Respuestas estándar
+)
 
-REDIRECT_URI = "http://localhost:8000/auth/google/callback"
-FRONTEND_URL = "http://localhost:3000"
+# Esquema para la respuesta
+class GoogleTokenResponse(BaseModel):
+    email: str
+    name: str | None
+    picture: str | None
+    email_verified: bool
 
-@router.get("/auth/google/login")
-async def login_via_google():
-    params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "response_type": "code",
-        "scope": "openid email profile",
-        "redirect_uri": REDIRECT_URI,
-        "access_type": "offline",
-        "prompt": "consent"
+@router.post(
+    "/google/verify",
+    response_model=GoogleTokenResponse,  # Modelo de respuesta
+    summary="Verificar token de Google",
+    description="Valida un token ID de Google y devuelve información del usuario",
+    responses={
+        200: {"description": "Token verificado correctamente"},
+        400: {"description": "Token inválido o error de verificación"}
     }
-    url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
-    return RedirectResponse(url)
-
-
-@router.get("/auth/google/callback")
-async def auth_callback(request: Request):
-    code = request.query_params.get("code")
-    if not code:
-        return JSONResponse({"error": "No code provided"}, status_code=400)
-
-    # Intercambiar code por token
-    async with httpx.AsyncClient() as client:
-        token_res = await client.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "code": code,
-                "client_id": GOOGLE_CLIENT_ID,
-                "redirect_uri": REDIRECT_URI,
-                "grant_type": "authorization_code",
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+)
+async def verify_google_token(
+    token: Annotated[str, Body(..., embed=True, example="your_google_id_token")]
+):
+    """
+    Verifica un token ID de Google recibido desde Flutter.
+    
+    Args:
+    - token: Token ID de Google obtenido del cliente
+    
+    Returns:
+    - Información básica del usuario verificada por Google
+    """
+    if not token:
+        raise HTTPException(
+            status_code=400,
+            detail="Token no proporcionado",
+            headers={"WWW-Authenticate": "Bearer"}
         )
-        token_data = token_res.json()
 
-    access_token = token_data.get("access_token")
-    if not access_token:
-        return JSONResponse({"error": "No access token returned"}, status_code=400)
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:  # Timeout añadido
+            response = await client.get(
+                f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Token de Google inválido",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
 
-    # Obtener perfil del usuario
-    async with httpx.AsyncClient() as client:
-        user_info_res = await client.get(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"}
+            user_data = response.json()
+            
+            return {
+                "email": user_data.get("email"),
+                "name": user_data.get("name"),
+                "picture": user_data.get("picture"),
+                "email_verified": user_data.get("email_verified", False)
+            }
+            
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error al verificar el token: {str(e)}"
         )
-        user_info = user_info_res.json()
-
-    # Aquí puedes buscar/crear usuario y generar JWT, pero de momento hacemos redirect al frontend
-    redirect_url = f"{FRONTEND_URL}/?token={access_token}"
-    return RedirectResponse(redirect_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno del servidor: {str(e)}"
+        )

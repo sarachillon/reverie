@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, Boolean
-from database import Base
+from app.database.database import Base
 
 coleccion_articulo_propio = Table(
     "coleccion_articulo_propio", Base.metadata,
