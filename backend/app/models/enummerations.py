@@ -1,5 +1,14 @@
 from enum import Enum
 
+
+class Ocasion(str, Enum):
+    CASUAL = "Casual"
+    CENA = "Cena"
+    FORMAL = "Formal"
+    TRABAJO_INFORMAL = "Trabajo informal"
+    TRABAJO_FORMAL = "Trabajo formal (traje)"
+    EVENTO = "Evento"
+
 class CategoriaEnum(str, Enum):
     ROPA = "Ropa"
     CALZADO = "Calzado"

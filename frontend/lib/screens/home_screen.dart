@@ -6,7 +6,7 @@ import '../services/api_manager.dart';
 import 'auth_screen.dart';
 import 'colecciones_screen.dart';
 import 'buscador_screen.dart';
-import 'armario_screen.dart';
+import 'armarioVirtual/armario_screen.dart';
 import 'outfits_screen.dart';
 
 class HomeScreen extends StatefulWidget {
