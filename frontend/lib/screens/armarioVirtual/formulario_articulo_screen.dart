@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
-import 'package:frontend/screens/armarioVirtual/ocasion_selector.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
   final File imagen;
