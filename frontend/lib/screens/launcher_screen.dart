@@ -29,12 +29,21 @@ class _LauncherScreenState extends State<LauncherScreen> {
       print('Usuario existe en la base de datos: $exists');
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => exists ? HomeScreen(userEmail: email) : const AuthScreen(),
-        ),
-      );
+
+      if (exists) {
+        // Si el usuario existe, redirige a HomeScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreen(userEmail: email)),
+        );
+      } else {
+        // Si el usuario no existe, limpia SharedPreferences y redirige a AuthScreen
+        await prefs.clear();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+        );
+      }
     } else {
       // Si no hay email, redirige a AuthScreen
       print('No se encontró email en SharedPreferences. Redirigiendo a AuthScreen.');

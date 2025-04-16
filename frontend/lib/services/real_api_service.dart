@@ -43,9 +43,11 @@ class RealApiService implements ApiService {
       print('Usuario existe: ${response.body}');
       return true;
     } else if (response.statusCode == 404) {
+      print("Usuario no existe");
       return false;
     } else {
-      throw Exception('Error al verificar usuario: ${response.body}');
+      print("Otro error");
+      return false;
     }
   }
 
