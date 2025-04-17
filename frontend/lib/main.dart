@@ -1,12 +1,7 @@
 
 import 'package:frontend/screens/launcher_screen.dart';
-
-import 'screens/auth_screen.dart'; 
-import 'screens/home_screen.dart';
-import 'services/api_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Define el MaterialColor personalizado
@@ -28,25 +23,6 @@ const MaterialColor customReverieColor = MaterialColor(
   },
 );
 
-/*void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();  
-  final prefs = await SharedPreferences.getInstance();
-  final email = prefs.getString('email');
-  Widget home;
-
-  if (email != null) {
-    final api = ApiManager.getInstance(email: email);
-    final exists = await api.checkUserExists(email: email);
-    home = exists ? HomeScreen(userEmail: email) : const AuthScreen();
-  } else {
-    home = const AuthScreen();
-  }
-
-
-  runApp(ReverieApp(initialRoute: home is HomeScreen ? 'home' : 'auth', userEmail: email));
-}*/
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();  
@@ -55,11 +31,6 @@ void main() async {
 
 
 class ReverieApp extends StatelessWidget {
-  /*final String initialRoute;
-  final String? userEmail;
-
-  ReverieApp({required this.initialRoute, this.userEmail});
-  */
 
   @override
   Widget build(BuildContext context) {
@@ -67,15 +38,15 @@ class ReverieApp extends StatelessWidget {
       title: 'Reverie',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Color(0xFFC9A86A),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xFFC9A86A),
+        ),
+        textTheme: GoogleFonts.workSansTextTheme(
+          Theme.of(context).textTheme,
+        ),
+        scaffoldBackgroundColor: Colors.white,
       ),
-      textTheme: GoogleFonts.workSansTextTheme(
-        Theme.of(context).textTheme,
-      ),
-      scaffoldBackgroundColor: Colors.white,
-    ),
       home: const LauncherScreen(),
     );
   }

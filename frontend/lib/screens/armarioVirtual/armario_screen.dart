@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ArmarioScreen extends StatefulWidget {
   const ArmarioScreen({super.key});
@@ -16,12 +17,33 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   bool _isPicking = false;
 
   Future<void> _pedirPermisos() async {
-    await [
-      Permission.camera,
-      Permission.photos, // iOS
-      Permission.storage, // Android
-    ].request();
+  Map<Permission, PermissionStatus> statuses;
+
+  if (Platform.isAndroid) {
+    final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+
+    statuses = sdk >= 33
+        ? await [Permission.camera, Permission.photos].request()
+        : await [Permission.camera, Permission.storage].request();
+  } else {
+    statuses = await [Permission.camera, Permission.photos].request(); // iOS
   }
+
+  if (statuses.values.any((status) => status.isPermanentlyDenied)) {
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Permisos necesarios'),
+        content: const Text('Concede los permisos necesarios en la configuración.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => openAppSettings(), child: const Text('Abrir configuración')),
+        ],
+      ),
+    );
+  }
+}
+
 
   Future<void> _seleccionarDesdeGaleria() async {
     if (_isPicking) return;
@@ -34,11 +56,14 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        final imagen = File(pickedFile.path);
+        setState(() {
+          _imagenSeleccionada = File(pickedFile.path); // Asigna la imagen seleccionada
+        });
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagen: imagen),
+            builder: (_) => FormularioArticuloScreen(imagen: _imagenSeleccionada!),
           ),
         );
       }
