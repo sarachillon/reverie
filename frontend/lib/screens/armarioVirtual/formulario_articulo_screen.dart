@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
+import 'package:frontend/services/api_manager.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
   final File imagen;
@@ -16,12 +17,76 @@ class FormularioArticuloScreen extends StatefulWidget {
 class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
+  final ApiManager _apiManager = ApiManager();
 
   CategoriaEnum? _categoria;
-  SubcategoriaRopaEnum? _subcategoria;
-  List<OcasionEnum> _ocasiones = []; // Selección múltiple para ocasión
-  List<TemporadaEnum> _temporadas = []; // Selección múltiple para temporada
-  List<ColorEnum> _colores = []; // Selección múltiple para colores
+  dynamic _subcategoria; // Puede ser cualquier tipo de subcategoría
+  List<OcasionEnum> _ocasiones = [];
+  List<TemporadaEnum> _temporadas = [];
+  List<ColorEnum> _colores = [];
+
+  Future<void> _guardarPrenda() async {
+    if (_formKey.currentState!.validate() &&
+        _categoria != null &&
+        _subcategoria != null &&
+        _ocasiones.isNotEmpty &&
+        _temporadas.isNotEmpty &&
+        _colores.isNotEmpty) {
+      try {
+        // Determina las subcategorías según la categoría seleccionada
+        SubcategoriaRopaEnum? subcategoriaRopa;
+        SubcategoriaAccesoriosEnum? subcategoriaAccesorios;
+        SubcategoriaCalzadoEnum? subcategoriaCalzado;
+
+        
+        if (_categoria == CategoriaEnum.Ropa) {
+          subcategoriaRopa = SubcategoriaRopaEnum.values.firstWhere(
+            (e) => e.value == _subcategoria,
+            orElse: () => throw Exception("Subcategoría no válida para Ropa"),
+          );
+        } else if (_categoria == CategoriaEnum.Accesorios) {
+          subcategoriaAccesorios = SubcategoriaAccesoriosEnum.values.firstWhere(
+            (e) => e.value == _subcategoria,
+            orElse: () => throw Exception("Subcategoría no válida para Accesorios"),
+          );
+        } else if (_categoria == CategoriaEnum.Calzado) {
+          subcategoriaCalzado = SubcategoriaCalzadoEnum.values.firstWhere(
+            (e) => e.value == _subcategoria,
+            orElse: () => throw Exception("Subcategoría no válida para Calzado"),
+          );
+        }
+
+        // Convierte la imagen de File a Image
+        final Image foto = Image.file(widget.imagen);
+
+        // Llama a la función guardarArticuloPropio
+        await _apiManager.guardarArticuloPropio(
+          foto: foto,
+          nombre: _nombreController.text,
+          categoria: _categoria!,
+          subcategoriaRopa: subcategoriaRopa,
+          subcategoriaAccesorios: subcategoriaAccesorios,
+          subcategoriaCalzado: subcategoriaCalzado,
+          temporadas: _temporadas,
+          colores: _colores,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Prenda guardada exitosamente.")),
+        );
+
+        Navigator.pop(context); // Regresa a la pantalla anterior
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al guardar la prenda: $e")),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,23 +116,35 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                     subtitle: Text(
                       (_categoria == null)
                           ? "Selecciona una categoría y subcategoría"
-                          : "${_categoria!.value}, ${_subcategoria!.value}",
+                          : "${_categoria!.value}, ${_subcategoria is String ? _subcategoria : (_subcategoria?.value ?? '')}",
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () async {
-                      final categoria = await Navigator.push(
+                      final categoriaSeleccionada = await Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const CategoriaSelector()),
                       );
-                      if (categoria != null) {
-                        final subcategoria = await Navigator.push(
+
+                      if (categoriaSeleccionada != null) {
+                        // Convierte el valor seleccionado a CategoriaEnum si es un String
+                        final categoria = categoriaSeleccionada is String
+                            ? CategoriaEnum.values.firstWhere(
+                                (e) => e.value == categoriaSeleccionada,
+                                orElse: () => throw Exception("Categoría no válida"),
+                              )
+                            : categoriaSeleccionada as CategoriaEnum;
+
+                        final subcategoriaSeleccionada = await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => SubcategoriaSelector(categoria: categoria)),
+                          MaterialPageRoute(
+                            builder: (_) => SubcategoriaSelector(categoria: categoria.value),
+                          ),
                         );
-                        if (subcategoria != null) {
+
+                        if (subcategoriaSeleccionada != null) {
                           setState(() {
                             _categoria = categoria;
-                            _subcategoria = subcategoria;
+                            _subcategoria = subcategoriaSeleccionada;
                           });
                         }
                       }
@@ -264,23 +341,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
 
                   // Botón para guardar la prenda
                   ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() &&
-                          _categoria != null &&
-                          _subcategoria != null &&
-                          _ocasiones.isNotEmpty &&
-                          _temporadas.isNotEmpty &&
-                          _colores.isNotEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Prenda añadida al armario virtual (simulado)",
-                            ),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
+                    onPressed: _guardarPrenda,
                     child: const Text("Guardar prenda"),
                   ),
                 ],

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_manager.dart';
-import 'auth_screen.dart';
+import 'launcher_screen.dart';
 import 'colecciones_screen.dart';
 import 'buscador_screen.dart';
 import 'armarioVirtual/armario_screen.dart';
 import 'outfits_screen.dart';
+import '../services/google_sign_in_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userEmail;
@@ -28,17 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   Future<void> _logout() async {
-    final GoogleSignIn _googleSignIn = GoogleSignIn();
-    await _googleSignIn.signOut();
+    final googleSignInService = GoogleSignInService();
+    await googleSignInService.logout();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); 
+    await prefs.clear();
     ApiManager.reset();
 
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        MaterialPageRoute(builder: (_) => const LauncherScreen()),
         (route) => false,
       );
     }

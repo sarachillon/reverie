@@ -1,5 +1,9 @@
+# backend/app/models/associations.py
+
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, Boolean
 from app.database.database import Base
+from sqlalchemy import Enum as SqlEnum
+from app.models.enummerations import *
 
 coleccion_articulo_propio = Table(
     "coleccion_articulo_propio", Base.metadata,
@@ -30,3 +34,4 @@ outfitnuevo_articulo = Table(
     Column("outfit_id", Integer, ForeignKey("outfits_nuevos.id")),
     Column("articulo_nuevo_url", String, ForeignKey("articulos_nuevos.url"))
 )
+

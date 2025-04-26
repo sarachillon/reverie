@@ -57,25 +57,44 @@ class _AuthScreenState extends State<AuthScreen> {
       final username = _usernameController.text;
       final edad = int.parse(_ageController.text);
 
-      // Guardar en SharedPreferences
-      await prefs.setString('username', username);
-      await prefs.setInt('edad', edad);
-      await prefs.setString('genero_pref', _genderPref);
-
-      // Guardar en backend (solo si es API real)
+      // Guardar en backend 
       final api = ApiManager.getInstance(email: email);
-      await api.registerUser(
+      final userData = await api.registerUser(
         email: email,
         username: username,
         edad: edad,
         genero_pref: _genderPref,
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen(userEmail: email)),
-      );
+      if (!mounted) return;
+
+      // Verificar que los datos devueltos sean correctos
+      if (userData != null) {
+        print ('Usuario registrado: $userData');
+
+        var accessToken = userData['access_token'];
+        var user = userData['user'];
+        var userId = user['id'].toString();
+
+        // Guardar token y user_id en SharedPreferences
+        await prefs.setString('token', accessToken);
+        await prefs.setString('userId', userId);
+
+        // Redirigir a la pantalla de inicio
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen(userEmail: email)),
+        );
+      } else {
+        // Manejo de error si la respuesta no contiene los datos esperados
+        print('Error: No se recibió el token de acceso o el ID del usuario');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar el usuario, por favor intenta de nuevo.')),
+        );
+      }
     }
+
+
   }
 
   @override

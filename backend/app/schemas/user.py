@@ -10,8 +10,14 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
-    email: EmailStr
+    email: str
+    edad: int
+    genero_pref: str
 
-    model_config = {
-        "from_attributes": True
-    }
+    class Config:
+        orm_mode = True
+
+class TokenUserResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOut

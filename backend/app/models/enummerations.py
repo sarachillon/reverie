@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Ocasion(str, Enum):
+class OcasionEnum(str, Enum):
     CASUAL = "Casual"
     CENA = "Cena"
     FORMAL = "Formal"
@@ -19,7 +19,7 @@ class SubcategoriaRopaEnum(str, Enum):
     CAMISETAS = "Camisetas y tops"
     FALDAS_CORTAS = "Faldas cortas"
     FALDAS_LARGAS = "Faldas midi y largas"
-    JERSEYS = "Jerseys y sudaderas"
+    JERSEYS = "Jerséis y sudaderas"
     MONOS = "Monos"
     PANTALONES = "Pantalones"
     BERMUDAS = "Pantalones cortos y bermudas"
@@ -43,7 +43,7 @@ class SubcategoriaAccesoriosEnum(str, Enum):
     CINTURONES = "Cinturones"
     CORBATAS = "Corbatas y pajaritas"
     GAFAS = "Gafas de sol"
-    MOCHILAS = "Mochilas y bolsos"
+    MOCHILAS = "Bolsos y mochilas"
     RELOJES = "Relojes"
     SOMBREROS = "Sombreros, gorras y gorros"
 
@@ -60,7 +60,7 @@ class ColorEnum(str, Enum):
     VIOLETA = "Violeta"
     AZUL = "Azul"
     VERDE = "Verde"
-    MARRON = "Marron"
+    MARRON = "Marrón"
     GRIS = "Gris"
     BLANCO = "Blanco"
     NEGRO = "Negro"

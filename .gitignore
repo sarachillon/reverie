@@ -25,6 +25,7 @@ frontend/.dart_tool/
 frontend/.idea/
 frontend/.packages
 frontend/pubspec.lock
+frontend/android/app/google-services.json
 
 # Flutter & Dart
 .dart_tool/
