@@ -36,52 +36,66 @@ class _AuthScreenState extends State<AuthScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('email', email);
 
-      // Valida si el usuario existe en la base de datos
-      final api = ApiManager.getInstance(email: email);
-      final exists = await api.checkUserExists(email: email);
-      print('Usuario existe en la base de datos: $exists');
-
+      setState(() {
+        _currentUser = account;
+      });
+    } catch (e) {
+      print('Error durante el inicio de sesión: $e');
+      // Maneja errores inesperados
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => exists ? HomeScreen(userEmail: email) : const AuthScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
       );
-    } catch (e) {
-      print('Error durante el inicio de sesión: $e');
     }
   }
 
   Future<void> _submit() async {
-  if (_formKey.currentState!.validate()) {
-    final prefs = await SharedPreferences.getInstance();
-    final email = _currentUser!.email;
-    final username = _usernameController.text;
-    final edad = int.parse(_ageController.text);
+    if (_formKey.currentState!.validate()) {
+      final prefs = await SharedPreferences.getInstance();
+      final email = _currentUser!.email;
+      final username = _usernameController.text;
+      final edad = int.parse(_ageController.text);
 
-    // Guardar en SharedPreferences
-    await prefs.setString('username', username);
-    await prefs.setInt('edad', edad);
-    await prefs.setString('genero_pref', _genderPref);
+      // Guardar en backend 
+      final api = ApiManager.getInstance(email: email);
+      final userData = await api.registerUser(
+        email: email,
+        username: username,
+        edad: edad,
+        genero_pref: _genderPref,
+      );
 
-    // Guardar en backend (solo si es API real)
-    final api = ApiManager.getInstance(email: email);
-    await api.registerUser(
-      email: email,
-      username: username,
-      edad: edad,
-      genero_pref: _genderPref,
-    );
+      if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-    );
+      // Verificar que los datos devueltos sean correctos
+      if (userData != null) {
+        print ('Usuario registrado: $userData');
+
+        var accessToken = userData['access_token'];
+        var user = userData['user'];
+        var userId = user['id'].toString();
+
+        // Guardar token y user_id en SharedPreferences
+        await prefs.setString('accessToken', accessToken);
+        await prefs.setString('userId', userId);
+
+        // Redirigir a la pantalla de inicio
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen(userEmail: email)),
+        );
+      } else {
+        // Manejo de error si la respuesta no contiene los datos esperados
+        print('Error: No se recibió el token de acceso o el ID del usuario');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar el usuario, por favor intenta de nuevo.')),
+        );
+      }
+    }
+
+
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -91,13 +105,11 @@ class _AuthScreenState extends State<AuthScreen> {
       );
     }
 
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(15),
@@ -108,38 +120,31 @@ class _AuthScreenState extends State<AuthScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Imagen centrada
                 Image.asset(
-                  'assets/logo_reverie_text.png', 
+                  'assets/logo_reverie_text.png',
                   width: 200,
                   height: 100,
                   fit: BoxFit.contain,
                 ),
-
-                
-                SizedBox(height: 30),
-
-                // Nombre de usuario
+                const SizedBox(height: 30),
                 SizedBox(
                   width: 300,
                   child: TextFormField(
                     controller: _usernameController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Nombre de usuario',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) => value == null || value.isEmpty ? 'Introduce un nombre' : null,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Introduce un nombre' : null,
                   ),
                 ),
-                
-                SizedBox(height: 30), 
-                
-                // Edad
+                const SizedBox(height: 30),
                 SizedBox(
                   width: 300,
                   child: TextFormField(
                     controller: _ageController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Edad',
                       border: OutlineInputBorder(),
                     ),
@@ -152,35 +157,29 @@ class _AuthScreenState extends State<AuthScreen> {
                     },
                   ),
                 ),
-                
-                SizedBox(height: 40), 
-                
-                // Preferencia de ropa
+                const SizedBox(height: 40),
                 Column(
                   children: [
-                    Text('Prefieres ropa de:', style: TextStyle(fontSize: 16)),
-                    SizedBox(height: 20),
+                    const Text('Prefieres ropa de:', style: TextStyle(fontSize: 16)),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _buildGenderOption('Mujer'),
-                        SizedBox(width: 30),
+                        const SizedBox(width: 30),
                         _buildGenderOption('Hombre'),
-                        SizedBox(width: 30),
+                        const SizedBox(width: 30),
                         _buildGenderOption('Ambos'),
                       ],
                     ),
                   ],
                 ),
-                
-                SizedBox(height: 50), 
-                
-                // Botón de enviar
+                const SizedBox(height: 50),
                 ElevatedButton(
                   onPressed: _submit,
-                  child: Text('Empezar', style: TextStyle(fontSize: 16)),
+                  child: const Text('Empezar', style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   ),
                 ),
               ],
@@ -203,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
               fontWeight: _genderPref == gender ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Container(
             height: 2,
             width: 60,

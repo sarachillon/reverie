@@ -1,8 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "postgresql://postgres:Sara1212@localhost/reverie_db"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 engine = create_engine(
@@ -10,7 +14,8 @@ engine = create_engine(
     pool_pre_ping=True,  # Verifica conexiones antes de usarlas
     pool_size=10,        # Número máximo de conexiones
     max_overflow=20,     # Conexiones adicionales permitidas
-    pool_recycle=3600    # Recicla conexiones después de 1 hora
+    pool_recycle=3600,    # Recicla conexiones después de 1 hora
+    echo=True,  # Muestra las consultas SQL en la consola
 )
 
 SessionLocal = sessionmaker(
