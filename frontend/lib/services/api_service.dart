@@ -24,6 +24,7 @@ abstract class ApiService {
     SubcategoriaRopaEnum? subcategoriaRopa,
     SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
     SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
     required List<TemporadaEnum> temporadas,
     required List<ColorEnum> colores,
   });

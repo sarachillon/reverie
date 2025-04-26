@@ -45,7 +45,7 @@ class _LauncherScreenState extends State<LauncherScreen> {
     final accessToken = userData['access_token'];
     final userId = userData['id'].toString(); 
 
-    await prefs.setString('token', accessToken);
+    await prefs.setString('accessToken', accessToken);
     await prefs.setString('userId', userId); 
 
     Navigator.pushReplacement(

@@ -77,7 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
         var userId = user['id'].toString();
 
         // Guardar token y user_id en SharedPreferences
-        await prefs.setString('token', accessToken);
+        await prefs.setString('accessToken', accessToken);
         await prefs.setString('userId', userId);
 
         // Redirigir a la pantalla de inicio

@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -105,16 +106,17 @@ class RealApiService implements ApiService {
     SubcategoriaRopaEnum? subcategoriaRopa,
     SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
     SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
     required List<TemporadaEnum> temporadas,
     required List<ColorEnum> colores,
   }) async {
-    final url = Uri.parse('$_baseUrl/articulos/');
+    final url = Uri.parse('$_baseUrl/articulos-propios/');
 
-    // Obtén el userId desde GoogleSignInService
-    final userId = GoogleSignInService().userId;
+    // Obtén el token desde GoogleSignInService
+    final token = await GoogleSignInService().getToken();
 
-    if (userId == null) {
-      throw Exception('No se pudo obtener el userId. El usuario no está autenticado.');
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
     }
 
     final ImageProvider imageProvider = foto.image;
@@ -125,33 +127,48 @@ class RealApiService implements ApiService {
     }
 
     final request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = 'UserID $userId'; // Usa el userId en el encabezado
+    request.headers['Authorization'] = 'Bearer $token'; // Usa el token en el encabezado
 
     request.files.add(await http.MultipartFile.fromPath(
-      'imagen',
+      'foto',
       imageFile.path,
       contentType: MediaType('image', 'jpeg'),
     ));
 
     request.fields['nombre'] = nombre;
-    request.fields['categoria'] = categoria.name;
+    request.fields['categoria'] = categoria.value;
 
     if (subcategoriaRopa != null) {
-      request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
+      request.fields['subcategoria_ropa'] = subcategoriaRopa.value;
     }
     if (subcategoriaCalzado != null) {
-      request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
+      request.fields['subcategoria_calzado'] = subcategoriaCalzado.value;
     }
     if (subcategoriaAccesorios != null) {
-      request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
+      request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.value;
     }
 
+    
+
+    // Convertir las listas de enums a sus valores
+    for (var o in ocasiones) {
+      request.files.add(
+        await http.MultipartFile.fromString('ocasiones[]', o.value),
+      );
+    }
     for (var t in temporadas) {
-      request.fields['temporadas'] = t.name;
+      request.files.add(
+        await http.MultipartFile.fromString('temporadas[]', t.value),
+      );
     }
     for (var c in colores) {
-      request.fields['colores'] = c.name;
+      request.files.add(
+        await http.MultipartFile.fromString('colores[]', c.value),
+      );
     }
+
+    // TODO: Eliminar este print
+    print(request.fields);
 
     final response = await request.send();
 
@@ -160,6 +177,7 @@ class RealApiService implements ApiService {
       throw Exception('Error al guardar artículo: $body');
     }
   }
+
 
   Future<File?> _getImageFileFromProvider(ImageProvider provider) async {
     if (provider is FileImage) {

@@ -41,6 +41,7 @@ class ApiManager {
     SubcategoriaRopaEnum? subcategoriaRopa,
     SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
     SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
     required List<TemporadaEnum> temporadas,
     required List<ColorEnum> colores,
   }) async {
@@ -55,6 +56,7 @@ class ApiManager {
       subcategoriaRopa: subcategoriaRopa,
       subcategoriaAccesorios: subcategoriaAccesorios,
       subcategoriaCalzado: subcategoriaCalzado,
+      ocasiones: ocasiones,
       temporadas: temporadas,
       colores: colores,
     );

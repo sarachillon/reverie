@@ -24,6 +24,12 @@ class GoogleSignInService with ChangeNotifier {
     notifyListeners();
   }
 
+  // Función para obtener el token de acceso
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('accessToken'); // Retorna el token almacenado
+  }
+
   /// Inicia sesión con Google y devuelve el email si tuvo éxito
   Future<String?> signInWithGoogle() async {
     try {

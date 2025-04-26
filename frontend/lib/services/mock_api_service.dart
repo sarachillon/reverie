@@ -53,6 +53,7 @@ class MockApiService implements ApiService {
     SubcategoriaRopaEnum? subcategoriaRopa,
     SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
     SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
     required List<TemporadaEnum> temporadas,
     required List<ColorEnum> colores,
   }) async {

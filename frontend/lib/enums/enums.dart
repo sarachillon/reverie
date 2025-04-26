@@ -19,7 +19,7 @@ extension OcasionEnumExtension on OcasionEnum {
       case OcasionEnum.Formal:
         return 'Formal';
       case OcasionEnum.Trabajo_formal:
-        return 'Trabajo formal';
+        return 'Trabajo formal (traje)';
       case OcasionEnum.Trabajo_informal:
         return 'Trabajo informal';
     }
@@ -68,9 +68,9 @@ extension SubcategoriaRopaEnumExtension on SubcategoriaRopaEnum {
       case SubcategoriaRopaEnum.Camisetas:
         return 'Camisetas y tops';
       case SubcategoriaRopaEnum.FaldasCortas:
-        return 'Faldas Cortas';
+        return 'Faldas cortas';
       case SubcategoriaRopaEnum.FaldasLargas:
-        return 'Faldas Largas';
+        return 'Faldas midi y largas';
       case SubcategoriaRopaEnum.Jerseis:
         return 'Jerséis y sudaderas';
       case SubcategoriaRopaEnum.Monos:
@@ -78,15 +78,15 @@ extension SubcategoriaRopaEnumExtension on SubcategoriaRopaEnum {
       case SubcategoriaRopaEnum.Pantalones:
         return 'Pantalones';
       case SubcategoriaRopaEnum.Bermudas:
-        return 'Bermudas';
+        return 'Pantalones cortos y bermudas';
       case SubcategoriaRopaEnum.Vaqueros:
-        return 'Vaqueros';
+        return 'Pantalones vaqueros';
       case SubcategoriaRopaEnum.Trajes:
-        return 'Trajes';
+        return 'Trajes y blazers';
       case SubcategoriaRopaEnum.VestidosCortos:
-        return 'Vestidos Cortos';
+        return 'Vestidos cortos';
       case SubcategoriaRopaEnum.VestidosLargos:
-        return 'Vestidos Largos';
+        return 'Vestidos largos';
     }
   }
 }
@@ -112,7 +112,7 @@ extension SubcategoriaCalzadoEnumExtension on SubcategoriaCalzadoEnum {
       case SubcategoriaCalzadoEnum.Botas:
         return 'Botas';
       case SubcategoriaCalzadoEnum.Nauticos:
-        return 'Náuticos';
+        return 'Náuticos y mocasines';
       case SubcategoriaCalzadoEnum.Sandalias:
         return 'Sandalias';
       case SubcategoriaCalzadoEnum.Tacones:
@@ -120,14 +120,13 @@ extension SubcategoriaCalzadoEnumExtension on SubcategoriaCalzadoEnum {
       case SubcategoriaCalzadoEnum.Zapatillas:
         return 'Zapatillas';
       case SubcategoriaCalzadoEnum.Zapatos:
-        return 'Zapatos';
+        return 'Zapatos de vestir';
     }
   }
 }
 
 enum SubcategoriaAccesoriosEnum {
   Bufandas,
-  Bolsos,
   Cinturones,
   Corbatas,
   Gafas,
@@ -140,21 +139,19 @@ extension SubcategoriaAccesoriosEnumExtension on SubcategoriaAccesoriosEnum {
   String get value {
     switch (this) {
       case SubcategoriaAccesoriosEnum.Bufandas:
-        return 'Bufandas';
-      case SubcategoriaAccesoriosEnum.Bolsos:
-        return 'Bolsos';
+        return 'Bufandas y pañuelos';
+      case SubcategoriaAccesoriosEnum.Mochilas:
+        return 'Bolsos y mochilas';
       case SubcategoriaAccesoriosEnum.Cinturones:
         return 'Cinturones';
       case SubcategoriaAccesoriosEnum.Corbatas:
-        return 'Corbatas';
+        return 'Corbatas y pajaritas';
       case SubcategoriaAccesoriosEnum.Gafas:
-        return 'Gafas';
-      case SubcategoriaAccesoriosEnum.Mochilas:
-        return 'Mochilas';
+        return 'Gafas de sol';
       case SubcategoriaAccesoriosEnum.Relojes:
         return 'Relojes';
       case SubcategoriaAccesoriosEnum.Sombreros:
-        return 'Sombreros';
+        return 'Sombreros, gorras y gorros';
     }
   }
 }

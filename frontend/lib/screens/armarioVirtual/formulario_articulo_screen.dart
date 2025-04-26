@@ -38,7 +38,6 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         SubcategoriaAccesoriosEnum? subcategoriaAccesorios;
         SubcategoriaCalzadoEnum? subcategoriaCalzado;
 
-        
         if (_categoria == CategoriaEnum.Ropa) {
           subcategoriaRopa = SubcategoriaRopaEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
@@ -67,6 +66,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
           subcategoriaRopa: subcategoriaRopa,
           subcategoriaAccesorios: subcategoriaAccesorios,
           subcategoriaCalzado: subcategoriaCalzado,
+          ocasiones: _ocasiones,
           temporadas: _temporadas,
           colores: _colores,
         );
@@ -193,7 +193,9 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                                     child: const Text("Cancelar"),
                                   ),
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, tempOcasiones),
+                                    onPressed: () {
+                                      Navigator.pop(context, tempOcasiones);  // Retorna la lista seleccionada
+                                    },
                                     child: const Text("Aceptar"),
                                   ),
                                 ],
@@ -205,7 +207,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
 
                       if (selectedOcasiones != null) {
                         setState(() {
-                          _ocasiones = selectedOcasiones;
+                          _ocasiones.addAll(selectedOcasiones.where((ocasion) => !_ocasiones.contains(ocasion)));
                         });
                       }
                     },
