@@ -24,4 +24,14 @@ async def subir_imagen_s3(file: UploadFile, filename: str) -> str:
         ContentType=file.content_type,
     )
 
-    return f"https://{AWS_S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{filename}"
+    return f"{filename}"
+
+async def get_imagen_s3(filename: str) -> bytes:
+    s3 = boto3.client("s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
+
+    response = s3.get_object(Bucket=AWS_S3_BUCKET_NAME, Key=filename)
+    return response['Body'].read()

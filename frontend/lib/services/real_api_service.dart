@@ -1,6 +1,7 @@
 // frontend/lib/services/real_api_service.dart
 
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +10,7 @@ import 'api_service.dart';
 import '../enums/enums.dart';
 import 'package:http_parser/http_parser.dart';
 import '../services/google_sign_in_service.dart';
+
 
 
 class RealApiService implements ApiService {
@@ -176,6 +178,95 @@ class RealApiService implements ApiService {
     }
   }
 
+  @override
+  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
+  final queryString = filtros != null
+        ? filtros.entries
+            .where((e) => e.value != null)
+            .expand((e) {
+              if (e.value is List) {
+                return (e.value as List).map((v) => '${e.key}=$v');
+              } else {
+                return ['${e.key}=${e.value}'];
+              }
+            })
+            .join('&')
+        : '';
+
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/articulos-propios/?$queryString'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> articulos = [];
+      bool streamSuccess = true;
+
+      final byteStream = Stream.fromIterable([response.bodyBytes]);
+      final responseBody = byteStream.transform(
+          StreamTransformer.fromBind(utf8.decoder.bind)).transform(const LineSplitter());
+
+      await for (final data in responseBody) {
+        if (data.isNotEmpty) {
+          final decodedData = jsonDecode(data);
+          if (decodedData is Map<String, dynamic> && decodedData.containsKey("error")) {
+            // Handle error object
+            print("Error from stream: ${decodedData["error"]}");
+            streamSuccess = false;
+            // You might want to log this or take other actions
+          } else if (decodedData is Map<String, dynamic> && decodedData.containsKey("stream_status")) {
+            if (decodedData["stream_status"] != "success") {
+              streamSuccess = false;
+            }
+          }
+          else {
+            articulos.add(decodedData);
+          }
+        }
+      }
+
+      if (!streamSuccess) {
+        // Handle the partial failure scenario
+        print("Stream completed with errors. Some data might be incomplete.");
+        // You might want to throw an exception, return a special object, or take other actions
+      }
+
+      return articulos;
+
+    } else {
+      throw Exception('Error al cargar artículos');
+    }
+  }
+
+
+  @override
+  Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/articulos-propios/?nombre=$nombre'),
+      headers: {
+        'Authorization': 'Bearer $token', 
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Error al cargar artículos');
+    }
+  }
+
 
   Future<File?> _getImageFileFromProvider(ImageProvider provider) async {
     if (provider is FileImage) {
@@ -183,4 +274,55 @@ class RealApiService implements ApiService {
     }
     return null;
   }
+
+
+
+@override
+Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async {
+  final queryString = filtros != null
+      ? filtros.entries
+          .where((e) => e.value != null)
+          .expand((e) {
+            if (e.value is List) {
+              return (e.value as List).map((v) => '${e.key}=$v');
+            } else {
+              return ['${e.key}=${e.value}'];
+            }
+          })
+          .join('&')
+      : '';
+
+  final token = await GoogleSignInService().getToken();
+  if (token == null) {
+    throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+  }
+
+  final request = http.Request(
+    'GET',
+    Uri.parse('$_baseUrl/articulos-propios/stream?$queryString'),
+  );
+  request.headers['Authorization'] = 'Bearer $token';
+
+  final response = await request.send();
+
+  if (response.statusCode == 200) {
+    final List<dynamic> articulos = [];
+
+    // Aquí leemos el stream de bytes y decodificamos línea a línea
+    final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+
+    await for (final line in utf8Stream) {
+      if (line.isNotEmpty) {
+        final decodedData = jsonDecode(line);
+        articulos.add(decodedData);
+      }
+    }
+
+    return articulos;
+  } else {
+    throw Exception('Error al cargar artículos (stream)');
+  }
+}
+
+
 }

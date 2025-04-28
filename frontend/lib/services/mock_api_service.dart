@@ -74,4 +74,68 @@ class MockApiService implements ApiService {
     print("Temporadas: $temporadasPrueba");
     print("Colores: $coloresPrueba");
   }
+
+  /*@override
+  Stream<dynamic> getArticulosPropios({Map<String, dynamic>? filtros}) async* {
+    // Simulación de respuesta de artículos propios
+    yield [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
+      },
+    ];
+  }*/
+
+  @override
+  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
+    // Simulación de respuesta de artículos propios
+    return [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
+      },
+    ];
+  }
+
+  @override
+  Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
+    // Simulación de respuesta de artículos propios por nombre
+    return [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+    ];
+  }
+
+  @override
+  Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async {
+    // Simulación de respuesta de artículos propios como stream
+    return [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+    ];
+  }
 }

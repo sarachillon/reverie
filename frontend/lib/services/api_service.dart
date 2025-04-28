@@ -28,4 +28,11 @@ abstract class ApiService {
     required List<TemporadaEnum> temporadas,
     required List<ColorEnum> colores,
   });
+
+  //Stream<dynamic> getArticulosPropios({Map<String, dynamic>? filtros});
+  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros});
+  
+  Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre});
+
+  Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros});
 }

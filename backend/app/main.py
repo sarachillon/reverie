@@ -8,7 +8,6 @@ from app.routers.upload_image import router as upload_image_router
 app = FastAPI()
 
 # Routers
-#app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(user_router)
 app.include_router(articulo_propio_router)
 app.include_router(upload_image_router)

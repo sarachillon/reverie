@@ -14,3 +14,19 @@ class ArticuloCreate(BaseModel):
     temporadas: List[TemporadaEnum]
     colores: List[ColorEnum]
     foto: str  # URL de la imagen en S3
+
+
+class ArticuloPropioConImagen(BaseModel):
+    id: int
+    usuario_id: int
+    nombre: str
+    categoria: CategoriaEnum
+    subcategoria: Optional[str] = None
+    ocasiones: List[OcasionEnum] = []
+    temporadas: List[TemporadaEnum] = []
+    colores: List[ColorEnum] = []
+    foto: str # URL de la imagen en S3
+    imagen: str  # imagen como tal
+
+    class Config:
+        orm_mode = True  #  Para trabajar con objetos SQLAlchemy
