@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -18,15 +19,14 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
   File? _imagenSeleccionada;
   bool _isPicking = false;
-  List<dynamic> _articulos = []; // Lista para almacenar los artículos
-  Map<String, dynamic> filtros = {}; // Para almacenar los filtros
+  List<dynamic> _articulos = [];
+  Map<String, dynamic> filtros = {};
 
   @override
   void initState() {
     super.initState();
-    _cargarArticulosPropios(); // Cargar los artículos al inicializar la pantalla
+    _cargarArticulosPropios();
   }
-
 
   Future<void> _pedirPermisos() async {
     Map<Permission, PermissionStatus> statuses;
@@ -56,20 +56,19 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     }
   }
 
-
   Future<void> _cargarArticulosPropios() async {
     try {
+      _articulos.clear();
       final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
-      stream.listen((articulo) {
+      await for (final articulo in stream) {
         setState(() {
           _articulos.add(articulo);
         });
-      });
+      }
     } catch (e) {
       print("Error al cargar artículos propios: $e");
     }
   }
-
 
   Future<void> _seleccionarDesdeGaleria() async {
     if (_isPicking) return;
@@ -159,62 +158,72 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi Armario')),
-      body: _articulos.isEmpty
-          ? const Center(child: Text('Aún no hay artículos en tu armario.'))
-          : GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.75,
-              ),
-              padding: const EdgeInsets.all(10),
-              itemCount: _articulos.length,
-              itemBuilder: (context, index) {
-                try {
-                  final articulo = _articulos[index];
-                  if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
+      appBar: AppBar(
+        title: const Text('Mi Armario'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_alt),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FiltrosArticuloPropioScreen(
+                    filtrosIniciales: filtros,
+                    onAplicar: (nuevosFiltros) {
+                      setState(() {
+                        filtros = nuevosFiltros;
+                        _articulos.clear();
+                      });
+                      _cargarArticulosPropios();
+                    },
+                  ),
+                ),
+              );
+            },
+          )
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _cargarArticulosPropios,
+        child: _articulos.isEmpty
+            ? const Center(child: Text('Aún no hay artículos en tu armario.'))
+            : GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.75,
+                ),
+                padding: const EdgeInsets.all(10),
+                itemCount: _articulos.length,
+                itemBuilder: (context, index) {
+                  try {
+                    final articulo = _articulos[index];
+                    if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
+                      return const Card(
+                        child: Center(child: Text('Artículo inválido')),
+                      );
+                    }
+                    return ArticuloPropioWidget(
+                      nombre: articulo['nombre'],
+                      articulo: articulo,
+                      onTap: () {
+                        print('Artículo seleccionado: ${articulo['nombre']}');
+                      },
+                    );
+                  } catch (e) {
+                    print("Error al construir el artículo $index: $e");
                     return const Card(
-                      child: Center(child: Text('Artículo inválido')),
+                      child: Center(child: Text('Error al cargar el artículo')),
                     );
                   }
-                  return ArticuloPropioWidget(
-                    nombre: articulo['nombre'],
-                    articulo: articulo,
-                    onTap: () {
-                      print('Artículo seleccionado: ${articulo['nombre']}');
-                    },
-                  );
-                } catch (e) {
-                  print("Error al construir el artículo $index: $e");
-                  return const Card(
-                    child: Center(child: Text('Error al cargar el artículo')),
-                  );
-                }
-              },
-            ),
+                },
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarOpcionesImagen(context),
         child: const Icon(Icons.add),
         tooltip: 'Añadir prenda',
-      ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.list),
-              onPressed: _cargarArticulosPropios,
-            ),
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () {
-                // Lógica para abrir la pantalla de filtros
-              },
-            ),
-          ],
-        ),
       ),
     );
   }

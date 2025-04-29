@@ -38,17 +38,17 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         SubcategoriaAccesoriosEnum? subcategoriaAccesorios;
         SubcategoriaCalzadoEnum? subcategoriaCalzado;
 
-        if (_categoria == CategoriaEnum.Ropa) {
+        if (_categoria == CategoriaEnum.ROPA) {
           subcategoriaRopa = SubcategoriaRopaEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Ropa"),
           );
-        } else if (_categoria == CategoriaEnum.Accesorios) {
+        } else if (_categoria == CategoriaEnum.ACCESORIOS) {
           subcategoriaAccesorios = SubcategoriaAccesoriosEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Accesorios"),
           );
-        } else if (_categoria == CategoriaEnum.Calzado) {
+        } else if (_categoria == CategoriaEnum.CALZADO) {
           subcategoriaCalzado = SubcategoriaCalzadoEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Calzado"),
@@ -358,27 +358,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   // Método para obtener el color real desde el enum
   Color _getColorFromEnum(ColorEnum color) {
     switch (color) {
-      case ColorEnum.Amarillo:
+      case ColorEnum.AMARILLO:
         return Colors.yellow;
-      case ColorEnum.Naranja:
+      case ColorEnum.NARANJA:
         return Colors.orange;
-      case ColorEnum.Rojo:
+      case ColorEnum.ROJO:
         return Colors.red;
-      case ColorEnum.Rosa:
+      case ColorEnum.ROSA:
         return Colors.pink;
-      case ColorEnum.Violeta:
+      case ColorEnum.VIOLETA:
         return Colors.purple;
-      case ColorEnum.Azul:
+      case ColorEnum.AZUL:
         return Colors.blue;
-      case ColorEnum.Verde:
+      case ColorEnum.VERDE:
         return Colors.green;
-      case ColorEnum.Marron:
+      case ColorEnum.MARRON:
         return Colors.brown;
-      case ColorEnum.Gris:
+      case ColorEnum.GRIS:
         return Colors.grey;
-      case ColorEnum.Blanco:
+      case ColorEnum.BLANCO:
         return Colors.white;
-      case ColorEnum.Negro:
+      case ColorEnum.NEGRO:
         return Colors.black;
     }
   }

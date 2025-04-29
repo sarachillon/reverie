@@ -62,27 +62,6 @@ class ArticuloPropio(Base):
     outfits_propios = relationship("OutfitPropio", secondary=outfitpropio_articulo, back_populates="articulos_propios")
 
 
-    @validates("subcategoria", "categoria")
-    def validate_subcategoria(self, key, value):
-        if key == "categoria":
-            if not isinstance(value, CategoriaEnum):
-                raise ValueError(f"Categoría debe ser un CategoriaEnum, no {type(value)}")
-            return value
-        elif key == "subcategoria":
-            if not isinstance(value, str):
-                raise ValueError(f"Subcategoría debe ser una cadena, no {type(value)}")
-            categoria = getattr(self, 'categoria', None) # Usar getattr con valor por defecto
-            if not categoria:
-                return value  # Permitir subcategoría si no hay categoría aún
-
-            if categoria == CategoriaEnum.ROPA and value not in [e.value for e in SubcategoriaRopaEnum]:
-                raise ValueError(f"Subcategoría '{value}' no válida para la categoría Ropa.")
-            elif categoria == CategoriaEnum.CALZADO and value not in [e.value for e in SubcategoriaCalzadoEnum]:
-                raise ValueError(f"Subcategoría '{value}' no válida para la categoría Calzado.")
-            elif categoria == CategoriaEnum.ACCESORIOS and value not in [e.value for e in SubcategoriaAccesoriosEnum]:
-                raise ValueError(f"Subcategoría '{value}' no válida para la categoría Accesorios.")
-            return value
-
 class Interaccion(Base):
     __tablename__ = "interacciones"
 

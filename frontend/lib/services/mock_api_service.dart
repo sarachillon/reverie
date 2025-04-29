@@ -60,10 +60,10 @@ class MockApiService implements ApiService {
     // Valores de prueba
     final Image fotoPrueba = Image.asset('assets/logo.png');
     final String nombrePrueba = "Camiseta de prueba";
-    final CategoriaEnum categoriaPrueba = CategoriaEnum.Ropa; 
-    final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.Camisas;
-    final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.Verano, TemporadaEnum.Entretiempo];
-    final List<ColorEnum> coloresPrueba = [ColorEnum.Azul, ColorEnum.Blanco];
+    final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
+    final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
+    final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
+    final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
 
     // Simulación de guardar el artículo
     print("Guardando artículo con los siguientes valores de prueba:");
@@ -101,14 +101,14 @@ class MockApiService implements ApiService {
       {
         'nombre': 'Camiseta de prueba',
         'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
       },
       {
         'nombre': 'Pantalones de prueba',
         'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES,
       },
     ];
   }
@@ -120,8 +120,8 @@ class MockApiService implements ApiService {
       {
         'nombre': 'Camiseta de prueba',
         'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
       },
     ];
   }
@@ -133,14 +133,14 @@ class MockApiService implements ApiService {
       {
         'nombre': 'Camiseta de prueba',
         'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
       },
       {
         'nombre': 'Pantalones de prueba',
         'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES,
       },
     ];
   }

@@ -1,225 +1,226 @@
+// frontend/lib/enums/enums.dart
 enum OcasionEnum {
-  Casual,
-  Cena,
-  Evento,
-  Formal, 
-  Trabajo_formal,
-  Trabajo_informal,
+  CASUAL,
+  CENA,
+  EVENTO,
+  FORMAL, 
+  TRABAJO_FORMAL,
+  TRABAJO_INFORMAL,
 }
 
 extension OcasionEnumExtension on OcasionEnum {
   String get value {
     switch (this) {
-      case OcasionEnum.Casual:
+      case OcasionEnum.CASUAL:
         return 'Casual';
-      case OcasionEnum.Cena:
+      case OcasionEnum.CENA:
         return 'Cena';
-      case OcasionEnum.Evento:
+      case OcasionEnum.EVENTO:
         return 'Evento';
-      case OcasionEnum.Formal:
+      case OcasionEnum.FORMAL:
         return 'Formal';
-      case OcasionEnum.Trabajo_formal:
+      case OcasionEnum.TRABAJO_FORMAL:
         return 'Trabajo formal (traje)';
-      case OcasionEnum.Trabajo_informal:
+      case OcasionEnum.TRABAJO_INFORMAL:
         return 'Trabajo informal';
     }
   }
 }
 
 enum CategoriaEnum {
-  Ropa,
-  Calzado,
-  Accesorios,
+  ROPA,
+  CALZADO,
+  ACCESORIOS,
 }
 
 extension CategoriaEnumExtension on CategoriaEnum {
   String get value {
     switch (this) {
-      case CategoriaEnum.Ropa:
+      case CategoriaEnum.ROPA:
         return 'Ropa';
-      case CategoriaEnum.Calzado:
+      case CategoriaEnum.CALZADO:
         return 'Calzado';
-      case CategoriaEnum.Accesorios:
+      case CategoriaEnum.ACCESORIOS:
         return 'Accesorios';
     }
   }
 }
 
 enum SubcategoriaRopaEnum {
-  Camisas,
-  Camisetas,
-  FaldasCortas,
-  FaldasLargas,
-  Jerseis,
-  Monos,
-  Pantalones,
-  Bermudas,
-  Vaqueros,
-  Trajes,
-  VestidosCortos,
-  VestidosLargos,
+  CAMISAS,
+  CAMISETAS,
+  FALDAS_CORTAS,
+  FALDAS_LARGAS,
+  JERSEYS,
+  MONOS,
+  PANTALONES,
+  BERMUDAS,
+  VAQUEROS,
+  TRAJES,
+  VESTIDOS_CORTOS,
+  VESTIDOS_LARGOS,
 }
 
 extension SubcategoriaRopaEnumExtension on SubcategoriaRopaEnum {
   String get value {
     switch (this) {
-      case SubcategoriaRopaEnum.Camisas:
+      case SubcategoriaRopaEnum.CAMISAS:
         return 'Camisas y blusas';
-      case SubcategoriaRopaEnum.Camisetas:
+      case SubcategoriaRopaEnum.CAMISETAS:
         return 'Camisetas y tops';
-      case SubcategoriaRopaEnum.FaldasCortas:
+      case SubcategoriaRopaEnum.FALDAS_CORTAS:
         return 'Faldas cortas';
-      case SubcategoriaRopaEnum.FaldasLargas:
+      case SubcategoriaRopaEnum.FALDAS_LARGAS:
         return 'Faldas midi y largas';
-      case SubcategoriaRopaEnum.Jerseis:
+      case SubcategoriaRopaEnum.JERSEYS:
         return 'Jerséis y sudaderas';
-      case SubcategoriaRopaEnum.Monos:
+      case SubcategoriaRopaEnum.MONOS:
         return 'Monos';
-      case SubcategoriaRopaEnum.Pantalones:
+      case SubcategoriaRopaEnum.PANTALONES:
         return 'Pantalones';
-      case SubcategoriaRopaEnum.Bermudas:
+      case SubcategoriaRopaEnum.BERMUDAS:
         return 'Pantalones cortos y bermudas';
-      case SubcategoriaRopaEnum.Vaqueros:
+      case SubcategoriaRopaEnum.VAQUEROS:
         return 'Pantalones vaqueros';
-      case SubcategoriaRopaEnum.Trajes:
+      case SubcategoriaRopaEnum.TRAJES:
         return 'Trajes y blazers';
-      case SubcategoriaRopaEnum.VestidosCortos:
+      case SubcategoriaRopaEnum.VESTIDOS_CORTOS:
         return 'Vestidos cortos';
-      case SubcategoriaRopaEnum.VestidosLargos:
+      case SubcategoriaRopaEnum.VESTIDOS_LARGOS:
         return 'Vestidos largos';
     }
   }
 }
 
 enum SubcategoriaCalzadoEnum {
-  Alpargatas,
-  Bailarinas,
-  Botas,
-  Nauticos,
-  Sandalias,
-  Tacones,
-  Zapatillas,
-  Zapatos,
+  ALPARGATAS,
+  BAILARINAS,  
+  BOTAS,
+  NAUTICOS,
+  SANDALIAS,
+  TACONES,
+  ZAPATILLAS,
+  ZAPATOS,
 }
 
 extension SubcategoriaCalzadoEnumExtension on SubcategoriaCalzadoEnum {
   String get value {
     switch (this) {
-      case SubcategoriaCalzadoEnum.Alpargatas:
+      case SubcategoriaCalzadoEnum.ALPARGATAS:
         return 'Alpargatas';
-      case SubcategoriaCalzadoEnum.Bailarinas:
+      case SubcategoriaCalzadoEnum.BAILARINAS:
         return 'Bailarinas';
-      case SubcategoriaCalzadoEnum.Botas:
+      case SubcategoriaCalzadoEnum.BOTAS:
         return 'Botas';
-      case SubcategoriaCalzadoEnum.Nauticos:
+      case SubcategoriaCalzadoEnum.NAUTICOS:
         return 'Náuticos y mocasines';
-      case SubcategoriaCalzadoEnum.Sandalias:
+      case SubcategoriaCalzadoEnum.SANDALIAS:
         return 'Sandalias';
-      case SubcategoriaCalzadoEnum.Tacones:
+      case SubcategoriaCalzadoEnum.TACONES:
         return 'Tacones';
-      case SubcategoriaCalzadoEnum.Zapatillas:
+      case SubcategoriaCalzadoEnum.ZAPATILLAS:
         return 'Zapatillas';
-      case SubcategoriaCalzadoEnum.Zapatos:
+      case SubcategoriaCalzadoEnum.ZAPATOS:
         return 'Zapatos de vestir';
     }
   }
 }
 
 enum SubcategoriaAccesoriosEnum {
-  Bufandas,
-  Cinturones,
-  Corbatas,
-  Gafas,
-  Mochilas,
-  Relojes,
-  Sombreros,
+  BUFANDAS,
+  CINTURONES,
+  CORBATAS,
+  GAFAS,
+  MOCHILAS,
+  RELOJES,
+  SOMBREROS,
 }
 
 extension SubcategoriaAccesoriosEnumExtension on SubcategoriaAccesoriosEnum {
   String get value {
     switch (this) {
-      case SubcategoriaAccesoriosEnum.Bufandas:
+      case SubcategoriaAccesoriosEnum.BUFANDAS:
         return 'Bufandas y pañuelos';
-      case SubcategoriaAccesoriosEnum.Mochilas:
+      case SubcategoriaAccesoriosEnum.MOCHILAS:
         return 'Bolsos y mochilas';
-      case SubcategoriaAccesoriosEnum.Cinturones:
+      case SubcategoriaAccesoriosEnum.CINTURONES:
         return 'Cinturones';
-      case SubcategoriaAccesoriosEnum.Corbatas:
+      case SubcategoriaAccesoriosEnum.CORBATAS:
         return 'Corbatas y pajaritas';
-      case SubcategoriaAccesoriosEnum.Gafas:
+      case SubcategoriaAccesoriosEnum.GAFAS:
         return 'Gafas de sol';
-      case SubcategoriaAccesoriosEnum.Relojes:
+      case SubcategoriaAccesoriosEnum.RELOJES:
         return 'Relojes';
-      case SubcategoriaAccesoriosEnum.Sombreros:
+      case SubcategoriaAccesoriosEnum.SOMBREROS:
         return 'Sombreros, gorras y gorros';
     }
   }
 }
 
 enum TemporadaEnum {
-  Verano,
-  Entretiempo,
-  Invierno,
+  VERANO,
+  ENTRETIEMPO,
+  INVIERNO,
 }
 
 extension TemporadaEnumExtension on TemporadaEnum {
   String get value {
     switch (this) {
-      case TemporadaEnum.Verano:
+      case TemporadaEnum.VERANO:
         return 'Verano';
-      case TemporadaEnum.Entretiempo:
+      case TemporadaEnum.ENTRETIEMPO:
         return 'Entretiempo';
-      case TemporadaEnum.Invierno:
+      case TemporadaEnum.INVIERNO:
         return 'Invierno';
     }
   }
 }
 
 enum ColorEnum {
-  Amarillo,
-  Naranja,
-  Rojo,
-  Rosa,
-  Violeta,
-  Azul,
-  Verde,
-  Marron,
-  Gris,
-  Blanco,
-  Negro,
+  AMARILLO,
+  NARANJA,
+  ROJO,
+  ROSA,
+  VIOLETA,
+  AZUL,
+  VERDE,
+  MARRON,
+  GRIS,
+  BLANCO,
+  NEGRO,
 }
 
 extension ColorEnumExtension on ColorEnum {
   String get value {
     switch (this) {
-      case ColorEnum.Amarillo:
+      case ColorEnum.AMARILLO:
         return 'Amarillo';
-      case ColorEnum.Naranja:
+      case ColorEnum.NARANJA:
         return 'Naranja';
-      case ColorEnum.Rojo:
+      case ColorEnum.ROJO:
         return 'Rojo';
-      case ColorEnum.Rosa:
+      case ColorEnum.ROSA:
         return 'Rosa';
-      case ColorEnum.Violeta:
+      case ColorEnum.VIOLETA:
         return 'Violeta';
-      case ColorEnum.Azul:
+      case ColorEnum.AZUL:
         return 'Azul';
-      case ColorEnum.Verde:
+      case ColorEnum.VERDE:
         return 'Verde';
-      case ColorEnum.Marron:
+      case ColorEnum.MARRON:
         return 'Marrón';
-      case ColorEnum.Gris:
+      case ColorEnum.GRIS:
         return 'Gris';
-      case ColorEnum.Blanco:
+      case ColorEnum.BLANCO:
         return 'Blanco';
-      case ColorEnum.Negro:
+      case ColorEnum.NEGRO:
         return 'Negro';
     }
   }
 }
 
 final Map<CategoriaEnum, List<dynamic>> subcategoriasPorCategoria = {
-  CategoriaEnum.Ropa: SubcategoriaRopaEnum.values,
-  CategoriaEnum.Calzado: SubcategoriaCalzadoEnum.values,
-  CategoriaEnum.Accesorios: SubcategoriaAccesoriosEnum.values,
+  CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
+  CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
+  CategoriaEnum.ACCESORIOS: SubcategoriaAccesoriosEnum.values,
 };

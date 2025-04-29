@@ -1,16 +1,16 @@
 # backend/app/routers/articulo_propios.py
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, Query
+from fastapi.responses import StreamingResponse
+from sqlalchemy import or_, any_, func
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy.dialects.postgresql import array
 from app.database.database import get_db
 from app.models.models import *
 from app.models.enummerations import *
 from app.utils.s3 import *
 from app.utils.auth import obtener_usuario_actual
-from typing import List, Optional, AsyncGenerator
-import uuid
+from typing import List, Optional
 from app.schemas.articulo_propio import *
-from fastapi.responses import StreamingResponse
 import json
 import base64
 
@@ -35,17 +35,17 @@ async def crear_articulo(
         if not subcategoria_ropa:
             raise HTTPException(status_code=400, detail="Subcategoría de ropa es obligatoria.")
         else:
-            subcategoria=subcategoria_ropa.value
+            subcategoria=SubcategoriaRopaEnum(subcategoria_ropa).name
     elif categoria == CategoriaEnum.CALZADO:
         if not subcategoria_calzado:
             raise HTTPException(status_code=400, detail="Subcategoría de calzado es obligatoria.")
         else:
-            subcategoria=subcategoria_calzado.value
+            subcategoria=SubcategoriaCalzadoEnum(subcategoria_calzado).name
     elif categoria == CategoriaEnum.ACCESORIOS:
         if not subcategoria_accesorios:
             raise HTTPException(status_code=400, detail="Subcategoría de accesorios es obligatoria.")
         else:
-            subcategoria=subcategoria_accesorios.value
+            subcategoria=SubcategoriaAccesoriosEnum(subcategoria_accesorios).name
     
     # Subir imagen a S3
     try:
@@ -158,9 +158,9 @@ async def obtener_articulos_propios_stream(
     request: Request,
     categoria: Optional[CategoriaEnum] = None,
     subcategoria: Optional[str] = None,
-    ocasiones: Optional[List[OcasionEnum]] = None,
-    temporadas: Optional[List[TemporadaEnum]] = None,
-    colores: Optional[List[ColorEnum]] = None,
+    ocasiones: Optional[List[OcasionEnum]] = Query(None),
+    temporadas: Optional[List[TemporadaEnum]] = Query(None),
+    colores: Optional[List[ColorEnum]] = Query(None),
     db: Session = Depends(get_db),
 ):
     usuario_actual = await obtener_usuario_actual(request, db)
@@ -170,20 +170,30 @@ async def obtener_articulos_propios_stream(
     query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_actual.id)
 
     if categoria:
-        query = query.filter(ArticuloPropio.categoria == categoria)
+        try:
+            categoria_enum = CategoriaEnum[categoria.upper()]
+        except KeyError:
+            raise HTTPException(status_code=422, detail="Categoría inválida")
+        
+        query = query.filter(ArticuloPropio.categoria == categoria_enum)
         if subcategoria:
             query = query.filter(ArticuloPropio.subcategoria == subcategoria)
     elif subcategoria:
         raise HTTPException(status_code=400, detail="No se puede filtrar por subcategoría sin filtrar por categoría.")
 
+
+
     if ocasiones:
-        query = query.filter(or_(*[ArticuloPropio.ocasiones.any(ocasion) for ocasion in ocasiones]))
+        query = query.filter(or_(*[ArticuloPropio.ocasiones.any(t) for t in ocasiones]))
 
     if temporadas:
-        query = query.filter(or_(*[ArticuloPropio.temporadas.any(temporada) for temporada in temporadas]))
+        query = query.filter(or_(*[ArticuloPropio.temporadas.any(t) for t in temporadas]))
 
     if colores:
-        query = query.filter(or_(*[ArticuloPropio.colores.any(color) for color in colores]))
+         query = query.filter(or_(*[ArticuloPropio.colores.any(t) for t in colores]))
+
+
+    
 
     articulos = query.all()
 
