@@ -247,6 +247,47 @@ class RealApiService implements ApiService {
 
 
   @override
+  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
+    final queryString = filtros != null
+        ? filtros.entries
+            .where((e) => e.value != null)
+            .expand((e) {
+              if (e.value is List) {
+                return (e.value as List).map((v) => '${e.key}=$v');
+              } else {
+                return ['${e.key}=${e.value}'];
+              }
+            })
+            .join('&')
+        : '';
+
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final request = http.Request(
+      'GET',
+      Uri.parse('$_baseUrl/articulos-propios/stream?$queryString'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+      await for (final line in utf8Stream) {
+        if (line.isNotEmpty) {
+          yield jsonDecode(line);
+        }
+      }
+    } else {
+      throw Exception('Error al cargar artículos (stream)');
+    }
+  }
+
+
+  @override
   Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
     final token = await GoogleSignInService().getToken();
     if (token == null) {
@@ -274,55 +315,6 @@ class RealApiService implements ApiService {
     }
     return null;
   }
-
-
-
-@override
-Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async {
-  final queryString = filtros != null
-      ? filtros.entries
-          .where((e) => e.value != null)
-          .expand((e) {
-            if (e.value is List) {
-              return (e.value as List).map((v) => '${e.key}=$v');
-            } else {
-              return ['${e.key}=${e.value}'];
-            }
-          })
-          .join('&')
-      : '';
-
-  final token = await GoogleSignInService().getToken();
-  if (token == null) {
-    throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
-  }
-
-  final request = http.Request(
-    'GET',
-    Uri.parse('$_baseUrl/articulos-propios/stream?$queryString'),
-  );
-  request.headers['Authorization'] = 'Bearer $token';
-
-  final response = await request.send();
-
-  if (response.statusCode == 200) {
-    final List<dynamic> articulos = [];
-
-    // Aquí leemos el stream de bytes y decodificamos línea a línea
-    final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
-
-    await for (final line in utf8Stream) {
-      if (line.isNotEmpty) {
-        final decodedData = jsonDecode(line);
-        articulos.add(decodedData);
-      }
-    }
-
-    return articulos;
-  } else {
-    throw Exception('Error al cargar artículos (stream)');
-  }
-}
 
 
 }

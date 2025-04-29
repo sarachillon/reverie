@@ -127,14 +127,20 @@ class MockApiService implements ApiService {
   }
 
   @override
-  Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async {
+  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
     // Simulación de respuesta de artículos propios como stream
-    return [
+    yield [
       {
         'nombre': 'Camiseta de prueba',
         'fotoUrl': 'assets/logo.png',
         'categoria': CategoriaEnum.Ropa,
         'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
       },
     ];
   }

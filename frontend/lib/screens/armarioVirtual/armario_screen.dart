@@ -1,10 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
-import 'package:frontend/services/google_sign_in_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -20,7 +16,6 @@ class ArmarioScreen extends StatefulWidget {
 
 class _ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
-  final GoogleSignInService _googleSignInService = GoogleSignInService();
   File? _imagenSeleccionada;
   bool _isPicking = false;
   List<dynamic> _articulos = []; // Lista para almacenar los artículos
@@ -31,53 +26,6 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     super.initState();
     _cargarArticulosPropios(); // Cargar los artículos al inicializar la pantalla
   }
-
-  /*Future<void> _cargarArticulosPropios() async {
-    try {
-      final articulos = await _apiManager.getArticulosPropiosStream(filtros: filtros);
-      setState(() {
-        _articulos = articulos;
-      });
-      print(articulos);
-    } catch (e) {
-      print("Error al cargar artículos propios: $e");
-    }
-  }*/
-
-
-  Future<void> _cargarArticulosPropios() async {
-  try {
-    final token = await _googleSignInService.getToken();
-    if (token == null) {
-      throw Exception('Token no disponible');
-    }
-
-    final request = http.Request(
-      'GET',
-      Uri.parse('${dotenv.env['API_URL'] ?? 'http://localhost:8000'}/articulos-propios/stream'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-
-    final response = await request.send();
-
-    if (response.statusCode == 200) {
-      final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
-
-      utf8Stream.listen((linea) {
-        if (linea.isNotEmpty) {
-          final articulo = jsonDecode(linea);
-          setState(() {
-            _articulos.add(articulo); 
-          });
-        }
-      });
-    } else {
-      throw Exception('Error al cargar artículos');
-    }
-  } catch (e) {
-    print("Error al cargar artículos propios: $e");
-  }
-}
 
 
   Future<void> _pedirPermisos() async {
@@ -107,6 +55,21 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
       );
     }
   }
+
+
+  Future<void> _cargarArticulosPropios() async {
+    try {
+      final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
+      stream.listen((articulo) {
+        setState(() {
+          _articulos.add(articulo);
+        });
+      });
+    } catch (e) {
+      print("Error al cargar artículos propios: $e");
+    }
+  }
+
 
   Future<void> _seleccionarDesdeGaleria() async {
     if (_isPicking) return;

@@ -77,10 +77,10 @@ class ApiManager {
   }
 
 
-  Future<List<dynamic>> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async {
+  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
-    return _instance!.getArticulosPropiosStream(filtros: filtros);
+    yield* _instance!.getArticulosPropiosStream(filtros: filtros);
   }
 }
