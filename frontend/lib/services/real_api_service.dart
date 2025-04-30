@@ -136,16 +136,16 @@ class RealApiService implements ApiService {
     ));
 
     request.fields['nombre'] = nombre;
-    request.fields['categoria'] = categoria.value;
+    request.fields['categoria'] = categoria.name;
 
     if (subcategoriaRopa != null) {
-      request.fields['subcategoria_ropa'] = subcategoriaRopa.value;
+      request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
     }
     if (subcategoriaCalzado != null) {
-      request.fields['subcategoria_calzado'] = subcategoriaCalzado.value;
+      request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
     }
     if (subcategoriaAccesorios != null) {
-      request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.value;
+      request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
     }
 
     
@@ -153,17 +153,17 @@ class RealApiService implements ApiService {
     // Convertir las listas de enums a sus valores
     for (var o in ocasiones) {
       request.files.add(
-        await http.MultipartFile.fromString('ocasiones[]', o.value),
+        await http.MultipartFile.fromString('ocasiones[]', o.name),
       );
     }
     for (var t in temporadas) {
       request.files.add(
-        await http.MultipartFile.fromString('temporadas[]', t.value),
+        await http.MultipartFile.fromString('temporadas[]', t.name),
       );
     }
     for (var c in colores) {
       request.files.add(
-        await http.MultipartFile.fromString('colores[]', c.value),
+        await http.MultipartFile.fromString('colores[]', c.name),
       );
     }
 

@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      /*appBar: AppBar(
         title: const Text('Reverie'),
         actions: [
           IconButton(
@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Cerrar sesión',
           )
         ],
-      ),
+      ),*/
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

@@ -292,16 +292,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                                 });
                               },
                               child: Container(
-                                width: 30, // Tamaño reducido
-                                height: 30,
+                                width: 32, 
+                                height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _getColorFromEnum(color),
+                                  color: _colores.contains(color)
+                                      ? _getColorFromEnum(color).withOpacity(0.7) 
+                                      : _getColorFromEnum(color),
                                   border: Border.all(
-                                    color: _colores.contains(color) ? Colors.black : Colors.grey,
+                                    color: Colors.black12,
                                     width: 2,
                                   ),
                                 ),
+                                child: _colores.contains(color)
+                                    ? Center(
+                                        child: Icon(
+                                          Icons.check,
+                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
+                                          size: 18,
+                                        ),
+                                      )
+                                    : null,
                               ),
                             );
                           }).toList(),
@@ -321,16 +332,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                                 });
                               },
                               child: Container(
-                                width: 30, // Tamaño reducido
-                                height: 30,
+                                width: 32, 
+                                height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _getColorFromEnum(color),
+                                  color: _colores.contains(color)
+                                      ? _getColorFromEnum(color).withOpacity(0.7) 
+                                      : _getColorFromEnum(color),
                                   border: Border.all(
-                                    color: _colores.contains(color) ? Colors.black : Colors.grey,
+                                    color: Colors.black12,
                                     width: 2,
                                   ),
                                 ),
+                                child: _colores.contains(color)
+                                    ? Center(
+                                        child: Icon(
+                                          Icons.check,
+                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
+                                          size: 18,
+                                        ),
+                                      )
+                                    : null,
                               ),
                             );
                           }).toList(),
