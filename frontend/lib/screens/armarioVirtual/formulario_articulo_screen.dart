@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
@@ -6,9 +7,17 @@ import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
-  final File imagen;
+  final File? imagenFile;
+  final Uint8List? imagenBytes;
+  final dynamic articuloExistente;
 
-  const FormularioArticuloScreen({super.key, required this.imagen});
+  const FormularioArticuloScreen({
+    super.key,
+    this.imagenFile,
+    this.imagenBytes,
+    this.articuloExistente,
+
+  });
 
   @override
   State<FormularioArticuloScreen> createState() => _FormularioArticuloScreenState();
@@ -20,10 +29,74 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   final ApiManager _apiManager = ApiManager();
 
   CategoriaEnum? _categoria;
-  dynamic _subcategoria; // Puede ser cualquier tipo de subcategoría
   List<OcasionEnum> _ocasiones = [];
+  dynamic _subcategoria;
   List<TemporadaEnum> _temporadas = [];
   List<ColorEnum> _colores = [];
+
+  final Map<CategoriaEnum, List<dynamic>> subcategoriasMap = {
+  CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
+  CategoriaEnum.ACCESORIOS: SubcategoriaAccesoriosEnum.values,
+  CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
+};
+
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.articuloExistente != null) {
+      final articulo = widget.articuloExistente;
+      _nombreController.text = articulo['nombre'] ?? '';
+
+      final categoriaEnum = CategoriaEnum.values.firstWhere(
+        (e) => e.name == articulo['categoria'],
+        orElse: () => CategoriaEnum.ROPA,
+      );
+
+      _categoria = categoriaEnum;
+
+      final subcategorias = subcategoriasMap[categoriaEnum];
+      if (subcategorias != null) {
+        if (categoriaEnum == CategoriaEnum.ROPA) {
+          _subcategoria = SubcategoriaRopaEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaRopaEnum.CAMISETAS, 
+          );
+        } else if (categoriaEnum == CategoriaEnum.ACCESORIOS) {
+          _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaAccesoriosEnum.CINTURONES,
+          );
+        } else if (categoriaEnum == CategoriaEnum.CALZADO) {
+          _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaCalzadoEnum.ZAPATILLAS,
+          );
+        }
+      }
+
+      _subcategoria = articulo['subcategoria'];
+
+      if (articulo['ocasiones'] != null) {
+        _ocasiones = List<String>.from(articulo['ocasiones'])
+            .map((e) => OcasionEnum.values.firstWhere((o) => o.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+
+      if (articulo['temporadas'] != null) {
+        _temporadas = List<String>.from(articulo['temporadas'])
+            .map((e) => TemporadaEnum.values.firstWhere((t) => t.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+
+      if (articulo['colores'] != null) {
+        _colores = List<String>.from(articulo['colores'])
+            .map((e) => ColorEnum.values.firstWhere((c) => c.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+    }
+  }
+
 
   Future<void> _guardarPrenda() async {
     if (_formKey.currentState!.validate() &&
@@ -55,8 +128,14 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
           );
         }
 
-        // Convierte la imagen de File a Image
-        final Image foto = Image.file(widget.imagen);
+        Image foto;
+        if (widget.imagenFile != null) {
+          foto = Image.file(widget.imagenFile!);
+        } else if (widget.imagenBytes != null) {
+          foto = Image.memory(widget.imagenBytes!);
+        } else {
+          throw Exception("No se ha proporcionado imagen.");
+        }
 
         // Llama a la función guardarArticuloPropio
         await _apiManager.guardarArticuloPropio(
@@ -88,7 +167,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
     }
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Nueva Prenda")),
@@ -96,12 +175,19 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.file(widget.imagen, height: 250),
+            if (widget.imagenFile != null)
+              Image.file(widget.imagenFile!, height: 250, fit: BoxFit.cover)
+            else if (widget.imagenBytes != null)
+              Image.memory(widget.imagenBytes!, height: 250, fit: BoxFit.cover)
+            else
+              const SizedBox(height: 250),
             const SizedBox(height: 16),
             Form(
               key: _formKey,
               child: Column(
                 children: [
+                // ... (el resto de los campos no se modifican)
+
                   // Campo de texto para el nombre
                   TextFormField(
                     controller: _nombreController,

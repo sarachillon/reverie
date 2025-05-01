@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/articulo_propio_detail_screen.dart'; 
 
 class ArticuloPropioWidget extends StatelessWidget {
   final String nombre;
-  final dynamic articulo; // Now 'articulo' will contain the 'imagen' data
+  final dynamic articulo; 
   final VoidCallback? onTap;
 
   const ArticuloPropioWidget({
@@ -19,48 +20,42 @@ class ArticuloPropioWidget extends StatelessWidget {
     final base64Image = (imagenRaw is String && imagenRaw.isNotEmpty) ? imagenRaw : null;
 
     return InkWell(
-      onTap: onTap,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Imagen que ocupa todo el espacio disponible menos el espacio para el título
-              Expanded(
-                child: base64Image != null
-                    ? Image.memory(
-                        base64Decode(base64Image),
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const SizedBox(
-                            width: double.infinity,
-                            child: Center(child: Icon(Icons.broken_image)),
-                          );
-                        },
-                      )
-                    : const SizedBox(
-                        width: double.infinity,
-                        child: Center(child: Icon(Icons.image)),
-                      ),
-              ),
-              // Título centrado en la parte inferior
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Center(
-                  child: Text(
-                    nombre,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticuloPropioDetailScreen(articulo: articulo),
           ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            // Imagen cuadrada
+            AspectRatio(
+              aspectRatio: 1, // cuadrada
+              child: base64Image != null
+                  ? Image.memory(
+                      base64Decode(base64Image),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Icon(Icons.broken_image)),
+                    )
+                  : const Center(child: Icon(Icons.image)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                nombre,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );

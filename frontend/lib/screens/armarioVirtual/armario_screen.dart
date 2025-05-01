@@ -89,7 +89,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagen: _imagenSeleccionada!),
+            builder: (_) => FormularioArticuloScreen(imagenFile: _imagenSeleccionada!),
           ),
         );
       }
@@ -115,7 +115,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagen: imagen),
+            builder: (_) => FormularioArticuloScreen(imagenFile: imagen),
           ),
         );
       }
