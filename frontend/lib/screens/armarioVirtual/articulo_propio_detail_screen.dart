@@ -1,14 +1,26 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
+import 'package:frontend/services/api_manager.dart';
 
 
 class ArticuloPropioDetailScreen extends StatelessWidget {
   final dynamic articulo;
+  final ApiManager _apiManager = ApiManager();
 
-  const ArticuloPropioDetailScreen({super.key, required this.articulo});
+
+  ArticuloPropioDetailScreen({super.key, required this.articulo});
+
+  Future<void> eliminarArticulo(int id) async {
+    try {
+      await _apiManager.deleteArticuloPropio(id: id);
+      // Aquí puedes manejar la respuesta después de eliminar el artículo
+    } catch (e) {
+      // Manejo de errores
+      print('Error al eliminar el artículo: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +75,8 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
         '';
 
     final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+
+    final id = articulo['id'] ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -127,7 +141,9 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
                         TextButton(
                           onPressed: () {
                             Navigator.of(ctx).pop();
-                            // Implementa la lógica de borrado
+                            eliminarArticulo(id).then((_) {
+                              Navigator.pop(context, true); // Cierra la pantalla actual
+                            });
                           },
                           child: const Text("Eliminar", style: TextStyle(color: Colors.black)),
                         ),

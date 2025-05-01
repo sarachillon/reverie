@@ -20,13 +20,17 @@ class ArticuloPropioWidget extends StatelessWidget {
     final base64Image = (imagenRaw is String && imagenRaw.isNotEmpty) ? imagenRaw : null;
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ArticuloPropioDetailScreen(articulo: articulo),
           ),
         );
+
+        if (result == true && onTap != null) {
+          onTap!(); // Llama a onTap para que ArmarioScreen recargue
+        }
       },
       child: Card(
         elevation: 4,

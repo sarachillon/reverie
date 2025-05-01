@@ -218,10 +218,6 @@ async def obtener_articulos_propios_stream(
 
 
 
-
-
-
-
 # Obtener un artículo propio por su nombre
 @router.get("/{nombre}", response_model=ArticuloCreate)
 async def obtener_articulo_por_nombre(
@@ -242,3 +238,113 @@ async def obtener_articulo_por_nombre(
         raise HTTPException(status_code=404, detail="Artículo no encontrado.")
 
     return articulo
+
+
+# Eliminar un artículo propio por su ID
+@router.delete("/{articulo_id}")
+async def eliminar_articulo(
+    articulo_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+
+    articulo = db.query(ArticuloPropio).filter(
+        ArticuloPropio.usuario_id == usuario_actual.id,
+        ArticuloPropio.id == articulo_id
+    ).first()
+
+    if not articulo:
+        raise HTTPException(status_code=404, detail="Artículo no encontrado.")
+
+    # Eliminar la imagen de S3
+    try:
+        await delete_imagen_s3(articulo.foto)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar la imagen de S3: {str(e)}")
+
+    db.delete(articulo)
+    db.commit()
+
+    return {"message": "Artículo eliminado exitosamente"}
+
+
+
+# Actualizar un artículo propio
+@router.put("/{articulo_id}")
+async def actualizar_articulo(
+    articulo_id: int,
+    request: Request,
+    nombre: Optional[str] = Form(None),
+    categoria: Optional[CategoriaEnum] = Form(None),
+    subcategoria_ropa: Optional[SubcategoriaRopaEnum] = Form(None),
+    subcategoria_calzado: Optional[SubcategoriaCalzadoEnum] = Form(None),
+    subcategoria_accesorios: Optional[SubcategoriaAccesoriosEnum] = Form(None),
+    ocasiones: Optional[List[str]] = Form(None, alias="ocasiones[]"),
+    temporadas: Optional[List[str]] = Form(None, alias="temporadas[]"),
+    colores: Optional[List[str]] = Form(None, alias="colores[]"),
+    foto: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+
+    articulo = db.query(ArticuloPropio).filter(
+        ArticuloPropio.usuario_id == usuario_actual.id,
+        ArticuloPropio.id == articulo_id
+    ).first()
+
+    if not articulo:
+        raise HTTPException(status_code=404, detail="Artículo no encontrado.")
+
+    # Validación de subcategorías
+    if categoria:
+        if categoria == CategoriaEnum.ROPA:
+            if not subcategoria_ropa:
+                raise HTTPException(status_code=400, detail="Subcategoría de ropa es obligatoria.")
+            else:
+                subcategoria=SubcategoriaRopaEnum(subcategoria_ropa).name
+        elif categoria == CategoriaEnum.CALZADO:
+            if not subcategoria_calzado:
+                raise HTTPException(status_code=400, detail="Subcategoría de calzado es obligatoria.")
+            else:
+                subcategoria=SubcategoriaCalzadoEnum(subcategoria_calzado).name
+        elif categoria == CategoriaEnum.ACCESORIOS:
+            if not subcategoria_accesorios:
+                raise HTTPException(status_code=400, detail="Subcategoría de accesorios es obligatoria.")
+            else:
+                subcategoria=SubcategoriaAccesoriosEnum(subcategoria_accesorios).name
+
+        articulo.categoria = categoria
+        articulo.subcategoria = subcategoria
+
+    
+    # Actualizar los campos del artículo
+    if nombre:
+        articulo.nombre = nombre
+
+    if ocasiones:
+        articulo.ocasiones = [OcasionEnum(o) for o in ocasiones]
+    if temporadas:
+        articulo.temporadas = [TemporadaEnum(t) for t in temporadas]
+    if colores:
+        articulo.colores = [ColorEnum(c) for c in colores]
+    if foto:
+        # Subir nueva imagen a S3
+        try:
+            imagen_key = await subir_imagen_s3(foto, foto.filename)
+            articulo.foto = imagen_key
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al subir la imagen: {str(e)}")
+        # Eliminar la imagen anterior de S3
+        try:
+            await delete_imagen_s3(articulo.foto)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al eliminar la imagen de S3: {str(e)}")
+    # Guardar los cambios en la base de datos
+    db.commit()
+    db.refresh(articulo)
+    return {"message": "Artículo actualizado exitosamente", "articulo_id": articulo.id}

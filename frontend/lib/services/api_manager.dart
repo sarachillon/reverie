@@ -83,4 +83,11 @@ class ApiManager {
     }
     yield* _instance!.getArticulosPropiosStream(filtros: filtros);
   }
+
+  Future<void> deleteArticuloPropio({required int id}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.deleteArticuloPropio(id: id);
+  }
 }

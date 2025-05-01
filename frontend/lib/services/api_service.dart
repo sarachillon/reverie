@@ -34,4 +34,6 @@ abstract class ApiService {
   Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre});
 
   Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros});
+
+  Future<void> deleteArticuloPropio({required int id});
 }

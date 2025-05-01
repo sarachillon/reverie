@@ -22,6 +22,8 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   bool _isPicking = false;
   List<dynamic> _articulos = [];
   Map<String, dynamic> filtros = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _busqueda = '';
 
   @override
   void initState() {
@@ -86,12 +88,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
           _imagenSeleccionada = File(pickedFile.path);
         });
 
-        Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => FormularioArticuloScreen(imagenFile: _imagenSeleccionada!),
           ),
         );
+
+        // Si el resultado es true, recarga los artículos
+        if (result == true) {
+          _cargarArticulosPropios();
+        }
       }
     } catch (e) {
       print("Error al seleccionar imagen de galería: $e");
@@ -99,6 +106,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
       _isPicking = false;
     }
   }
+
 
   Future<void> _sacarFotoConCamara() async {
     if (_isPicking) return;
@@ -112,12 +120,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
 
       if (pickedFile != null) {
         final imagen = File(pickedFile.path);
-        Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => FormularioArticuloScreen(imagenFile: imagen),
           ),
         );
+
+        // Si el resultado es true, recarga los artículos
+        if (result == true) {
+          _cargarArticulosPropios();
+        }
       }
     } catch (e) {
       print("Error al tomar foto: $e");
@@ -162,56 +175,92 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final articulosFiltrados = _articulos.where((articulo) {
+      final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
+      return nombre.contains(_busqueda.toLowerCase());
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Armario'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_alt),
-            onPressed: () => setState(() => _mostrarFiltros = true),
-          ),
-        ],
       ),
       body: Stack(
         children: [
-          RefreshIndicator(
-            onRefresh: _cargarArticulosPropios,
-            child: _articulos.isEmpty
-                ? const Center(child: Text('Aún no hay artículos en tu armario.'))
-                : GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.75,
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _busqueda = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.all(10),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.all(10),
-                    itemCount: _articulos.length,
-                    itemBuilder: (context, index) {
-                      try {
-                        final articulo = _articulos[index];
-                        if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
-                          return const Card(
-                            child: Center(child: Text('Artículo inválido')),
-                          );
-                        }
-                        return ArticuloPropioWidget(
-                          nombre: articulo['nombre'],
-                          articulo: articulo,
-                          onTap: () {
-                            print('Artículo seleccionado: ${articulo['nombre']}');
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.filter_alt),
+                      onPressed: () => setState(() => _mostrarFiltros = true),
+                      tooltip: 'Mostrar filtros',
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _cargarArticulosPropios,
+                  child: articulosFiltrados.isEmpty
+                      ? const Center(child: Text('No se encontraron artículos.'))
+                      : GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.75,
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          itemCount: articulosFiltrados.length,
+                          itemBuilder: (context, index) {
+                            try {
+                              final articulo = articulosFiltrados[index];
+                              if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
+                                return const Card(
+                                  child: Center(child: Text('Artículo inválido')),
+                                );
+                              }
+                              return ArticuloPropioWidget(
+                                nombre: articulo['nombre'],
+                                articulo: articulo,
+                                onTap: () => _cargarArticulosPropios(),
+                              );
+                            } catch (e) {
+                              print("Error al construir el artículo $index: $e");
+                              return const Card(
+                                child: Center(child: Text('Error al cargar el artículo')),
+                              );
+                            }
                           },
-                        );
-                      } catch (e) {
-                        print("Error al construir el artículo $index: $e");
-                        return const Card(
-                          child: Center(child: Text('Error al cargar el artículo')),
-                        );
-                      }
-                    },
-                  ),
+                        ),
+                ),
+              ),
+            ],
           ),
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
@@ -232,7 +281,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                   });
                   _cargarArticulosPropios();
                 },
-                onCerrar: _cerrarFiltros, // nuevo botón de cerrar
+                onCerrar: _cerrarFiltros,
               ),
             ),
           )

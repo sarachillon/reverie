@@ -144,4 +144,10 @@ class MockApiService implements ApiService {
       },
     ];
   }
+
+  @override
+  Future<void> deleteArticuloPropio({required int id}) async {
+    // Simulación de eliminación de un artículo propio
+    print("Artículo con ID $id eliminado.");
+  }
 }

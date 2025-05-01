@@ -35,10 +35,10 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   List<ColorEnum> _colores = [];
 
   final Map<CategoriaEnum, List<dynamic>> subcategoriasMap = {
-  CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
-  CategoriaEnum.ACCESORIOS: SubcategoriaAccesoriosEnum.values,
-  CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
-};
+    CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
+    CategoriaEnum.ACCESORIOS: SubcategoriaAccesoriosEnum.values,
+    CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
+  };
 
 
   @override
@@ -136,7 +136,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         } else {
           throw Exception("No se ha proporcionado imagen.");
         }
-
+        
         // Llama a la función guardarArticuloPropio
         await _apiManager.guardarArticuloPropio(
           foto: foto,
@@ -153,18 +153,20 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Prenda guardada exitosamente.")),
         );
-
-        Navigator.pop(context); // Regresa a la pantalla anterior
-      } catch (e) {
+        Navigator.pop(context, true); // Si se ha guardado bien la prenda, recarga la página del armario virtual
+        
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error al guardar la prenda: $e")),
+          );
+          Navigator.pop(context, false);  // En caso de error, retorna false
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al guardar la prenda: $e")),
+          const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
-      );
-    }
+
   }
 
  @override
