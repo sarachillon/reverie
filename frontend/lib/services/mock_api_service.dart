@@ -60,10 +60,10 @@ class MockApiService implements ApiService {
     // Valores de prueba
     final Image fotoPrueba = Image.asset('assets/logo.png');
     final String nombrePrueba = "Camiseta de prueba";
-    final CategoriaEnum categoriaPrueba = CategoriaEnum.Ropa; 
-    final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.Camisas;
-    final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.Verano, TemporadaEnum.Entretiempo];
-    final List<ColorEnum> coloresPrueba = [ColorEnum.Azul, ColorEnum.Blanco];
+    final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
+    final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
+    final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
+    final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
 
     // Simulación de guardar el artículo
     print("Guardando artículo con los siguientes valores de prueba:");
@@ -73,5 +73,81 @@ class MockApiService implements ApiService {
     print("Subcategoría Ropa: $subcategoriaRopaPrueba");
     print("Temporadas: $temporadasPrueba");
     print("Colores: $coloresPrueba");
+  }
+
+  /*@override
+  Stream<dynamic> getArticulosPropios({Map<String, dynamic>? filtros}) async* {
+    // Simulación de respuesta de artículos propios
+    yield [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.Ropa,
+        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
+      },
+    ];
+  }*/
+
+  @override
+  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
+    // Simulación de respuesta de artículos propios
+    return [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES,
+      },
+    ];
+  }
+
+  @override
+  Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
+    // Simulación de respuesta de artículos propios por nombre
+    return [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
+      },
+    ];
+  }
+
+  @override
+  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
+    // Simulación de respuesta de artículos propios como stream
+    yield [
+      {
+        'nombre': 'Camiseta de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS,
+      },
+      {
+        'nombre': 'Pantalones de prueba',
+        'fotoUrl': 'assets/logo.png',
+        'categoria': CategoriaEnum.ROPA,
+        'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES,
+      },
+    ];
+  }
+
+  @override
+  Future<void> deleteArticuloPropio({required int id}) async {
+    // Simulación de eliminación de un artículo propio
+    print("Artículo con ID $id eliminado.");
   }
 }

@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
+import 'package:frontend/services/api_manager.dart';
 
 class ArmarioScreen extends StatefulWidget {
   const ArmarioScreen({super.key});
@@ -13,37 +16,62 @@ class ArmarioScreen extends StatefulWidget {
 }
 
 class _ArmarioScreenState extends State<ArmarioScreen> {
+  final ApiManager _apiManager = ApiManager();
+  bool _mostrarFiltros = false;
   File? _imagenSeleccionada;
   bool _isPicking = false;
+  List<dynamic> _articulos = [];
+  Map<String, dynamic> filtros = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _busqueda = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarArticulosPropios();
+  }
 
   Future<void> _pedirPermisos() async {
-  Map<Permission, PermissionStatus> statuses;
+    Map<Permission, PermissionStatus> statuses;
 
-  if (Platform.isAndroid) {
-    final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    if (Platform.isAndroid) {
+      final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
 
-    statuses = sdk >= 33
-        ? await [Permission.camera, Permission.photos].request()
-        : await [Permission.camera, Permission.storage].request();
-  } else {
-    statuses = await [Permission.camera, Permission.photos].request(); // iOS
+      statuses = sdk >= 33
+          ? await [Permission.camera, Permission.photos].request()
+          : await [Permission.camera, Permission.storage].request();
+    } else {
+      statuses = await [Permission.camera, Permission.photos].request();
+    }
+
+    if (statuses.values.any((status) => status.isPermanentlyDenied)) {
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Permisos necesarios'),
+          content: const Text('Concede los permisos necesarios en la configuración.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => openAppSettings(), child: const Text('Abrir configuración')),
+          ],
+        ),
+      );
+    }
   }
 
-  if (statuses.values.any((status) => status.isPermanentlyDenied)) {
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Permisos necesarios'),
-        content: const Text('Concede los permisos necesarios en la configuración.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          TextButton(onPressed: () => openAppSettings(), child: const Text('Abrir configuración')),
-        ],
-      ),
-    );
+  Future<void> _cargarArticulosPropios() async {
+    try {
+      _articulos.clear();
+      final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
+      await for (final articulo in stream) {
+        setState(() {
+          _articulos.add(articulo);
+        });
+      }
+    } catch (e) {
+      print("Error al cargar artículos propios: $e");
+    }
   }
-}
-
 
   Future<void> _seleccionarDesdeGaleria() async {
     if (_isPicking) return;
@@ -57,15 +85,20 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
 
       if (pickedFile != null) {
         setState(() {
-          _imagenSeleccionada = File(pickedFile.path); // Asigna la imagen seleccionada
+          _imagenSeleccionada = File(pickedFile.path);
         });
 
-        Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagen: _imagenSeleccionada!),
+            builder: (_) => FormularioArticuloScreen(imagenFile: _imagenSeleccionada!),
           ),
         );
+
+        // Si el resultado es true, recarga los artículos
+        if (result == true) {
+          _cargarArticulosPropios();
+        }
       }
     } catch (e) {
       print("Error al seleccionar imagen de galería: $e");
@@ -73,6 +106,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
       _isPicking = false;
     }
   }
+
 
   Future<void> _sacarFotoConCamara() async {
     if (_isPicking) return;
@@ -86,12 +120,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
 
       if (pickedFile != null) {
         final imagen = File(pickedFile.path);
-        Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagen: imagen),
+            builder: (_) => FormularioArticuloScreen(imagenFile: imagen),
           ),
         );
+
+        // Si el resultado es true, recarga los artículos
+        if (result == true) {
+          _cargarArticulosPropios();
+        }
       }
     } catch (e) {
       print("Error al tomar foto: $e");
@@ -130,20 +169,131 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     );
   }
 
+  void _cerrarFiltros() {
+    setState(() {
+      _mostrarFiltros = false;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final articulosFiltrados = _articulos.where((articulo) {
+      final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
+      return nombre.contains(_busqueda.toLowerCase());
+    }).toList();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi Armario')),
-      body: Center(
-        child: _imagenSeleccionada != null
-            ? Image.file(_imagenSeleccionada!)
-            : const Text('Contenido del armario'),
+      appBar: AppBar(
+        title: const Text('Mi Armario'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarOpcionesImagen(context),
-        child: const Icon(Icons.add),
-        tooltip: 'Añadir prenda',
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _busqueda = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.all(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.filter_alt),
+                      onPressed: () => setState(() => _mostrarFiltros = true),
+                      tooltip: 'Mostrar filtros',
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _cargarArticulosPropios,
+                  child: articulosFiltrados.isEmpty
+                      ? const Center(child: Text('No se encontraron artículos.'))
+                      : GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.75,
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          itemCount: articulosFiltrados.length,
+                          itemBuilder: (context, index) {
+                            try {
+                              final articulo = articulosFiltrados[index];
+                              if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
+                                return const Card(
+                                  child: Center(child: Text('Artículo inválido')),
+                                );
+                              }
+                              return ArticuloPropioWidget(
+                                nombre: articulo['nombre'],
+                                articulo: articulo,
+                                onTap: () => _cargarArticulosPropios(),
+                              );
+                            } catch (e) {
+                              print("Error al construir el artículo $index: $e");
+                              return const Card(
+                                child: Center(child: Text('Error al cargar el artículo')),
+                              );
+                            }
+                          },
+                        ),
+                ),
+              ),
+            ],
+          ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            top: 0,
+            right: _mostrarFiltros ? 0 : -MediaQuery.of(context).size.width * 0.8,
+            bottom: 0,
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Material(
+              elevation: 16,
+              child: FiltrosArticuloPropioScreen(
+                filtrosIniciales: filtros,
+                onAplicar: (nuevosFiltros) {
+                  setState(() {
+                    filtros = nuevosFiltros;
+                    _mostrarFiltros = false;
+                    _articulos.clear();
+                  });
+                  _cargarArticulosPropios();
+                },
+                onCerrar: _cerrarFiltros,
+              ),
+            ),
+          )
+        ],
       ),
+      floatingActionButton: _mostrarFiltros
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _mostrarOpcionesImagen(context),
+              child: const Icon(Icons.add),
+              tooltip: 'Añadir prenda',
+            ),
     );
   }
 }

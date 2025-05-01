@@ -60,4 +60,34 @@ class ApiManager {
       colores: colores,
     );
   }
+
+  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getArticulosPropios(filtros: filtros);
+  }
+
+
+  Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getArticulosPropiosPorNombre(nombre: nombre);
+  }
+
+
+  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    yield* _instance!.getArticulosPropiosStream(filtros: filtros);
+  }
+
+  Future<void> deleteArticuloPropio({required int id}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.deleteArticuloPropio(id: id);
+  }
 }

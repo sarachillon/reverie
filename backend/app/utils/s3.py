@@ -3,6 +3,7 @@
 import boto3
 from fastapi import UploadFile
 from decouple import config
+from datetime import datetime
 
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
@@ -16,6 +17,9 @@ async def subir_imagen_s3(file: UploadFile, filename: str) -> str:
         region_name=AWS_REGION
     )
 
+    # Generar un nombre único para el archivo
+    filename = generar_nombre_unico(filename)
+
     contenido = await file.read()
     s3.put_object(
         Bucket=AWS_S3_BUCKET_NAME,
@@ -24,4 +28,36 @@ async def subir_imagen_s3(file: UploadFile, filename: str) -> str:
         ContentType=file.content_type,
     )
 
-    return f"https://{AWS_S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{filename}"
+    return f"{filename}"
+
+
+
+
+async def get_imagen_s3(filename: str) -> bytes:
+    s3 = boto3.client("s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
+
+    response = s3.get_object(Bucket=AWS_S3_BUCKET_NAME, Key=filename)
+    return response['Body'].read()
+
+
+async def delete_imagen_s3(filename: str) -> None:
+    s3 = boto3.client("s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
+
+    s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=filename)
+
+
+
+# Utils
+def generar_nombre_unico(nombre_original):
+    nombre, extension = nombre_original.rsplit('.', 1)
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    nuevo_nombre = f"{nombre}_{timestamp}.{extension}"
+    return nuevo_nombre

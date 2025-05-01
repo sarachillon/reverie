@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
@@ -6,9 +7,17 @@ import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
-  final File imagen;
+  final File? imagenFile;
+  final Uint8List? imagenBytes;
+  final dynamic articuloExistente;
 
-  const FormularioArticuloScreen({super.key, required this.imagen});
+  const FormularioArticuloScreen({
+    super.key,
+    this.imagenFile,
+    this.imagenBytes,
+    this.articuloExistente,
+
+  });
 
   @override
   State<FormularioArticuloScreen> createState() => _FormularioArticuloScreenState();
@@ -20,10 +29,74 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   final ApiManager _apiManager = ApiManager();
 
   CategoriaEnum? _categoria;
-  dynamic _subcategoria; // Puede ser cualquier tipo de subcategoría
   List<OcasionEnum> _ocasiones = [];
+  dynamic _subcategoria;
   List<TemporadaEnum> _temporadas = [];
   List<ColorEnum> _colores = [];
+
+  final Map<CategoriaEnum, List<dynamic>> subcategoriasMap = {
+    CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
+    CategoriaEnum.ACCESORIOS: SubcategoriaAccesoriosEnum.values,
+    CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
+  };
+
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.articuloExistente != null) {
+      final articulo = widget.articuloExistente;
+      _nombreController.text = articulo['nombre'] ?? '';
+
+      final categoriaEnum = CategoriaEnum.values.firstWhere(
+        (e) => e.name == articulo['categoria'],
+        orElse: () => CategoriaEnum.ROPA,
+      );
+
+      _categoria = categoriaEnum;
+
+      final subcategorias = subcategoriasMap[categoriaEnum];
+      if (subcategorias != null) {
+        if (categoriaEnum == CategoriaEnum.ROPA) {
+          _subcategoria = SubcategoriaRopaEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaRopaEnum.CAMISETAS, 
+          );
+        } else if (categoriaEnum == CategoriaEnum.ACCESORIOS) {
+          _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaAccesoriosEnum.CINTURONES,
+          );
+        } else if (categoriaEnum == CategoriaEnum.CALZADO) {
+          _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere(
+            (e) => e.name == articulo['subcategoria'],
+            orElse: () => SubcategoriaCalzadoEnum.ZAPATILLAS,
+          );
+        }
+      }
+
+      _subcategoria = articulo['subcategoria'];
+
+      if (articulo['ocasiones'] != null) {
+        _ocasiones = List<String>.from(articulo['ocasiones'])
+            .map((e) => OcasionEnum.values.firstWhere((o) => o.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+
+      if (articulo['temporadas'] != null) {
+        _temporadas = List<String>.from(articulo['temporadas'])
+            .map((e) => TemporadaEnum.values.firstWhere((t) => t.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+
+      if (articulo['colores'] != null) {
+        _colores = List<String>.from(articulo['colores'])
+            .map((e) => ColorEnum.values.firstWhere((c) => c.name.toUpperCase() == e.toUpperCase()))
+            .toList();
+      }
+    }
+  }
+
 
   Future<void> _guardarPrenda() async {
     if (_formKey.currentState!.validate() &&
@@ -38,26 +111,32 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         SubcategoriaAccesoriosEnum? subcategoriaAccesorios;
         SubcategoriaCalzadoEnum? subcategoriaCalzado;
 
-        if (_categoria == CategoriaEnum.Ropa) {
+        if (_categoria == CategoriaEnum.ROPA) {
           subcategoriaRopa = SubcategoriaRopaEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Ropa"),
           );
-        } else if (_categoria == CategoriaEnum.Accesorios) {
+        } else if (_categoria == CategoriaEnum.ACCESORIOS) {
           subcategoriaAccesorios = SubcategoriaAccesoriosEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Accesorios"),
           );
-        } else if (_categoria == CategoriaEnum.Calzado) {
+        } else if (_categoria == CategoriaEnum.CALZADO) {
           subcategoriaCalzado = SubcategoriaCalzadoEnum.values.firstWhere(
             (e) => e.value == _subcategoria,
             orElse: () => throw Exception("Subcategoría no válida para Calzado"),
           );
         }
 
-        // Convierte la imagen de File a Image
-        final Image foto = Image.file(widget.imagen);
-
+        Image foto;
+        if (widget.imagenFile != null) {
+          foto = Image.file(widget.imagenFile!);
+        } else if (widget.imagenBytes != null) {
+          foto = Image.memory(widget.imagenBytes!);
+        } else {
+          throw Exception("No se ha proporcionado imagen.");
+        }
+        
         // Llama a la función guardarArticuloPropio
         await _apiManager.guardarArticuloPropio(
           foto: foto,
@@ -74,21 +153,23 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Prenda guardada exitosamente.")),
         );
-
-        Navigator.pop(context); // Regresa a la pantalla anterior
-      } catch (e) {
+        Navigator.pop(context, true); // Si se ha guardado bien la prenda, recarga la página del armario virtual
+        
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error al guardar la prenda: $e")),
+          );
+          Navigator.pop(context, false);  // En caso de error, retorna false
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al guardar la prenda: $e")),
+          const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
-      );
-    }
+
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Nueva Prenda")),
@@ -96,12 +177,19 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.file(widget.imagen, height: 250),
+            if (widget.imagenFile != null)
+              Image.file(widget.imagenFile!, height: 250, fit: BoxFit.cover)
+            else if (widget.imagenBytes != null)
+              Image.memory(widget.imagenBytes!, height: 250, fit: BoxFit.cover)
+            else
+              const SizedBox(height: 250),
             const SizedBox(height: 16),
             Form(
               key: _formKey,
               child: Column(
                 children: [
+                // ... (el resto de los campos no se modifican)
+
                   // Campo de texto para el nombre
                   TextFormField(
                     controller: _nombreController,
@@ -292,16 +380,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                                 });
                               },
                               child: Container(
-                                width: 30, // Tamaño reducido
-                                height: 30,
+                                width: 32, 
+                                height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _getColorFromEnum(color),
+                                  color: _colores.contains(color)
+                                      ? _getColorFromEnum(color).withOpacity(0.7) 
+                                      : _getColorFromEnum(color),
                                   border: Border.all(
-                                    color: _colores.contains(color) ? Colors.black : Colors.grey,
+                                    color: Colors.black12,
                                     width: 2,
                                   ),
                                 ),
+                                child: _colores.contains(color)
+                                    ? Center(
+                                        child: Icon(
+                                          Icons.check,
+                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
+                                          size: 18,
+                                        ),
+                                      )
+                                    : null,
                               ),
                             );
                           }).toList(),
@@ -321,16 +420,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                                 });
                               },
                               child: Container(
-                                width: 30, // Tamaño reducido
-                                height: 30,
+                                width: 32, 
+                                height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _getColorFromEnum(color),
+                                  color: _colores.contains(color)
+                                      ? _getColorFromEnum(color).withOpacity(0.7) 
+                                      : _getColorFromEnum(color),
                                   border: Border.all(
-                                    color: _colores.contains(color) ? Colors.black : Colors.grey,
+                                    color: Colors.black12,
                                     width: 2,
                                   ),
                                 ),
+                                child: _colores.contains(color)
+                                    ? Center(
+                                        child: Icon(
+                                          Icons.check,
+                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
+                                          size: 18,
+                                        ),
+                                      )
+                                    : null,
                               ),
                             );
                           }).toList(),
@@ -358,27 +468,27 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   // Método para obtener el color real desde el enum
   Color _getColorFromEnum(ColorEnum color) {
     switch (color) {
-      case ColorEnum.Amarillo:
+      case ColorEnum.AMARILLO:
         return Colors.yellow;
-      case ColorEnum.Naranja:
+      case ColorEnum.NARANJA:
         return Colors.orange;
-      case ColorEnum.Rojo:
+      case ColorEnum.ROJO:
         return Colors.red;
-      case ColorEnum.Rosa:
+      case ColorEnum.ROSA:
         return Colors.pink;
-      case ColorEnum.Violeta:
+      case ColorEnum.VIOLETA:
         return Colors.purple;
-      case ColorEnum.Azul:
+      case ColorEnum.AZUL:
         return Colors.blue;
-      case ColorEnum.Verde:
+      case ColorEnum.VERDE:
         return Colors.green;
-      case ColorEnum.Marron:
+      case ColorEnum.MARRON:
         return Colors.brown;
-      case ColorEnum.Gris:
+      case ColorEnum.GRIS:
         return Colors.grey;
-      case ColorEnum.Blanco:
+      case ColorEnum.BLANCO:
         return Colors.white;
-      case ColorEnum.Negro:
+      case ColorEnum.NEGRO:
         return Colors.black;
     }
   }
