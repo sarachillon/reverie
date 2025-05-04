@@ -1,5 +1,6 @@
 # backend/app/utils/s3.py
 
+import io
 import boto3
 from fastapi import UploadFile
 from decouple import config
@@ -31,6 +32,13 @@ async def subir_imagen_s3(file: UploadFile, filename: str) -> str:
     return f"{filename}"
 
 
+async def subir_imagen_s3_bytes(image_bytes: bytes, filename: str) -> str:
+    s3 = boto3.client("s3")
+    bucket = AWS_S3_BUCKET_NAME
+    key = f"articulos_propios/{filename}"
+
+    s3.upload_fileobj(io.BytesIO(image_bytes), bucket, key, ExtraArgs={"ContentType": "image/png"})
+    return key
 
 
 async def get_imagen_s3(filename: str) -> bytes:

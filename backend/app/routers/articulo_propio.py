@@ -9,8 +9,9 @@ from app.models.models import *
 from app.models.enummerations import *
 from app.utils.s3 import *
 from app.utils.auth import obtener_usuario_actual
-from typing import List, Optional
 from app.schemas.articulo_propio import *
+from app.utils.remove_background import quitar_fondo_imagen  
+from typing import List, Optional
 import json
 import base64
 
@@ -49,23 +50,16 @@ async def crear_articulo(
     
     # Subir imagen a S3
     try:
-        imagen_key = await subir_imagen_s3(foto, foto.filename)  # Usamos la función para subir la imagen
+        original_bytes = await foto.read()
+        imagen_sin_fondo = quitar_fondo_imagen(original_bytes)
+        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"{foto.filename.split('.')[0]}.png")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir la imagen: {str(e)}")
     
 
-    #usuario
     usuario_actual = await obtener_usuario_actual(request, db)
     if not usuario_actual:
         raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-    
-    for ocasion in ocasiones:
-        print(f"\n\n\n\n\n\n\nocasion: {ocasion}")
-    for temporada in temporadas:
-        print(f"temporada: {temporada}")
-    for color in colores:
-        print(f"color: {color}\n\n\n\n\n\n\n")
-
 
     ocasiones_enum = [OcasionEnum(o) for o in ocasiones]
     temporadas_enum = [TemporadaEnum(t) for t in temporadas]
@@ -73,7 +67,7 @@ async def crear_articulo(
 
 
 
-    # Crear el nuevo artículo
+    # Crear el nuevo artículo propio
     nuevo_articulo = ArticuloPropio(
         nombre=nombre,
         categoria=categoria,
@@ -84,7 +78,6 @@ async def crear_articulo(
         colores=colores_enum,
         usuario=usuario_actual,
     )
-
 
     db.add(nuevo_articulo)
     db.commit()

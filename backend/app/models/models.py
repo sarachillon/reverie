@@ -90,6 +90,8 @@ class Outfit(Base):
     descripcion_generacion = Column(String)  
     fecha_creacion = Column(DateTime, nullable=False)
     ocasiones = Column(ARRAY(SqlEnum(OcasionEnum)), nullable=False)
+    temporadas = Column(ARRAY(SqlEnum(TemporadaEnum)), nullable=True)
+    colores = Column(ARRAY(SqlEnum(ColorEnum)), nullable=True)
 
     usuario = relationship("Usuario", back_populates="outfits")
     colecciones = relationship("Coleccion", secondary=coleccion_outfit, back_populates="outfits")

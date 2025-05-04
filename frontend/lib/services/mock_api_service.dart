@@ -75,24 +75,6 @@ class MockApiService implements ApiService {
     print("Colores: $coloresPrueba");
   }
 
-  /*@override
-  Stream<dynamic> getArticulosPropios({Map<String, dynamic>? filtros}) async* {
-    // Simulación de respuesta de artículos propios
-    yield [
-      {
-        'nombre': 'Camiseta de prueba',
-        'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Camisas,
-      },
-      {
-        'nombre': 'Pantalones de prueba',
-        'fotoUrl': 'assets/logo.png',
-        'categoria': CategoriaEnum.Ropa,
-        'subcategoriaRopa': SubcategoriaRopaEnum.Pantalones,
-      },
-    ];
-  }*/
 
   @override
   Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
@@ -150,4 +132,44 @@ class MockApiService implements ApiService {
     // Simulación de eliminación de un artículo propio
     print("Artículo con ID $id eliminado.");
   }
+
+  @override
+Future<Map<String, dynamic>> generarOutfitPropio({
+  required String titulo,
+  String? descripcion,
+  required OcasionEnum ocasion,
+  List<TemporadaEnum>? temporadas,
+  List<ColorEnum>? colores,
+}) async {
+
+  return {
+    "id": 999,
+    "titulo": titulo,
+    "descripcion": descripcion ?? "Outfit generado automáticamente",
+    "articulos": [
+      {
+        "id": 1,
+        "nombre": "Camiseta blanca",
+        "foto_url": "https://example.com/mock/camiseta.png",
+        "categoria": CategoriaEnum.ROPA,
+        "subcategoria_ropa": SubcategoriaRopaEnum.CAMISETAS,
+        "colores": [ColorEnum.AZUL],
+        "temporadas": [TemporadaEnum.ENTRETIEMPO],
+        "ocasiones": [OcasionEnum.CASUAL],
+      },
+      {
+        "id": 2,
+        "nombre": "Pantalón negro",
+        "foto_url": "https://example.com/mock/pantalon.png",
+        "categoria": CategoriaEnum.ROPA,
+        "subcategoria_ropa": SubcategoriaRopaEnum.PANTALONES,
+        "colores": [ColorEnum.GRIS],
+        "temporadas": [TemporadaEnum.ENTRETIEMPO],
+        "ocasiones": [OcasionEnum.CASUAL],
+      }
+    ]
+  };
+}
+
+
 }

@@ -339,4 +339,56 @@ class RealApiService implements ApiService {
   }
 
 
+
+
+
+
+
+
+  @override
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required OcasionEnum ocasion,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    final url = Uri.parse('$_baseUrl/outfits/generar');
+
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['titulo'] = titulo;
+    if (descripcion != null && descripcion.isNotEmpty) {
+      request.fields['descripcion'] = descripcion;
+    }
+    request.fields['ocasion'] = ocasion.name;
+
+    if (temporadas != null) {
+      for (final t in temporadas) {
+        request.fields['temporadas[]'] = t.name;
+      }
+    }
+
+    if (colores != null) {
+      for (final c in colores) {
+        request.fields['colores[]'] = c.name;
+      }
+    }
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(responseBody);
+    } else {
+      throw Exception('Error al generar outfit: $responseBody');
+    }
+  }
+
 }

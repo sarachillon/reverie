@@ -36,4 +36,8 @@ abstract class ApiService {
   Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros});
 
   Future<void> deleteArticuloPropio({required int id});
+
+  Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required OcasionEnum ocasion, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores});
+
+  
 }
