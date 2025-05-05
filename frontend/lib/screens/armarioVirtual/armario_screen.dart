@@ -1,11 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
-import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
 import 'package:frontend/services/api_manager.dart';
 
@@ -19,8 +14,6 @@ class ArmarioScreen extends StatefulWidget {
 class _ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
   bool _mostrarFiltros = false;
-  File? _imagenSeleccionada;
-  bool _isPicking = false;
   List<dynamic> _articulos = [];
   Map<String, dynamic> filtros = {};
   final TextEditingController _searchController = TextEditingController();
@@ -32,33 +25,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     _cargarArticulosPropios();
   }
 
-  Future<void> _pedirPermisos() async {
-    Map<Permission, PermissionStatus> statuses;
 
-    if (Platform.isAndroid) {
-      final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
-
-      statuses = sdk >= 33
-          ? await [Permission.camera, Permission.photos].request()
-          : await [Permission.camera, Permission.storage].request();
-    } else {
-      statuses = await [Permission.camera, Permission.photos].request();
-    }
-
-    if (statuses.values.any((status) => status.isPermanentlyDenied)) {
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Permisos necesarios'),
-          content: const Text('Concede los permisos necesarios en la configuración.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            TextButton(onPressed: () => openAppSettings(), child: const Text('Abrir configuración')),
-          ],
-        ),
-      );
-    }
-  }
 
   Future<void> _cargarArticulosPropios() async {
     try {
@@ -74,101 +41,6 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     }
   }
 
-  Future<void> _seleccionarDesdeGaleria() async {
-    if (_isPicking) return;
-    _isPicking = true;
-
-    try {
-      await _pedirPermisos();
-
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-      if (pickedFile != null) {
-        setState(() {
-          _imagenSeleccionada = File(pickedFile.path);
-        });
-
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagenFile: _imagenSeleccionada!),
-          ),
-        );
-
-        // Si el resultado es true, recarga los artículos
-        if (result == true) {
-          _cargarArticulosPropios();
-        }
-      }
-    } catch (e) {
-      print("Error al seleccionar imagen de galería: $e");
-    } finally {
-      _isPicking = false;
-    }
-  }
-
-
-  Future<void> _sacarFotoConCamara() async {
-    if (_isPicking) return;
-    _isPicking = true;
-
-    try {
-      await _pedirPermisos();
-
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-      if (pickedFile != null) {
-        final imagen = File(pickedFile.path);
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagenFile: imagen),
-          ),
-        );
-
-        // Si el resultado es true, recarga los artículos
-        if (result == true) {
-          _cargarArticulosPropios();
-        }
-      }
-    } catch (e) {
-      print("Error al tomar foto: $e");
-    } finally {
-      _isPicking = false;
-    }
-  }
-
-  void _mostrarOpcionesImagen(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Sacar foto'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Future.delayed(const Duration(milliseconds: 200), _sacarFotoConCamara);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Elegir de la galería'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Future.delayed(const Duration(milliseconds: 200), _seleccionarDesdeGaleria);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   void _cerrarFiltros() {
     setState(() {
