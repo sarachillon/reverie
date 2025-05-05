@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
+import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -288,12 +289,21 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
         ],
       ),
       floatingActionButton: _mostrarFiltros
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _mostrarOpcionesImagen(context),
-              child: const Icon(Icons.add),
-              tooltip: 'Añadir prenda',
-            ),
+        ? null
+        : FloatingActionButton(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+              );
+              if (result == true) {
+                _cargarArticulosPropios(); // recarga el armario si se añadió algo
+              }
+            },
+            child: const Icon(Icons.add),
+            tooltip: 'Añadir prenda',
+          ),
+
     );
   }
 }
