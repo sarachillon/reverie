@@ -338,5 +338,134 @@ class RealApiService implements ApiService {
     }
   }
 
+  Future<void> editarArticuloPropio({
+    required int id,
+    Image? foto,
+    String? nombre,
+    CategoriaEnum? categoria,
+    SubcategoriaRopaEnum? subcategoriaRopa,
+    SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
+    SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    List<OcasionEnum>? ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    final url = Uri.parse('$_baseUrl/articulos-propios/editar/$id');
+    final token = await GoogleSignInService().getToken();
+
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    if (foto != null) {
+      final imageProvider = foto.image;
+      final file = await _getImageFileFromProvider(imageProvider);
+      if (file != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'foto',
+          file.path,
+          contentType: MediaType('image', 'jpeg'),
+        ));
+      }
+    }
+
+    if (nombre != null) request.fields['nombre'] = nombre;
+    if (categoria != null) request.fields['categoria'] = categoria.name;
+    if (subcategoriaRopa != null) request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
+    if (subcategoriaCalzado != null) request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
+    if (subcategoriaAccesorios != null) request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
+
+    if (ocasiones != null) {
+      for (var o in ocasiones) {
+        request.files.add(await http.MultipartFile.fromString('ocasiones[]', o.name));
+      }
+    }
+
+    if (temporadas != null) {
+      for (var t in temporadas) {
+        request.files.add(await http.MultipartFile.fromString('temporadas[]', t.name));
+      }
+    }
+
+    if (colores != null) {
+      for (var c in colores) {
+        request.files.add(await http.MultipartFile.fromString('colores[]', c.name));
+      }
+    }
+
+    final response = await request.send();
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final body = await response.stream.bytesToString();
+      throw Exception('Error al editar artículo: $body');
+    }
+  }
+
+
+
+
+
+
+
+
+ /*------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ -------------------FUNCIONES DE OUTFITS-----------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------*/
+
+  @override
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required OcasionEnum ocasion,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    final url = Uri.parse('$_baseUrl/outfits/generar');
+
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['titulo'] = titulo;
+    if (descripcion != null && descripcion.isNotEmpty) {
+      request.fields['descripcion'] = descripcion;
+    }
+    request.fields['ocasion'] = ocasion.name;
+
+    if (temporadas != null) {
+      for (final t in temporadas) {
+        request.fields['temporadas[]'] = t.name;
+      }
+    }
+
+    if (colores != null) {
+      for (final c in colores) {
+        request.fields['colores[]'] = c.name;
+      }
+    }
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(responseBody);
+    } else {
+      throw Exception('Error al generar outfit: $responseBody');
+    }
+  }
 
 }

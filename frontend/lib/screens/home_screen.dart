@@ -5,7 +5,7 @@ import 'launcher_screen.dart';
 import 'colecciones_screen.dart';
 import 'buscador_screen.dart';
 import 'armarioVirtual/armario_screen.dart';
-import 'outfits_screen.dart';
+import 'outfits/outfits_screen.dart';
 import '../services/google_sign_in_service.dart';
 
 class HomeScreen extends StatefulWidget {

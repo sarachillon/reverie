@@ -9,8 +9,9 @@ from app.models.models import *
 from app.models.enummerations import *
 from app.utils.s3 import *
 from app.utils.auth import obtener_usuario_actual
-from typing import List, Optional
 from app.schemas.articulo_propio import *
+from app.utils.remove_background import quitar_fondo_imagen  
+from typing import List, Optional
 import json
 import base64
 
@@ -49,23 +50,16 @@ async def crear_articulo(
     
     # Subir imagen a S3
     try:
-        imagen_key = await subir_imagen_s3(foto, foto.filename)  # Usamos la función para subir la imagen
+        original_bytes = await foto.read()
+        imagen_sin_fondo = quitar_fondo_imagen(original_bytes)
+        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"{foto.filename.split('.')[0]}.png")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir la imagen: {str(e)}")
     
 
-    #usuario
     usuario_actual = await obtener_usuario_actual(request, db)
     if not usuario_actual:
         raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-    
-    for ocasion in ocasiones:
-        print(f"\n\n\n\n\n\n\nocasion: {ocasion}")
-    for temporada in temporadas:
-        print(f"temporada: {temporada}")
-    for color in colores:
-        print(f"color: {color}\n\n\n\n\n\n\n")
-
 
     ocasiones_enum = [OcasionEnum(o) for o in ocasiones]
     temporadas_enum = [TemporadaEnum(t) for t in temporadas]
@@ -73,7 +67,7 @@ async def crear_articulo(
 
 
 
-    # Crear el nuevo artículo
+    # Crear el nuevo artículo propio
     nuevo_articulo = ArticuloPropio(
         nombre=nombre,
         categoria=categoria,
@@ -84,7 +78,6 @@ async def crear_articulo(
         colores=colores_enum,
         usuario=usuario_actual,
     )
-
 
     db.add(nuevo_articulo)
     db.commit()
@@ -152,7 +145,7 @@ async def obtener_articulos_propios(
 
 
 
-# Obtener  los artículos propios del usuario autenticado de uno en uno
+# Obtener los artículos propios del usuario autenticado de uno en uno
 @router.get("/stream", response_class=StreamingResponse)
 async def obtener_articulos_propios_stream(
     request: Request,
@@ -272,9 +265,8 @@ async def eliminar_articulo(
 
 
 
-# Actualizar un artículo propio
-@router.put("/{articulo_id}")
-async def actualizar_articulo(
+@router.post("/editar/{articulo_id}")
+async def editar_articulo(
     articulo_id: int,
     request: Request,
     nombre: Optional[str] = Form(None),
@@ -292,59 +284,38 @@ async def actualizar_articulo(
     if not usuario_actual:
         raise HTTPException(status_code=401, detail="Usuario no autenticado.")
 
-    articulo = db.query(ArticuloPropio).filter(
-        ArticuloPropio.usuario_id == usuario_actual.id,
-        ArticuloPropio.id == articulo_id
-    ).first()
-
+    articulo = db.query(ArticuloPropio).filter_by(id=articulo_id, usuario_id=usuario_actual.id).first()
     if not articulo:
         raise HTTPException(status_code=404, detail="Artículo no encontrado.")
 
-    # Validación de subcategorías
-    if categoria:
-        if categoria == CategoriaEnum.ROPA:
-            if not subcategoria_ropa:
-                raise HTTPException(status_code=400, detail="Subcategoría de ropa es obligatoria.")
-            else:
-                subcategoria=SubcategoriaRopaEnum(subcategoria_ropa).name
-        elif categoria == CategoriaEnum.CALZADO:
-            if not subcategoria_calzado:
-                raise HTTPException(status_code=400, detail="Subcategoría de calzado es obligatoria.")
-            else:
-                subcategoria=SubcategoriaCalzadoEnum(subcategoria_calzado).name
-        elif categoria == CategoriaEnum.ACCESORIOS:
-            if not subcategoria_accesorios:
-                raise HTTPException(status_code=400, detail="Subcategoría de accesorios es obligatoria.")
-            else:
-                subcategoria=SubcategoriaAccesoriosEnum(subcategoria_accesorios).name
-
-        articulo.categoria = categoria
-        articulo.subcategoria = subcategoria
-
-    
-    # Actualizar los campos del artículo
-    if nombre:
+    if nombre is not None:
         articulo.nombre = nombre
 
-    if ocasiones:
+    if categoria is not None:
+        articulo.categoria = categoria
+        if categoria == CategoriaEnum.ROPA and subcategoria_ropa:
+            articulo.subcategoria = subcategoria_ropa.name
+        elif categoria == CategoriaEnum.CALZADO and subcategoria_calzado:
+            articulo.subcategoria = subcategoria_calzado.name
+        elif categoria == CategoriaEnum.ACCESORIOS and subcategoria_accesorios:
+            articulo.subcategoria = subcategoria_accesorios.name
+
+    if ocasiones is not None:
         articulo.ocasiones = [OcasionEnum(o) for o in ocasiones]
-    if temporadas:
+
+    if temporadas is not None:
         articulo.temporadas = [TemporadaEnum(t) for t in temporadas]
-    if colores:
+
+    if colores is not None:
         articulo.colores = [ColorEnum(c) for c in colores]
-    if foto:
-        # Subir nueva imagen a S3
-        try:
-            imagen_key = await subir_imagen_s3(foto, foto.filename)
-            articulo.foto = imagen_key
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error al subir la imagen: {str(e)}")
-        # Eliminar la imagen anterior de S3
-        try:
-            await delete_imagen_s3(articulo.foto)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error al eliminar la imagen de S3: {str(e)}")
-    # Guardar los cambios en la base de datos
+
+    if foto is not None:
+        original_bytes = await foto.read()
+        imagen_sin_fondo = quitar_fondo_imagen(original_bytes)
+        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"{foto.filename.split('.')[0]}.png")
+        articulo.foto = imagen_key
+
     db.commit()
     db.refresh(articulo)
-    return {"message": "Artículo actualizado exitosamente", "articulo_id": articulo.id}
+
+    return {"message": "Artículo editado exitosamente"}

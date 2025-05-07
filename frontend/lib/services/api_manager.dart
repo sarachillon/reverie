@@ -90,4 +90,35 @@ class ApiManager {
     }
     await _instance!.deleteArticuloPropio(id: id);
   }
+
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required OcasionEnum ocasion,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasion: ocasion, temporadas: temporadas, colores: colores); 
+  }
+
+  Future<void> editarArticuloPropio({
+    required int id,
+    Image? foto,
+    String? nombre,
+    CategoriaEnum? categoria,
+    SubcategoriaRopaEnum? subcategoriaRopa,
+    SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
+    SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    List<OcasionEnum>? ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+     if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.editarArticuloPropio(id: id, foto: foto, nombre: nombre, categoria: categoria, subcategoriaAccesorios: subcategoriaAccesorios, subcategoriaCalzado: subcategoriaCalzado, subcategoriaRopa: subcategoriaRopa, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
+  }
 }

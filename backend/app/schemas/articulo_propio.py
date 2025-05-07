@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.models.enummerations import *
 
 class ArticuloCreate(BaseModel):
+    id: int
     nombre: str
     categoria: CategoriaEnum
     subcategoria_ropa: Optional[SubcategoriaRopaEnum] = None
