@@ -167,9 +167,6 @@ class RealApiService implements ApiService {
       );
     }
 
-    // TODO: Eliminar este print
-    print(request.fields);
-
     final response = await request.send();
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -235,7 +232,6 @@ class RealApiService implements ApiService {
       if (!streamSuccess) {
         // Handle the partial failure scenario
         print("Stream completed with errors. Some data might be incomplete.");
-        // You might want to throw an exception, return a special object, or take other actions
       }
 
       return articulos;
