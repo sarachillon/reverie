@@ -1,23 +1,32 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
-import 'package:frontend/screens/armarioVirtual/formulario_articulo_screen.dart';
+import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 
-
-class ArticuloPropioDetailScreen extends StatelessWidget {
+class ArticuloPropioDetailScreen extends StatefulWidget {
   final dynamic articulo;
+
+  const ArticuloPropioDetailScreen({super.key, required this.articulo});
+
+  @override
+  State<ArticuloPropioDetailScreen> createState() => _ArticuloPropioDetailScreenState();
+}
+
+class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen> {
   final ApiManager _apiManager = ApiManager();
+  late dynamic articulo;
 
-
-  ArticuloPropioDetailScreen({super.key, required this.articulo});
+  @override
+  void initState() {
+    super.initState();
+    articulo = widget.articulo;
+  }
 
   Future<void> eliminarArticulo(int id) async {
     try {
       await _apiManager.deleteArticuloPropio(id: id);
-      // Aquí puedes manejar la respuesta después de eliminar el artículo
     } catch (e) {
-      // Manejo de errores
       print('Error al eliminar el artículo: $e');
     }
   }
@@ -26,14 +35,12 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final nombre = articulo['nombre'] ?? '';
 
-    // Parsear categoria
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
       orElse: () => CategoriaEnum.ROPA,
     );
     final categoria = categoriaEnum.value;
 
-    // Parsear subcategoría según la categoría
     String subcategoria = '';
     switch (categoriaEnum) {
       case CategoriaEnum.ROPA:
@@ -132,7 +139,7 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text("Eliminar prenda"),
-                      content: Text('¿Quieres eliminar la prenda: $nombre?', style: TextStyle(fontSize: 16)),
+                      content: Text('¿Quieres eliminar la prenda: $nombre?', style: const TextStyle(fontSize: 16)),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(),
@@ -142,7 +149,7 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(ctx).pop();
                             eliminarArticulo(id).then((_) {
-                              Navigator.pop(context, true); // Cierra la pantalla actual
+                              Navigator.pop(context, true);
                             });
                           },
                           child: const Text("Eliminar", style: TextStyle(color: Colors.black)),
@@ -162,17 +169,23 @@ class ArticuloPropioDetailScreen extends StatelessWidget {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final imagenBytes = base64Decode(articulo['imagen']);
-              Navigator.push(
+              final updatedArticulo = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => FormularioArticuloScreen(
+                  builder: (_) => FormularioEdicionArticuloPropioScreen(
                     imagenBytes: imagenBytes,
                     articuloExistente: articulo,
                   ),
                 ),
               );
+
+              if (updatedArticulo != null) {
+                setState(() {
+                  articulo = updatedArticulo;
+                });
+              }
             },
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(

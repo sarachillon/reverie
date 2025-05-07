@@ -172,4 +172,32 @@ Future<Map<String, dynamic>> generarOutfitPropio({
 }
 
 
+Future<void> editarArticuloPropio({
+    required int id,
+    Image? foto,
+    String? nombre,
+    CategoriaEnum? categoria,
+    SubcategoriaRopaEnum? subcategoriaRopa,
+    SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
+    SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    List<OcasionEnum>? ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    final Image fotoPrueba = Image.asset('assets/logo.png');
+    final String nombrePrueba = "Camiseta de prueba";
+    final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
+    final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
+    final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
+    final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
+
+    // Simulación de guardar el artículo
+    print("Guardando artículo con los siguientes valores de prueba:");
+    print("Foto: $fotoPrueba");
+    print("Nombre: $nombrePrueba");
+    print("Categoría: $categoriaPrueba");
+    print("Subcategoría Ropa: $subcategoriaRopaPrueba");
+    print("Temporadas: $temporadasPrueba");
+    print("Colores: $coloresPrueba");
+  }
 }
