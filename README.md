@@ -1,6 +1,10 @@
 # TFG
 
+Este proyecto es un TRabajo de Fin de Grado de Ingeniería Informática sobre moda. 
 
+
+
+# Comandos útiles y recurrentes
 Frontend desde VisualStudio (en /frontend)
     > cd frontend
     > flutter clean
@@ -24,3 +28,7 @@ Conectarse a la BD (en /backend)
 
 Ejecutar scripts (en /backend)
     > PYTHONPATH=$PWD python3 -m app.scripts.borrar_articulos_propios
+
+Tema de la hora
+    > date
+    > sudo ntpdate time.google.com

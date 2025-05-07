@@ -256,10 +256,15 @@ async def eliminar_articulo(
     try:
         await delete_imagen_s3(articulo.foto)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar la imagen de S3: {str(e)}")
+        print(f"Advertencia: error al eliminar imagen S3: {e}")
+        # Continuamos aunque falle S3
 
-    db.delete(articulo)
-    db.commit()
+    try:
+        db.delete(articulo)
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar el artículo de la base de datos: {str(e)}")
+
 
     return {"message": "Artículo eliminado exitosamente"}
 

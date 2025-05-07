@@ -50,6 +50,11 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final articulosFiltrados = _articulos.where((articulo) {
+      final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
+      return nombre.contains(_busqueda.toLowerCase());
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Armario'),
@@ -93,10 +98,10 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _cargarArticulosPropios,
-                  child: _articulos.isEmpty
+                  child: articulosFiltrados.isEmpty
                       ? const Center(child: Text('No se encontraron artículos.'))
                       : GridView.builder(
-                          key: PageStorageKey('grid'),
+                          key: const PageStorageKey('grid'),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
@@ -104,9 +109,9 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                             childAspectRatio: 0.75,
                           ),
                           padding: const EdgeInsets.all(10),
-                          itemCount: _articulos.length,
+                          itemCount: articulosFiltrados.length,
                           itemBuilder: (context, index) {
-                            final articulo = _articulos[index];
+                            final articulo = articulosFiltrados[index];
                             if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
                               return const Card(
                                 child: Center(child: Text('Artículo inválido')),
