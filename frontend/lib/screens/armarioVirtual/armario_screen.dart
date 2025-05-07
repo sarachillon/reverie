@@ -14,10 +14,10 @@ class ArmarioScreen extends StatefulWidget {
 class _ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
   bool _mostrarFiltros = false;
-  List<dynamic> _articulos = [];
-  Map<String, dynamic> filtros = {};
+  final List<dynamic> _articulos = [];
   final TextEditingController _searchController = TextEditingController();
   String _busqueda = '';
+  Map<String, dynamic> filtros = {};
 
   @override
   void initState() {
@@ -25,13 +25,14 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     _cargarArticulosPropios();
   }
 
-
-
   Future<void> _cargarArticulosPropios() async {
-    try {
+    setState(() {
       _articulos.clear();
+    });
+    try {
       final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
       await for (final articulo in stream) {
+        if (!mounted) return;
         setState(() {
           _articulos.add(articulo);
         });
@@ -41,21 +42,14 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     }
   }
 
-
   void _cerrarFiltros() {
     setState(() {
       _mostrarFiltros = false;
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final articulosFiltrados = _articulos.where((articulo) {
-      final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
-      return nombre.contains(_busqueda.toLowerCase());
-    }).toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Armario'),
@@ -99,9 +93,10 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _cargarArticulosPropios,
-                  child: articulosFiltrados.isEmpty
+                  child: _articulos.isEmpty
                       ? const Center(child: Text('No se encontraron artículos.'))
                       : GridView.builder(
+                          key: PageStorageKey('grid'),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
@@ -109,26 +104,22 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                             childAspectRatio: 0.75,
                           ),
                           padding: const EdgeInsets.all(10),
-                          itemCount: articulosFiltrados.length,
+                          itemCount: _articulos.length,
                           itemBuilder: (context, index) {
-                            try {
-                              final articulo = articulosFiltrados[index];
-                              if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
-                                return const Card(
-                                  child: Center(child: Text('Artículo inválido')),
-                                );
-                              }
-                              return ArticuloPropioWidget(
-                                nombre: articulo['nombre'],
-                                articulo: articulo,
-                                onTap: () => _cargarArticulosPropios(),
-                              );
-                            } catch (e) {
-                              print("Error al construir el artículo $index: $e");
+                            final articulo = _articulos[index];
+                            if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
                               return const Card(
-                                child: Center(child: Text('Error al cargar el artículo')),
+                                child: Center(child: Text('Artículo inválido')),
                               );
                             }
+                            final nombre = articulo['nombre'] as String? ?? 'Sin nombre';
+                            return KeepAliveWrapper(
+                              child: ArticuloPropioWidget(
+                                nombre: nombre,
+                                articulo: articulo,
+                                onTap: _cargarArticulosPropios,
+                              ),
+                            );
                           },
                         ),
                 ),
@@ -150,7 +141,6 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                   setState(() {
                     filtros = nuevosFiltros;
                     _mostrarFiltros = false;
-                    _articulos.clear();
                   });
                   _cargarArticulosPropios();
                 },
@@ -161,21 +151,40 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
         ],
       ),
       floatingActionButton: _mostrarFiltros
-        ? null
-        : FloatingActionButton(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
-              );
-              if (result == true) {
-                _cargarArticulosPropios(); // recarga el armario si se añadió algo
-              }
-            },
-            child: const Icon(Icons.add),
-            tooltip: 'Añadir prenda',
-          ),
-
+          ? null
+          : FloatingActionButton(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                );
+                if (result == true) {
+                  _cargarArticulosPropios();
+                }
+              },
+              child: const Icon(Icons.add),
+              tooltip: 'Añadir prenda',
+            ),
     );
+  }
+}
+
+class KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+  const KeepAliveWrapper({super.key, required this.child});
+
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
