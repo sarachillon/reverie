@@ -107,6 +107,8 @@ class OutfitPropio(Outfit):
     __mapper_args__ = {'polymorphic_identity': 'propio'}
 
     id = Column(Integer, ForeignKey("outfits.id"), primary_key=True)
+    collage_key = Column(String, nullable=False)  # s3 key de la imagen del collage del outfit
+
     articulos_propios = relationship("ArticuloPropio", secondary=outfitpropio_articulo, back_populates="outfits_propios")
 
 class OutfitNuevo(Outfit):

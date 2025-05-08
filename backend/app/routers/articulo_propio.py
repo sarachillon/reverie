@@ -188,7 +188,7 @@ async def obtener_articulos_propios_stream(
 
     
 
-    articulos = query.all()
+    articulos = query.order_by(ArticuloPropio.id.desc()).all()
 
     async def articulo_generator():
         for articulo in articulos:

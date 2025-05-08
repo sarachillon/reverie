@@ -94,14 +94,14 @@ class ApiManager {
   Future<Map<String, dynamic>> generarOutfitPropio({
     required String titulo,
     String? descripcion,
-    required OcasionEnum ocasion,
+    required List<OcasionEnum> ocasiones,
     List<TemporadaEnum>? temporadas,
     List<ColorEnum>? colores,
   }) async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
-    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasion: ocasion, temporadas: temporadas, colores: colores); 
+    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
   }
 
   Future<void> editarArticuloPropio({
@@ -120,5 +120,13 @@ class ApiManager {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
     return _instance!.editarArticuloPropio(id: id, foto: foto, nombre: nombre, categoria: categoria, subcategoriaAccesorios: subcategoriaAccesorios, subcategoriaCalzado: subcategoriaCalzado, subcategoriaRopa: subcategoriaRopa, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
+  }
+
+
+  Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros}) async* {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    yield* _instance!.getOutfitsPropiosStream(filtros: filtros);
   }
 }

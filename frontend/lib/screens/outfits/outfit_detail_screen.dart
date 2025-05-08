@@ -7,7 +7,7 @@ class OutfitDetailScreen extends StatelessWidget {
   final String? descripcion;
   final List<ColorEnum> colores;
   final List<TemporadaEnum> temporadas;
-  final OcasionEnum ocasion;
+  final List<OcasionEnum> ocasiones;
   final List<dynamic> articulosPropios;
 
   const OutfitDetailScreen({
@@ -16,7 +16,7 @@ class OutfitDetailScreen extends StatelessWidget {
     this.descripcion,
     required this.colores,
     required this.temporadas,
-    required this.ocasion,
+    required this.ocasiones,
     required this.articulosPropios,
   });
 
@@ -128,7 +128,10 @@ class OutfitDetailScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 12),
-              buildInfo("Ocasión", ocasion.value),
+              buildInfo(
+                "Ocasiones",
+                 ocasiones.map((c) => c.value).join(", "),
+              ),
               buildInfo(
                 "Colores",
                 colores.map((c) => c.value).join(", "),
