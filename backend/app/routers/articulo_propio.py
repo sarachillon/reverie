@@ -9,11 +9,13 @@ from app.models.models import *
 from app.models.enummerations import *
 from app.utils.s3 import *
 from app.utils.auth import obtener_usuario_actual
+from app.utils.inferir_estilo import *
 from app.schemas.articulo_propio import *
 from app.utils.remove_background import quitar_fondo_imagen  
 from typing import List, Optional
 import json
 import base64
+from PIL import Image
 
 router = APIRouter(prefix="/articulos-propios", tags=["Artículos Propios"])
 
@@ -51,8 +53,13 @@ async def crear_articulo(
     # Subir imagen a S3
     try:
         original_bytes = await foto.read()
-        imagen_sin_fondo = quitar_fondo_imagen(original_bytes)
-        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"{foto.filename.split('.')[0]}.png")
+        imagen_key = await subir_imagen_s3_bytes(original_bytes, f"{foto.filename.split('.')[0]}.png")
+
+        imagen_pil = Image.open(io.BytesIO(original_bytes)).convert("RGB")
+        estilo_inferido = inferir_estilo_desde_imagen(imagen_pil)
+        estilo = EstiloEnum(estilo_inferido)
+        formalidad = inferir_formalidad_desde_estilo(estilo_inferido)
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir la imagen: {str(e)}")
     
@@ -77,6 +84,8 @@ async def crear_articulo(
         temporadas=temporadas_enum,
         colores=colores_enum,
         usuario=usuario_actual,
+        estilo = estilo,
+        formalidad=formalidad,
     )
 
     db.add(nuevo_articulo)

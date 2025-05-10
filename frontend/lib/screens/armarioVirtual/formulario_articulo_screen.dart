@@ -7,17 +7,9 @@ import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
-  final File? imagenFile;
-  final Uint8List? imagenBytes;
-  final dynamic articuloExistente;
+  final File imagenOriginal;
 
-  const FormularioArticuloScreen({
-    super.key,
-    this.imagenFile,
-    this.imagenBytes,
-    this.articuloExistente,
-
-  });
+  const FormularioArticuloScreen({super.key, required this.imagenOriginal});
 
   @override
   State<FormularioArticuloScreen> createState() => _FormularioArticuloScreenState();
@@ -27,10 +19,12 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final ApiManager _apiManager = ApiManager();
+  File? _imagenFile;
+  bool _cargandoImagen = true;
 
   CategoriaEnum? _categoria;
-  List<OcasionEnum> _ocasiones = [];
   dynamic _subcategoria;
+  List<OcasionEnum> _ocasiones = [];
   List<TemporadaEnum> _temporadas = [];
   List<ColorEnum> _colores = [];
 
@@ -40,136 +34,86 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
     CategoriaEnum.CALZADO: SubcategoriaCalzadoEnum.values,
   };
 
-
   @override
   void initState() {
     super.initState();
-    if (widget.articuloExistente != null) {
-      final articulo = widget.articuloExistente;
-      _nombreController.text = articulo['nombre'] ?? '';
+    _procesarImagen();
+  }
 
-      final categoriaEnum = CategoriaEnum.values.firstWhere(
-        (e) => e.name == articulo['categoria'],
-        orElse: () => CategoriaEnum.ROPA,
+  void _procesarImagen() async {
+    setState(() => _cargandoImagen = true);
+    final file = await _apiManager.procesarImagen(imagenOriginal: widget.imagenOriginal);
+    if (file != null) {
+      setState(() {
+        _imagenFile = file;
+        _cargandoImagen = false;
+      });
+    } else {
+      setState(() => _cargandoImagen = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error al procesar la imagen")),
       );
-
-      _categoria = categoriaEnum;
-
-      final subcategorias = subcategoriasMap[categoriaEnum];
-      if (subcategorias != null) {
-        if (categoriaEnum == CategoriaEnum.ROPA) {
-          _subcategoria = SubcategoriaRopaEnum.values.firstWhere(
-            (e) => e.name == articulo['subcategoria'],
-            orElse: () => SubcategoriaRopaEnum.CAMISETAS, 
-          );
-        } else if (categoriaEnum == CategoriaEnum.ACCESORIOS) {
-          _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere(
-            (e) => e.name == articulo['subcategoria'],
-            orElse: () => SubcategoriaAccesoriosEnum.CINTURONES,
-          );
-        } else if (categoriaEnum == CategoriaEnum.CALZADO) {
-          _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere(
-            (e) => e.name == articulo['subcategoria'],
-            orElse: () => SubcategoriaCalzadoEnum.ZAPATILLAS,
-          );
-        }
-      }
-
-      _subcategoria = articulo['subcategoria'];
-
-      if (articulo['ocasiones'] != null) {
-        _ocasiones = List<String>.from(articulo['ocasiones'])
-            .map((e) => OcasionEnum.values.firstWhere((o) => o.name.toUpperCase() == e.toUpperCase()))
-            .toList();
-      }
-
-      if (articulo['temporadas'] != null) {
-        _temporadas = List<String>.from(articulo['temporadas'])
-            .map((e) => TemporadaEnum.values.firstWhere((t) => t.name.toUpperCase() == e.toUpperCase()))
-            .toList();
-      }
-
-      if (articulo['colores'] != null) {
-        _colores = List<String>.from(articulo['colores'])
-            .map((e) => ColorEnum.values.firstWhere((c) => c.name.toUpperCase() == e.toUpperCase()))
-            .toList();
-      }
     }
   }
 
-
   Future<void> _guardarPrenda() async {
-    if (_formKey.currentState!.validate() &&
-        _categoria != null &&
-        _subcategoria != null &&
-        _ocasiones.isNotEmpty &&
-        _temporadas.isNotEmpty &&
-        _colores.isNotEmpty) {
-      try {
-        // Determina las subcategorías según la categoría seleccionada
-        SubcategoriaRopaEnum? subcategoriaRopa;
-        SubcategoriaAccesoriosEnum? subcategoriaAccesorios;
-        SubcategoriaCalzadoEnum? subcategoriaCalzado;
+    if (!_formKey.currentState!.validate() ||
+        _categoria == null ||
+        _subcategoria == null ||
+        _ocasiones.isEmpty ||
+        _temporadas.isEmpty ||
+        _colores.isEmpty ||
+        _imagenFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
+      );
+      return;
+    }
 
-        if (_categoria == CategoriaEnum.ROPA) {
-          subcategoriaRopa = SubcategoriaRopaEnum.values.firstWhere(
-            (e) => e.value == _subcategoria,
-            orElse: () => throw Exception("Subcategoría no válida para Ropa"),
-          );
-        } else if (_categoria == CategoriaEnum.ACCESORIOS) {
-          subcategoriaAccesorios = SubcategoriaAccesoriosEnum.values.firstWhere(
-            (e) => e.value == _subcategoria,
-            orElse: () => throw Exception("Subcategoría no válida para Accesorios"),
-          );
-        } else if (_categoria == CategoriaEnum.CALZADO) {
-          subcategoriaCalzado = SubcategoriaCalzadoEnum.values.firstWhere(
-            (e) => e.value == _subcategoria,
-            orElse: () => throw Exception("Subcategoría no válida para Calzado"),
-          );
-        }
+    try {
+      SubcategoriaRopaEnum? subRopa;
+      SubcategoriaAccesoriosEnum? subAccesorio;
+      SubcategoriaCalzadoEnum? subCalzado;
 
-        Image foto;
-        if (widget.imagenFile != null) {
-          foto = Image.file(widget.imagenFile!);
-        } else if (widget.imagenBytes != null) {
-          foto = Image.memory(widget.imagenBytes!);
-        } else {
-          throw Exception("No se ha proporcionado imagen.");
-        }
-        
-        // Llama a la función guardarArticuloPropio
-        await _apiManager.guardarArticuloPropio(
-          foto: foto,
-          nombre: _nombreController.text,
-          categoria: _categoria!,
-          subcategoriaRopa: subcategoriaRopa,
-          subcategoriaAccesorios: subcategoriaAccesorios,
-          subcategoriaCalzado: subcategoriaCalzado,
-          ocasiones: _ocasiones,
-          temporadas: _temporadas,
-          colores: _colores,
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Prenda guardada exitosamente.")),
-        );
-        Navigator.pop(context, true); // Si se ha guardado bien la prenda, recarga la página del armario virtual
-        
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error al guardar la prenda: $e")),
-          );
-          Navigator.pop(context, false);  // En caso de error, retorna false
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
-        );
+      if (_categoria == CategoriaEnum.ROPA && _subcategoria is SubcategoriaRopaEnum) {
+        subRopa = _subcategoria;
+      } else if (_categoria == CategoriaEnum.ACCESORIOS && _subcategoria is SubcategoriaAccesoriosEnum) {
+        subAccesorio = _subcategoria;
+      } else if (_categoria == CategoriaEnum.CALZADO && _subcategoria is SubcategoriaCalzadoEnum) {
+        subCalzado = _subcategoria;
       }
 
+      await _apiManager.guardarArticuloPropio(
+        foto: Image.file(_imagenFile!),
+        nombre: _nombreController.text,
+        categoria: _categoria!,
+        subcategoriaRopa: subRopa,
+        subcategoriaAccesorios: subAccesorio,
+        subcategoriaCalzado: subCalzado,
+        ocasiones: _ocasiones,
+        temporadas: _temporadas,
+        colores: _colores,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Prenda guardada exitosamente.")),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al guardar la prenda: $e")),
+      );
+    }
   }
 
- @override
+  String _getSubcategoriaValue(dynamic sub) {
+    if (sub is SubcategoriaRopaEnum) return sub.value;
+    if (sub is SubcategoriaAccesoriosEnum) return sub.value;
+    if (sub is SubcategoriaCalzadoEnum) return sub.value;
+    return sub.toString();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Nueva Prenda")),
@@ -177,20 +121,16 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            if (widget.imagenFile != null)
-              Image.file(widget.imagenFile!, height: 250, fit: BoxFit.cover)
-            else if (widget.imagenBytes != null)
-              Image.memory(widget.imagenBytes!, height: 250, fit: BoxFit.cover)
-            else
-              const SizedBox(height: 250),
+            _cargandoImagen
+                ? const SizedBox(height: 250, child: Center(child: CircularProgressIndicator()))
+                : (_imagenFile != null
+                    ? Image.file(_imagenFile!, height: 250, fit: BoxFit.cover)
+                    : const SizedBox(height: 250, child: Center(child: Text("Error al mostrar imagen")))),
             const SizedBox(height: 16),
             Form(
               key: _formKey,
               child: Column(
                 children: [
-                // ... (el resto de los campos no se modifican)
-
-                  // Campo de texto para el nombre
                   TextFormField(
                     controller: _nombreController,
                     decoration: const InputDecoration(labelText: "Nombre de la prenda"),
@@ -204,7 +144,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                     subtitle: Text(
                       (_categoria == null)
                           ? "Selecciona una categoría y subcategoría"
-                          : "${_categoria!.value}, ${_subcategoria is String ? _subcategoria : (_subcategoria?.value ?? '')}",
+                          : "${_categoria!.value}, ${_getSubcategoriaValue(_subcategoria)}",
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () async {
@@ -232,7 +172,13 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                         if (subcategoriaSeleccionada != null) {
                           setState(() {
                             _categoria = categoria;
-                            _subcategoria = subcategoriaSeleccionada;
+                            if (categoria == CategoriaEnum.ROPA) {
+                              _subcategoria = SubcategoriaRopaEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
+                            } else if (categoria == CategoriaEnum.ACCESORIOS) {
+                              _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
+                            } else if (categoria == CategoriaEnum.CALZADO) {
+                              _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
+                            }
                           });
                         }
                       }

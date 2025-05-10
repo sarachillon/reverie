@@ -13,7 +13,6 @@ class SubirFotoScreen extends StatefulWidget {
 }
 
 class _SubirFotoScreenState extends State<SubirFotoScreen> {
-  File? _imageFile;
   bool _isPicking = false;
   final PageController _pageController = PageController();
   int _paginaActual = 0;
@@ -63,12 +62,12 @@ class _SubirFotoScreenState extends State<SubirFotoScreen> {
       final pickedFile = await picker.pickImage(source: source);
 
       if (pickedFile != null) {
-        _imageFile = File(pickedFile.path);
+        final originalFile = File(pickedFile.path);
 
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FormularioArticuloScreen(imagenFile: _imageFile!),
+            builder: (_) => FormularioArticuloScreen(imagenOriginal: originalFile),
           ),
         );
 
@@ -77,7 +76,7 @@ class _SubirFotoScreenState extends State<SubirFotoScreen> {
         }
       }
     } catch (e) {
-      print("Error al seleccionar o sacar una foto: $e");
+      print("Error al seleccionar imagen: $e");
     } finally {
       _isPicking = false;
     }
@@ -127,7 +126,7 @@ class _SubirFotoScreenState extends State<SubirFotoScreen> {
                   width: _paginaActual == index ? 12 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _paginaActual == index ? Color(0xFF9C6A3F) : Colors.grey[400],
+                    color: _paginaActual == index ? const Color(0xFF9C6A3F) : Colors.grey[400],
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );

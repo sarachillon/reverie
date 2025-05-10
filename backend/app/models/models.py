@@ -56,6 +56,8 @@ class ArticuloPropio(Base):
     ocasiones = Column(ARRAY(SqlEnum(OcasionEnum)), nullable=False)
     temporadas = Column(ARRAY(SqlEnum(TemporadaEnum)), nullable=False)
     colores = Column(ARRAY(SqlEnum(ColorEnum)), nullable=False)
+    estilo = Column(SqlEnum(EstiloEnum), nullable=True)
+    formalidad = Column(Integer, nullable=True)
 
     usuario = relationship("Usuario", back_populates="articulos_propios")
     colecciones = relationship("Coleccion", secondary=coleccion_articulo_propio, back_populates="articulos_propios")

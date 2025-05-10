@@ -400,10 +400,31 @@ class RealApiService implements ApiService {
     }
   }
 
+  Future<File?> procesarImagen({required File imagenOriginal}) async {
+    final url = Uri.parse('$_baseUrl/imagen/procesar');
+    final token = await GoogleSignInService().getToken();
 
+    final request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(await http.MultipartFile.fromPath('foto', imagenOriginal.path));
 
+    final response = await request.send();
 
+    if (response.statusCode == 200) {
+      final body = await response.stream.bytesToString();
+      final decoded = jsonDecode(body);
+      final base64Str = decoded['imagen_base64'] as String;
+      final bytes = base64Decode(base64Str);
 
+      final tempDir = Directory.systemTemp;
+      final processedFile = File('${tempDir.path}/sin_fondo_${DateTime.now().millisecondsSinceEpoch}.png');
+      return await processedFile.writeAsBytes(bytes);
+    } else {
+      final error = await response.stream.bytesToString();
+      print("Error al procesar imagen: $error");
+      return null;
+    }
+  }
 
 
 

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers.users import router as user_router  
 from app.routers.articulo_propio import router as articulo_propio_router
 from app.routers.outfit_propio import router as outfit_propio
+from app.routers.imagen import router as imagen_router
 
 app = FastAPI()
 
@@ -10,6 +11,7 @@ app = FastAPI()
 app.include_router(user_router)
 app.include_router(articulo_propio_router)
 app.include_router(outfit_propio)
+app.include_router(imagen_router)
 
 
 

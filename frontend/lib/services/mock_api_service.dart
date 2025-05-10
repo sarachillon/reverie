@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'api_service.dart';
@@ -156,42 +158,42 @@ class MockApiService implements ApiService {
   }
 
   @override
-Future<Map<String, dynamic>> generarOutfitPropio({
-  required String titulo,
-  String? descripcion,
-  required List<OcasionEnum> ocasiones,
-  List<TemporadaEnum>? temporadas,
-  List<ColorEnum>? colores,
-}) async {
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required List<OcasionEnum> ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
 
-  return {
-    "id": 999,
-    "titulo": titulo,
-    "descripcion": descripcion ?? "Outfit generado automáticamente",
-    "articulos": [
-      {
-        "id": 1,
-        "nombre": "Camiseta blanca",
-        "foto_url": "https://example.com/mock/camiseta.png",
-        "categoria": CategoriaEnum.ROPA,
-        "subcategoria_ropa": SubcategoriaRopaEnum.CAMISETAS,
-        "colores": [ColorEnum.AZUL],
-        "temporadas": [TemporadaEnum.ENTRETIEMPO],
-        "ocasiones": [OcasionEnum.CASUAL],
-      },
-      {
-        "id": 2,
-        "nombre": "Pantalón negro",
-        "foto_url": "https://example.com/mock/pantalon.png",
-        "categoria": CategoriaEnum.ROPA,
-        "subcategoria_ropa": SubcategoriaRopaEnum.PANTALONES,
-        "colores": [ColorEnum.GRIS],
-        "temporadas": [TemporadaEnum.ENTRETIEMPO],
-        "ocasiones": [OcasionEnum.CASUAL],
-      }
-    ]
-  };
-}
+    return {
+      "id": 999,
+      "titulo": titulo,
+      "descripcion": descripcion ?? "Outfit generado automáticamente",
+      "articulos": [
+        {
+          "id": 1,
+          "nombre": "Camiseta blanca",
+          "foto_url": "https://example.com/mock/camiseta.png",
+          "categoria": CategoriaEnum.ROPA,
+          "subcategoria_ropa": SubcategoriaRopaEnum.CAMISETAS,
+          "colores": [ColorEnum.AZUL],
+          "temporadas": [TemporadaEnum.ENTRETIEMPO],
+          "ocasiones": [OcasionEnum.CASUAL],
+        },
+        {
+          "id": 2,
+          "nombre": "Pantalón negro",
+          "foto_url": "https://example.com/mock/pantalon.png",
+          "categoria": CategoriaEnum.ROPA,
+          "subcategoria_ropa": SubcategoriaRopaEnum.PANTALONES,
+          "colores": [ColorEnum.GRIS],
+          "temporadas": [TemporadaEnum.ENTRETIEMPO],
+          "ocasiones": [OcasionEnum.CASUAL],
+        }
+      ]
+    };
+  }
 
 
 Future<void> editarArticuloPropio({
@@ -262,6 +264,11 @@ Future<void> editarArticuloPropio({
     for (final outfit in outfits) {
       yield outfit;
     }
+  }
+
+
+  Future<File?> procesarImagen({required File imagenOriginal}) async {
+    return File('assets/logo.png');
   }
 
 }
