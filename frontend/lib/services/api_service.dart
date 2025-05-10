@@ -1,5 +1,7 @@
 // frontend/lib/services/api_service.dart
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 
@@ -37,8 +39,11 @@ abstract class ApiService {
 
   Future<void> deleteArticuloPropio({required int id});
 
-  Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required OcasionEnum ocasion, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores});
+  Future<File?> procesarImagen({required File imagenOriginal});
+
+  Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required List<OcasionEnum> ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores});
 
   Future<void> editarArticuloPropio({required int id, Image? foto, String? nombre, CategoriaEnum? categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, List<OcasionEnum>? ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores });
-  
+
+  Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros});
 }

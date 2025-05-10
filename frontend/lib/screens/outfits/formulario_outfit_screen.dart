@@ -19,7 +19,7 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
   final ApiManager _apiManager = ApiManager();
 
 
-  OcasionEnum? _ocasion;
+  List<OcasionEnum> _ocasiones = [];
   List<TemporadaEnum> _temporadas = [];
   List<ColorEnum> _colores = [];
 
@@ -34,7 +34,7 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
       final outfit = await _apiManager.generarOutfitPropio(
         titulo: _tituloController.text,
         descripcion: _descripcionController.text,
-        ocasion: _ocasion!,
+        ocasiones: _ocasiones!,
         temporadas: _temporadas,
         colores: _colores,
       );
@@ -55,10 +55,12 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
         );
       }).toList();
 
-      final ocasionEnum = OcasionEnum.values.firstWhere(
-        (e) => e.name == (outfit['ocasiones'] as List).first,
-        orElse: () => throw Exception("Ocasión desconocida: ${outfit['ocasiones']}"),
-      );
+      final ocasionEnum = (outfit['ocasion'] as List<dynamic>).map((o) {
+        return OcasionEnum.values.firstWhere(
+          (e) => e.name == o,
+          orElse: () => throw Exception("Ocasion desconocida: $o"),
+        );
+      }).toList();
 
 
       Navigator.pushReplacement(
@@ -69,7 +71,7 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
             descripcion: outfit['descripcion'] as String?,
             colores: coloresEnum,
             temporadas: temporadasEnum,
-            ocasion: ocasionEnum,
+            ocasiones: ocasionEnum,
             articulosPropios: outfit['articulos_propios'] as List<dynamic>,
           ),
         ),
@@ -141,9 +143,12 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
                 Wrap(
                   spacing: 6,
                   children: OcasionEnum.values.map((o) {
-                    final selected = _ocasion == o;
+                    final selected = _ocasiones.contains(o);
                     return ChoiceChip(
-                      label: Text(o.value, style: const TextStyle(fontSize: 15)),
+                      label: Text(
+                        o.value,
+                        style: const TextStyle(fontSize: 15),
+                      ),
                       selected: selected,
                       backgroundColor: Colors.transparent,
                       selectedColor: Colors.black,
@@ -154,14 +159,21 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
                         borderRadius: BorderRadius.circular(100),
                       ),
                       showCheckmark: false,
-                      onSelected: (_) {
+                      onSelected: (isSelected) {
                         setState(() {
-                          _ocasion = o;
+                          if (isSelected && !_ocasiones.contains(o)) {
+                            _ocasiones.add(o);
+                          } else if (!isSelected && _ocasiones.contains(o)) {
+                            _ocasiones.remove(o);
+                          }
                         });
                       },
                     );
                   }).toList(),
                 ),
+
+            
+
 
                 const SizedBox(height: 24),
                 _buildTitulo("Filtros avanzados (opcionales)"),

@@ -86,6 +86,12 @@ flutter:
   - assets/articulos/vaqueros_pull.png
   - assets/articulos/botas_altas.png
   - assets/articulos/camiseta_larga.png
+
+  fonts:
+    - family: GreatVibes
+      fonts:
+        - asset: assets/fonts/GreatVibes-Regular.ttf
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

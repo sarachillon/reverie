@@ -31,4 +31,5 @@ class ArticuloPropioConImagen(BaseModel):
     imagen: str  # imagen como tal
 
     class Config:
-        orm_mode = True  #  Para trabajar con objetos SQLAlchemy
+        #orm_mode = True  #  Para trabajar con objetos SQLAlchemy
+        from_attributes = True

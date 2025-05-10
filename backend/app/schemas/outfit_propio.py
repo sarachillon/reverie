@@ -6,11 +6,12 @@ from app.models.enummerations import OcasionEnum, TemporadaEnum, ColorEnum
 class OutfitPropioResponse(BaseModel):
     id: int
     titulo: str
-    descripcion: Optional[str]
-    ocasion: OcasionEnum
+    descripcion_generacion: Optional[str]
+    ocasiones: List[OcasionEnum]
     temporadas: Optional[List[TemporadaEnum]]
     colores: Optional[List[ColorEnum]]
     articulos_propios: List[ArticuloPropioConImagen]
+    collage_key: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True

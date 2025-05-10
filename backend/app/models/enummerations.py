@@ -75,3 +75,14 @@ class GeneroPrefEnum(str, Enum):
     HOMBRE = "HOMBRE"
     MUJER = "MUJER"
     AMBOS = "AMBOS"
+
+class EstiloEnum(str, Enum):
+    BOHO = "boho"
+    STREET = "street"
+    MINIMAL = "minimal"
+    ELEGANT = "elegant"
+    SPORTY = "sporty"
+    PUNK = "punk"
+    FORMAL = "formal"
+    CASUAL = "casual"
+    BEACH = "beach"

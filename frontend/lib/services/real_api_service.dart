@@ -400,10 +400,31 @@ class RealApiService implements ApiService {
     }
   }
 
+  Future<File?> procesarImagen({required File imagenOriginal}) async {
+    final url = Uri.parse('$_baseUrl/imagen/procesar');
+    final token = await GoogleSignInService().getToken();
 
+    final request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(await http.MultipartFile.fromPath('foto', imagenOriginal.path));
 
+    final response = await request.send();
 
+    if (response.statusCode == 200) {
+      final body = await response.stream.bytesToString();
+      final decoded = jsonDecode(body);
+      final base64Str = decoded['imagen_base64'] as String;
+      final bytes = base64Decode(base64Str);
 
+      final tempDir = Directory.systemTemp;
+      final processedFile = File('${tempDir.path}/sin_fondo_${DateTime.now().millisecondsSinceEpoch}.png');
+      return await processedFile.writeAsBytes(bytes);
+    } else {
+      final error = await response.stream.bytesToString();
+      print("Error al procesar imagen: $error");
+      return null;
+    }
+  }
 
 
 
@@ -422,7 +443,7 @@ class RealApiService implements ApiService {
   Future<Map<String, dynamic>> generarOutfitPropio({
     required String titulo,
     String? descripcion,
-    required OcasionEnum ocasion,
+    required List<OcasionEnum> ocasiones,
     List<TemporadaEnum>? temporadas,
     List<ColorEnum>? colores,
   }) async {
@@ -440,7 +461,10 @@ class RealApiService implements ApiService {
     if (descripcion != null && descripcion.isNotEmpty) {
       request.fields['descripcion'] = descripcion;
     }
-    request.fields['ocasion'] = ocasion.name;
+    
+    for (final o in ocasiones) {
+        request.fields['ocasiones[]'] = o.name;
+      }
 
     if (temporadas != null) {
       for (final t in temporadas) {
@@ -464,4 +488,46 @@ class RealApiService implements ApiService {
     }
   }
 
+
+  @override
+  Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros}) async* {
+    final queryString = filtros != null
+        ? filtros.entries
+            .where((e) => e.value != null)
+            .expand((e) {
+              if (e.value is List) {
+                return (e.value as List).map((v) => '${e.key}=$v');
+              } else {
+                return ['${e.key}=${e.value}'];
+              }
+            })
+            .join('&')
+        : '';
+
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+   final request = http.Request(
+      'GET',
+      Uri.parse(queryString.isNotEmpty
+        ? '$_baseUrl/outfits/stream?$queryString'
+        : '$_baseUrl/outfits/stream')
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+      await for (final line in utf8Stream) {
+        if (line.isNotEmpty) {
+          yield jsonDecode(line);
+        }
+      }
+    } else {
+      throw Exception('Error al cargar outfits (stream)');
+    }
+  }
 }
