@@ -19,7 +19,7 @@ class Usuario(Base):
     colecciones = relationship("Coleccion", back_populates="usuario")
     articulos_propios = relationship("ArticuloPropio", back_populates="usuario")
     interacciones = relationship("Interaccion", back_populates="usuario")
-    outfits = relationship("OutfitPropio", back_populates="usuario")
+    outfits_propios = relationship("OutfitPropio", back_populates="usuario")
 
 class Coleccion(Base):
     __tablename__ = "colecciones"
@@ -32,7 +32,7 @@ class Coleccion(Base):
 
     usuario = relationship("Usuario", back_populates="colecciones")
     articulos_propios = relationship("ArticuloPropio", secondary=coleccion_articulo_propio, back_populates="colecciones")
-    outfits = relationship("OutfitPropio", secondary=coleccion_outfit_propio, back_populates="colecciones")
+    outfits_propios = relationship("OutfitPropio", secondary=coleccion_outfit_propio, back_populates="colecciones")
 
 class ArticuloPropio(Base):
     __tablename__ = "articulos_propios"
