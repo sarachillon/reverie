@@ -19,7 +19,7 @@ class Usuario(Base):
     colecciones = relationship("Coleccion", back_populates="usuario")
     articulos_propios = relationship("ArticuloPropio", back_populates="usuario")
     interacciones = relationship("Interaccion", back_populates="usuario")
-    outfits = relationship("Outfit", back_populates="usuario")
+    outfits = relationship("OutfitPropio", back_populates="usuario")
 
 class Coleccion(Base):
     __tablename__ = "colecciones"
@@ -31,18 +31,8 @@ class Coleccion(Base):
     colaborativa = Column(Boolean, default=False)
 
     usuario = relationship("Usuario", back_populates="colecciones")
-    articulos_nuevos = relationship("ArticuloNuevo", secondary=coleccion_articulo_nuevo, back_populates="colecciones")
     articulos_propios = relationship("ArticuloPropio", secondary=coleccion_articulo_propio, back_populates="colecciones")
-    outfits = relationship("Outfit", secondary=coleccion_outfit, back_populates="colecciones")
-
-class ArticuloNuevo(Base):
-    __tablename__ = "articulos_nuevos"
-
-    url = Column(String, primary_key=True)
-
-    colecciones = relationship("Coleccion", secondary=coleccion_articulo_nuevo, back_populates="articulos_nuevos")
-    outfits_nuevos = relationship("OutfitNuevo", secondary=outfitnuevo_articulo, back_populates="articulos_nuevos")
-    interacciones = relationship("Interaccion", back_populates="articulo_nuevo")
+    outfits = relationship("OutfitPropio", secondary=coleccion_outfit_propio, back_populates="colecciones")
 
 class ArticuloPropio(Base):
     __tablename__ = "articulos_propios"
@@ -69,57 +59,25 @@ class Interaccion(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
-    articulo_url = Column(String, ForeignKey("articulos_nuevos.url"))
     tipo = Column(SqlEnum(TipoInteraccionEnum), nullable=False)
     fecha = Column(String, nullable=False)
     busqueda = Column(String, nullable=True)
 
     usuario = relationship("Usuario", back_populates="interacciones")
-    articulo_nuevo = relationship("ArticuloNuevo", back_populates="interacciones")
 
-class Outfit(Base):
-    __tablename__ = "outfits"
-    __mapper_args__ = {
-        'polymorphic_identity': 'outfit',
-        'polymorphic_on': 'tipo_outfit'
-    }
+class OutfitPropio(Base):
+    __tablename__ = "outfits_propios"
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     titulo = Column(String, nullable=False)
-    numero = Column(Integer, nullable=False)
-    tipo_outfit = Column(String(20))
     descripcion_generacion = Column(String)  
     fecha_creacion = Column(DateTime, nullable=False)
     ocasiones = Column(ARRAY(SqlEnum(OcasionEnum)), nullable=False)
     temporadas = Column(ARRAY(SqlEnum(TemporadaEnum)), nullable=True)
     colores = Column(ARRAY(SqlEnum(ColorEnum)), nullable=True)
-
-    usuario = relationship("Usuario", back_populates="outfits")
-    colecciones = relationship("Coleccion", secondary=coleccion_outfit, back_populates="outfits")
-
-    @validates("tipo_outfit")
-    def validate_tipo_outfit(self, key, value):
-        if value not in ["nuevo", "propio"]:
-            raise ValueError(f"Tipo de outfit '{value}' no válido.")
-        return value
-
-class OutfitPropio(Outfit):
-    __tablename__ = "outfits_propios"
-    __mapper_args__ = {'polymorphic_identity': 'propio'}
-
-    id = Column(Integer, ForeignKey("outfits.id"), primary_key=True)
     collage_key = Column(String, nullable=False)  # s3 key de la imagen del collage del outfit
 
+    usuario = relationship("Usuario", back_populates="outfits_propios")
+    colecciones = relationship("Coleccion", secondary=coleccion_outfit_propio, back_populates="outfits_propios")
     articulos_propios = relationship("ArticuloPropio", secondary=outfitpropio_articulo, back_populates="outfits_propios")
-
-class OutfitNuevo(Outfit):
-    __tablename__ = "outfits_nuevos"
-    __mapper_args__ = {'polymorphic_identity': 'nuevo'}
-
-    id = Column(Integer, ForeignKey("outfits.id"), primary_key=True)
-    rango_precio_min = Column(Integer)
-    rango_precio_max = Column(Integer)
-    tiendas = Column(String)
-    articulos_nuevos = relationship("ArticuloNuevo", secondary=outfitnuevo_articulo, back_populates="outfits_nuevos")
-

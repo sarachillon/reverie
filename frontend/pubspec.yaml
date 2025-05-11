@@ -39,6 +39,7 @@ dependencies:
   google_fonts: ^6.1.0
   shared_preferences: ^2.2.2
   http: ^1.3.0
+  html: ^0.15.4
   image_picker: ^1.0.4
   provider: ^6.1.4
   
@@ -86,11 +87,12 @@ flutter:
   - assets/articulos/vaqueros_pull.png
   - assets/articulos/botas_altas.png
   - assets/articulos/camiseta_larga.png
+  - assets/mock/ropa_mock.png
+  - assets/titulos/MiArmario.png
+  - assets/titulos/ropa.png
+  - assets/titulos/calzado.png
+  - assets/titulos/accesorios.png
 
-  fonts:
-    - family: GreatVibes
-      fonts:
-        - asset: assets/fonts/GreatVibes-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

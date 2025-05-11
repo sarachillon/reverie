@@ -87,10 +87,7 @@ class _FiltrosArticuloPropioScreenState extends State<FiltrosArticuloPropioScree
                             },
                             child: const Text('Limpiar filtros'),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: widget.onCerrar,
-                          ),
+                          
                         ],
                       ),
                     ],
