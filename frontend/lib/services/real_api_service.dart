@@ -418,6 +418,7 @@ class RealApiService implements ApiService {
 
       final tempDir = Directory.systemTemp;
       final processedFile = File('${tempDir.path}/sin_fondo_${DateTime.now().millisecondsSinceEpoch}.png');
+      print(base64Str);
       return await processedFile.writeAsBytes(bytes);
     } else {
       final error = await response.stream.bytesToString();

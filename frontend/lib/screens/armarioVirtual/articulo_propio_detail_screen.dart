@@ -1,3 +1,5 @@
+// ARCHIVO: detail_screen.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
@@ -41,7 +43,6 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
   @override
   Widget build(BuildContext context) {
     final nombre = articulo['nombre'] ?? '';
-
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
       orElse: () => CategoriaEnum.ROPA,
@@ -91,6 +92,24 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
             title: Image.asset('assets/logo_reverie_text.png', height: 32),
             actions: [
               IconButton(
+                icon: const Icon(Icons.edit, color: Colors.black),
+                onPressed: () async {
+                  final imagenBytes = base64Decode(articulo['imagen']);
+                  final updatedArticulo = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FormularioEdicionArticuloPropioScreen(
+                        imagenBytes: imagenBytes,
+                        articuloExistente: articulo,
+                      ),
+                    ),
+                  );
+                  if (updatedArticulo != null) {
+                    setState(() => articulo = updatedArticulo);
+                  }
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.delete, color: Colors.black),
                 onPressed: () {
                   showDialog(
@@ -99,17 +118,8 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
                       title: const Text("Eliminar prenda"),
                       content: Text('¿Eliminar "$nombre"?'),
                       actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text("Cancelar"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(ctx).pop();
-                            eliminarArticulo(id, context);
-                          },
-                          child: const Text("Eliminar", style: TextStyle(color: Colors.black)),
-                        ),
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text("Cancelar")),
+                        TextButton(onPressed: () => eliminarArticulo(id, context), child: const Text("Eliminar", style: TextStyle(color: Colors.black))),
                       ],
                     ),
                   );
@@ -127,86 +137,57 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
                     : Image.memory(imagenBytes, fit: BoxFit.cover),
               ),
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Text(
-                          nombre,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Text(
+                            nombre,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildPrettyRow("Categoría", categoria),
-                      _buildPrettyRow("Subcategoría", subcategoria),
-                      _buildPrettyRow("Ocasiones", ocasiones),
-                      _buildPrettyRow("Temporadas", temporadas),
-                      const SizedBox(height: 16),
-                      const Text("Colores", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: colores.map((colorName) {
-                          final colorEnum = ColorEnum.values.firstWhere(
-                            (c) => c.name.toUpperCase() == colorName.toUpperCase(),
-                            orElse: () => ColorEnum.BLANCO,
-                          );
-                          return Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: _getColorFromEnum(colorEnum),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.black12, width: 2),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        _buildPrettyRow("Categoría", categoria),
+                        _buildPrettyRow("Subcategoría", subcategoria),
+                        _buildPrettyRow("Ocasiones", ocasiones),
+                        _buildPrettyRow("Temporadas", temporadas),
+                        const SizedBox(height: 24),
+                        const Text("Colores", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: colores.map((colorName) {
+                            final colorEnum = ColorEnum.values.firstWhere(
+                              (c) => c.name.toUpperCase() == colorName.toUpperCase(),
+                              orElse: () => ColorEnum.BLANCO,
+                            );
+                            return Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: _getColorFromEnum(colorEnum),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black12, width: 2),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
-          ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final imagenBytes = base64Decode(articulo['imagen']);
-                  final updatedArticulo = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FormularioEdicionArticuloPropioScreen(
-                        imagenBytes: imagenBytes,
-                        articuloExistente: articulo,
-                      ),
-                    ),
-                  );
-
-                  if (updatedArticulo != null) {
-                    setState(() {
-                      articulo = updatedArticulo;
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Editar', style: TextStyle(fontSize: 18)),
-              ),
-            ),
           ),
         );
       },
@@ -217,6 +198,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 16))),
@@ -224,8 +206,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
       ),
     );
   }
-
-  Color _getColorFromEnum(ColorEnum color) {
+Color _getColorFromEnum(ColorEnum color) {
     switch (color) {
       case ColorEnum.AMARILLO:
         return Colors.yellow;

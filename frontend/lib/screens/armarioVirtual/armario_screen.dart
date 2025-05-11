@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
-import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
+import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
+import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class ArmarioScreen extends StatefulWidget {
@@ -13,11 +13,7 @@ class ArmarioScreen extends StatefulWidget {
 
 class _ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
-  bool _mostrarFiltros = false;
   final List<dynamic> _articulos = [];
-  final TextEditingController _searchController = TextEditingController();
-  String _busqueda = '';
-  Map<String, dynamic> filtros = {};
 
   @override
   void initState() {
@@ -26,170 +22,135 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   }
 
   Future<void> _cargarArticulosPropios() async {
-    setState(() {
-      _articulos.clear();
-    });
+    setState(() => _articulos.clear());
     try {
-      final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
+      final stream = _apiManager.getArticulosPropiosStream();
       await for (final articulo in stream) {
         if (!mounted) return;
-        setState(() {
-          _articulos.add(articulo);
-        });
+        setState(() => _articulos.add(articulo));
       }
     } catch (e) {
       print("Error al cargar artículos propios: $e");
     }
   }
 
-  void _cerrarFiltros() {
-    setState(() {
-      _mostrarFiltros = false;
-    });
-  }
+  Widget _buildCategoriaHorizontal(String categoria, List<dynamic> articulos) {
+    final articulosCategoria = articulos
+        .where((a) => (a['categoria'] ?? '').toString().toUpperCase() == categoria)
+        .toList();
 
-  @override
-  Widget build(BuildContext context) {
-    final articulosFiltrados = _articulos.where((articulo) {
-      final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
-      return nombre.contains(_busqueda.toLowerCase());
-    }).toList();
+    if (articulosCategoria.isEmpty) return const SizedBox.shrink();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Armario'),
-      ),
-      body: Stack(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (value) {
-                          setState(() {
-                            _busqueda = value;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Buscar por nombre',
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.all(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.filter_alt),
-                      onPressed: () => setState(() => _mostrarFiltros = true),
-                      tooltip: 'Mostrar filtros',
-                    ),
-                  ],
-                ),
+              Text(
+                categoria[0] + categoria.substring(1).toLowerCase(),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _cargarArticulosPropios,
-                  child: articulosFiltrados.isEmpty
-                      ? const Center(child: Text('No se encontraron artículos.'))
-                      : GridView.builder(
-                          key: const PageStorageKey('grid'),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.75,
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          itemCount: articulosFiltrados.length,
-                          itemBuilder: (context, index) {
-                            final articulo = articulosFiltrados[index];
-                            if (articulo is! Map<String, dynamic> || !articulo.containsKey('nombre')) {
-                              return const Card(
-                                child: Center(child: Text('Artículo inválido')),
-                              );
-                            }
-                            final nombre = articulo['nombre'] as String? ?? 'Sin nombre';
-                            return KeepAliveWrapper(
-                              child: ArticuloPropioWidget(
-                                nombre: nombre,
-                                articulo: articulo,
-                                onTap: _cargarArticulosPropios,
-                              ),
-                            );
-                          },
-                        ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PantallaVerTodos(categoria: categoria),
+                  ),
+                ),
+                child: Row(
+                  children: const [
+                    Text("Ver todos", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey),
+                  ],
                 ),
               ),
             ],
           ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            top: 0,
-            right: _mostrarFiltros ? 0 : -MediaQuery.of(context).size.width * 0.8,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: Material(
-              elevation: 16,
-              child: FiltrosArticuloPropioScreen(
-                filtrosIniciales: filtros,
-                onAplicar: (nuevosFiltros) {
-                  setState(() {
-                    filtros = nuevosFiltros;
-                    _mostrarFiltros = false;
-                  });
-                  _cargarArticulosPropios();
-                },
-                onCerrar: _cerrarFiltros,
-              ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 160,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemCount: articulosCategoria.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final articulo = articulosCategoria[index];
+                return SizedBox(
+                  width: 120,
+                  child: ArticuloPropioWidget(
+                    nombre: articulo['nombre'] ?? '',
+                    articulo: articulo,
+                    onTap: _cargarArticulosPropios,
+                  ),
+                );
+              },
             ),
-          )
+          ),
         ],
       ),
-      floatingActionButton: _mostrarFiltros
-          ? null
-          : FloatingActionButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
-                );
-                if (result == true) {
-                  _cargarArticulosPropios();
-                }
-              },
-              child: const Icon(Icons.add),
-              tooltip: 'Añadir prenda',
-            ),
     );
   }
-}
-
-class KeepAliveWrapper extends StatefulWidget {
-  final Widget child;
-  const KeepAliveWrapper({super.key, required this.child});
-
-  @override
-  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
-}
-
-class _KeepAliveWrapperState extends State<KeepAliveWrapper>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Image.asset('assets/titulos/MiArmario.png', height: 40),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _cargarArticulosPropios,
+        child: _articulos.isEmpty
+            ? const Center(child: Text('No se encontraron artículos.'))
+            : ListView(
+                children: [
+                  _buildCategoriaHorizontal('ROPA', _articulos),
+                  _buildCategoriaHorizontal('CALZADO', _articulos),
+                  _buildCategoriaHorizontal('ACCESORIOS', _articulos),
+                  const SizedBox(height: 80),
+                ],
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          showModalBottomSheet(
+            context: context,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (BuildContext context) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt),
+                      title: const Text('Subir prenda'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                        );
+                        if (result == true) {
+                          _cargarArticulosPropios();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+        child: const Icon(Icons.add),
+        tooltip: 'Añadir prenda',
+      ),
+    );
   }
 }

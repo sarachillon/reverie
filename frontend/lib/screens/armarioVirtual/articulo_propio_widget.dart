@@ -16,7 +16,7 @@ class ArticuloPropioWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagenRaw = articulo['imagen'];
+    final imagenRaw = articulo['fotoUrl'];
     final base64Image = (imagenRaw is String && imagenRaw.isNotEmpty) ? imagenRaw : null;
 
     return InkWell(
@@ -51,14 +51,20 @@ class ArticuloPropioWidget extends StatelessWidget {
                     )
                   : const Center(child: Icon(Icons.image)),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                nombre,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
+            SizedBox(
+            height: 40,
+                child: Center(
+                  child: Text(
+                    nombre,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    softWrap: true,
+                    maxLines: 2,
+                    overflow: TextOverflow.fade,
+                  ),
+                ),
               ),
-            ),
+
           ],
         ),
       ),
