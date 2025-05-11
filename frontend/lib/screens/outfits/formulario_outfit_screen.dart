@@ -55,7 +55,7 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
         );
       }).toList();
 
-      final ocasionEnum = (outfit['ocasion'] as List<dynamic>).map((o) {
+      final ocasionEnum = (outfit['ocasiones'] as List<dynamic>).map((o) {
         return OcasionEnum.values.firstWhere(
           (e) => e.name == o,
           orElse: () => throw Exception("Ocasion desconocida: $o"),

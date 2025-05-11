@@ -72,7 +72,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 160,
+            height: 190,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -81,11 +81,12 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
               itemBuilder: (context, index) {
                 final articulo = articulosCategoria[index];
                 return SizedBox(
-                  width: 120,
+                  width: 150,
                   child: ArticuloPropioWidget(
                     nombre: articulo['nombre'] ?? '',
                     articulo: articulo,
                     onTap: _cargarArticulosPropios,
+                    
                   ),
                 );
               },

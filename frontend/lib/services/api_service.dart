@@ -46,4 +46,6 @@ abstract class ApiService {
   Future<void> editarArticuloPropio({required int id, Image? foto, String? nombre, CategoriaEnum? categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, List<OcasionEnum>? ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores });
 
   Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros});
+
+  Future<void> deleteOutfitPropio({required int id});
 }
