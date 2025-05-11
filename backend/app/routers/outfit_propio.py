@@ -132,3 +132,20 @@ async def obtener_outfit(
     return outfit
 
 
+@router.delete("/{outfit_id}") 
+async def eliminar_outfit(
+    outfit_id: int,
+    db: Session = Depends(get_db)
+):
+    outfit = db.query(OutfitPropio).filter(OutfitPropio.id == outfit_id).first()
+    if not outfit:
+        raise HTTPException(status_code=404, detail="Outfit no encontrado")
+
+    try:
+        await delete_imagen_s3(outfit.collage_key)
+        db.delete(outfit)
+        db.commit()
+        return {"message": "Outfit eliminado correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al eliminar el outfit: {str(e)}")

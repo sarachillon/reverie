@@ -1,5 +1,3 @@
-// ARCHIVO: detail_screen.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';

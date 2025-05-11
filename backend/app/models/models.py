@@ -68,7 +68,7 @@ class Interaccion(Base):
 class OutfitPropio(Base):
     __tablename__ = "outfits_propios"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     titulo = Column(String, nullable=False)
     descripcion_generacion = Column(String)  

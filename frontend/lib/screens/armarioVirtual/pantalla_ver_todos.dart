@@ -3,6 +3,7 @@ import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
 import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
 
 class PantallaVerTodos extends StatefulWidget {
   final String categoria;
@@ -100,30 +101,26 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
         ],
       ),
       body: Stack(
+        
         children: [
-          RefreshIndicator(
-            onRefresh: _cargarArticulos,
-            child: articulosFiltrados.isEmpty
-                ? const Center(child: Text('No se encontraron artículos.'))
-                : GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: articulosFiltrados.length,
-                    itemBuilder: (context, index) {
-                      final articulo = articulosFiltrados[index];
-                      return ArticuloPropioWidget(
-                        nombre: articulo['nombre'] ?? '',
-                        articulo: articulo,
-                        onTap: _cargarArticulos,
-                      );
-                    },
-                  ),
+          Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              crossAxisSpacing: 30,
+              mainAxisSpacing: 30,
+              childAspectRatio: 3, // Ajusta este valor si quieres hacerlas más altas
+            ),
+            itemCount: articulosFiltrados.length,
+            itemBuilder: (context, index) {
+              final articulo = articulosFiltrados[index];
+              return ArticuloPropioResumen(
+                articulo: articulo,
+              );
+            },
           ),
+        ),  
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,

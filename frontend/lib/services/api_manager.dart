@@ -139,4 +139,12 @@ class ApiManager {
     yield* _instance!.getOutfitsPropiosStream(filtros: filtros);
   }
 
+
+  Future<void> deleteOutfitPropio({required int id}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.deleteOutfitPropio(id: id);
+  }
+
 }

@@ -531,4 +531,26 @@ class RealApiService implements ApiService {
       throw Exception('Error al cargar outfits (stream)');
     }
   }
+
+  
+  @override
+  Future<void> deleteOutfitPropio({required int id}) async {
+    final url = Uri.parse('$_baseUrl/outfits/$id');
+
+    // Obtén el token desde GoogleSignInService
+    final token = await GoogleSignInService().getToken();
+
+    if (token == null) {
+      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+    }
+
+    final response = await http.delete(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Error al eliminar artículo: ${response.body}');
+    }
+  }
 }

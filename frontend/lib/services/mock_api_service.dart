@@ -128,7 +128,7 @@ class MockApiService implements ApiService {
     final articulos = [
         {
           'nombre': 'Camiseta de prueba',
-          'fotoUrl': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
+          'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
           'categoria': CategoriaEnum.ROPA.name,
           'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS.name,
           'ocasiones': [OcasionEnum.CASUAL.name],
@@ -137,7 +137,7 @@ class MockApiService implements ApiService {
         },
         {
           'nombre': 'Pantalones de prueba',
-          'fotoUrl': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
+          'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
           'categoria': CategoriaEnum.ROPA.name,
           'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES.name,
           'ocasiones': [OcasionEnum.TRABAJO_FORMAL.name],
@@ -267,8 +267,15 @@ Future<void> editarArticuloPropio({
   }
 
 
+  @override
   Future<File?> procesarImagen({required File imagenOriginal}) async {
     return File('assets/logo.png');
+  }
+
+
+  @override
+  Future<void> deleteOutfitPropio({required int id}) async {
+    print("Artículo con ID $id eliminado.");
   }
 
 }

@@ -56,19 +56,31 @@ async def generar_outfit_propio(
     if not partes_arriba or not partes_abajo:
         print("No se puede generar outfit")
         return None 
+    
+    combinaciones_validas = [
+        (a, b)
+        for a in partes_arriba
+        for b in partes_abajo
+        if (
+            (len(a.colores) <= 1 or len(b.colores) <= 1)  # al menos uno con un solo color
+            and not (len(a.colores) > 1 and len(b.colores) > 1)  # no ambos con múltiples colores
+        )
+    ]
 
-    arriba = random.choice(partes_arriba)
-    abajo = random.choice(partes_abajo)
+    if not combinaciones_validas:
+        print("No se puede generar outfit que cumpla con la restricción de colores")
+        return None
+
+    arriba, abajo = random.choice(combinaciones_validas)
 
     imagen_arriba = await get_imagen_s3(arriba.foto)
     imagen_abajo = await get_imagen_s3(abajo.foto)
     collage_bytes = crear_collage_outfit(imagen_arriba, imagen_abajo)
-    collage_key = await subir_imagen_s3_bytes(collage_bytes, f"collage_{usuario.id}.png")
+    collage_key = await subir_imagen_s3_bytes(collage_bytes, f"collage_{usuario.id}_{datetime.utcnow().timestamp()}.png")
 
     outfit = OutfitPropio(
         usuario=usuario,
         titulo=titulo,
-        numero=1,
         descripcion_generacion=descripcion_generacion or "",
         fecha_creacion=datetime.now(),
         ocasiones=[ocasiones] if ocasiones else [],
