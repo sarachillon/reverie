@@ -22,23 +22,22 @@ async def generar_outfit(
     request: Request,
     titulo: str = Form(...),
     descripcion: Optional[str] = Form(None),
-    ocasiones: List[OcasionEnum] = Form(None),
-    temporadas: Optional[List[TemporadaEnum]] = Form(None, alias="temporadas[]"),
-    colores: Optional[List[ColorEnum]] = Form(None, alias="colores[]"),
+    ocasiones: List[OcasionEnum] = Form(..., alias="ocasiones[]"),
+    temporadas: Optional[List[TemporadaEnum]] = Form([], alias="temporadas[]"),
+    colores: Optional[List[ColorEnum]] = Form([], alias="colores[]"),
     db: Session = Depends(get_db)
 ):
     usuario_actual: Usuario = await obtener_usuario_actual(request, db)
     if not usuario_actual:
         raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-
-    temporada = temporadas[0] if temporadas else None
+    
     outfit = await generar_outfit_propio(
         usuario=usuario_actual,
         titulo=titulo,
         descripcion_generacion=descripcion,
-        temporada=temporada,
+        temporadas=temporadas,
         ocasiones=ocasiones,
-        colores=colores
+        colores=colores,
     )
 
     if not outfit:
@@ -57,6 +56,15 @@ async def generar_outfit(
     for articulo in outfit.articulos_propios:
         imagen_bytes = await get_imagen_s3(articulo.foto)
         articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+
+    # Añadir imagen del collage 
+    if outfit.collage_key:
+        try:
+            collage_bytes = await get_imagen_s3(outfit.collage_key)
+            outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+        except Exception as e:
+            print(f"Error al obtener collage: {e}")
+            outfit.imagen = ""
 
     return outfit
 
@@ -106,8 +114,9 @@ async def obtener_outfits_stream(
                         except Exception as e_col:
                             print(f"⚠️  Error al obtener collage {outfit.collage_key}: {e_col}")
 
+                    setattr(outfit, "imagen", imagen_collage)
                     schema = OutfitPropioResponse.from_orm(outfit).dict()
-                    schema["imagen"] = imagen_collage  # Añadir imagen al dict
+                    
                     yield json.dumps(schema) + "\n"
 
                 except Exception as e_outfit:

@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_manager.dart';
 import 'launcher_screen.dart';
 import 'colecciones_screen.dart';
-import 'buscador_screen.dart';
+import 'perfil/perfil_screen.dart';
 import 'armarioVirtual/armario_screen.dart';
 import 'outfits/outfits_screen.dart';
 import '../services/google_sign_in_service.dart';
@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     ColeccionesScreen(),
-    BuscadorScreen(),
+    PerfilScreen(),
     ArmarioScreen(),
     OutfitsScreen(),
   ];
@@ -76,8 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Colecciones',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Buscador',
+            icon: Icon(Icons.person),
+            label: 'Perfil',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.checkroom),

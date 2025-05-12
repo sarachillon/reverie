@@ -16,6 +16,21 @@ import '../services/google_sign_in_service.dart';
 class RealApiService implements ApiService {
   final String _baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:8000';
 
+
+
+
+ /*------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ -------------------FUNCIONES DE PERFIL------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------*/
+
+
   @override
   Future<dynamic> loginWithEmail({required String email}) async {
     final url = Uri.parse('$_baseUrl/auth/login?email=$email'); 
@@ -72,7 +87,7 @@ class RealApiService implements ApiService {
 
   @override
   Future<dynamic> checkUserExists({required String email}) async {
-    final url = Uri.parse('$_baseUrl/auth/users/$email');
+    final url = Uri.parse('$_baseUrl/auth/users/email/$email');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -97,6 +112,74 @@ class RealApiService implements ApiService {
       throw Exception('Error en el ping');
     }
   }
+
+
+  @override
+  Future<Map<String, dynamic>> getUsuarioActual() async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/auth/users/me'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Error al obtener el usuario actual');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/auth/users'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Error al obtener todos los usuarios');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserById({required int id}) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/auth/users/id/$id'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Error al obtener el usuario por ID');
+    }
+  }
+
+  
+
+
+ /*------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ -------------------FUNCIONES DE ARTICULOS---------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------
+ --------------------------------------------------------------*/
+
 
   @override
   Future<void> guardarArticuloPropio({
@@ -462,20 +545,26 @@ class RealApiService implements ApiService {
     if (descripcion != null && descripcion.isNotEmpty) {
       request.fields['descripcion'] = descripcion;
     }
-    
+
     for (final o in ocasiones) {
-        request.fields['ocasiones[]'] = o.name;
-      }
+      request.files.add(
+        await http.MultipartFile.fromString('ocasiones[]', o.name),
+      );
+    }
 
     if (temporadas != null) {
       for (final t in temporadas) {
-        request.fields['temporadas[]'] = t.name;
+        request.files.add(
+          await http.MultipartFile.fromString('temporadas[]', t.name),
+        );
       }
     }
 
     if (colores != null) {
       for (final c in colores) {
-        request.fields['colores[]'] = c.name;
+        request.files.add(
+          await http.MultipartFile.fromString('colores[]', c.name),
+        );
       }
     }
 

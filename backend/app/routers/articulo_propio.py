@@ -140,6 +140,7 @@ async def obtener_articulos_propios(
             print(f"Fetching image for key: {articulo.foto}") 
             imagen_bytes = await get_imagen_s3(articulo.foto)
             imagen_base64 = base64.b64encode(imagen_bytes).decode('utf-8')
+            print(f"BASE64 code: {imagen_base64}")
             articulos_con_imagenes.append(ArticuloPropioConImagen(
                 **articulo.__dict__,
                 imagen=imagen_base64

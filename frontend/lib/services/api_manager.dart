@@ -147,4 +147,29 @@ class ApiManager {
     await _instance!.deleteOutfitPropio(id: id);
   }
 
+
+
+  /*USUARIOS*/
+  Future<Map<String, dynamic>> getUsuarioActual() async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getUsuarioActual();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    } else {
+      return _instance!.getAllUsers();
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserById({required int id}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getUserById(id: id);
+  }
+
 }

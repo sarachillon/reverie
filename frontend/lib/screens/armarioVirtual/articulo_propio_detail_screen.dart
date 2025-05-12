@@ -130,9 +130,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
               const SizedBox(height: 8),
               AspectRatio(
                 aspectRatio: 1,
-                child: (email == "testing.reverie@gmail.com")
-                    ? Image.asset('assets/ropa_mock.png', fit: BoxFit.cover)
-                    : Image.memory(imagenBytes, fit: BoxFit.cover),
+                child: Image.memory(imagenBytes, fit: BoxFit.cover),
               ),
               Expanded(
                 child: SingleChildScrollView(

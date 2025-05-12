@@ -1,149 +1,169 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 
 class OutfitDetailScreen extends StatelessWidget {
-  final String titulo;
-  final String? descripcion;
-  final List<ColorEnum> colores;
-  final List<TemporadaEnum> temporadas;
-  final List<OcasionEnum> ocasiones;
-  final List<dynamic> articulosPropios;
+  final Map<String, dynamic> outfit;
+  final bool mostrarAcciones;
+  final VoidCallback? onAceptar;
+  final VoidCallback? onRechazar;
 
   const OutfitDetailScreen({
     super.key,
-    required this.titulo,
-    this.descripcion,
-    required this.colores,
-    required this.temporadas,
-    required this.ocasiones,
-    required this.articulosPropios,
+    required this.outfit,
+    this.mostrarAcciones = false,
+    this.onAceptar,
+    this.onRechazar,
   });
 
   @override
   Widget build(BuildContext context) {
-    final partesArriba = {
-      SubcategoriaRopaEnum.CAMISAS,
-      SubcategoriaRopaEnum.CAMISETAS,
-      SubcategoriaRopaEnum.JERSEYS,
-      SubcategoriaRopaEnum.MONOS,
-      SubcategoriaRopaEnum.TRAJES,
-    };
-    final partesAbajo = {
-      SubcategoriaRopaEnum.PANTALONES,
-      SubcategoriaRopaEnum.VAQUEROS,
-      SubcategoriaRopaEnum.FALDAS_CORTAS,
-      SubcategoriaRopaEnum.FALDAS_LARGAS,
-      SubcategoriaRopaEnum.BERMUDAS,
-    };
-    final cuerpoEntero = {
-      SubcategoriaRopaEnum.MONOS,
-      SubcategoriaRopaEnum.VESTIDOS_CORTOS,
-      SubcategoriaRopaEnum.VESTIDOS_LARGOS,
-    };
+    final titulo = outfit['titulo'] ?? '';
+    final descripcion = outfit['descripcion_generacion'] ?? '';
+    final colores = (outfit['colores'] as List?)
+            ?.map((c) => ColorEnum.values.firstWhere((e) => e.name == c, orElse: () => ColorEnum.BLANCO))
+            .toList() ??
+        [];
+    final temporadas = (outfit['temporadas'] as List?)
+            ?.map((t) => TemporadaEnum.values.firstWhere((e) => e.name == t, orElse: () => TemporadaEnum.VERANO))
+            .toList() ??
+        [];
+    final ocasiones = (outfit['ocasiones'] as List?)
+            ?.map((o) => OcasionEnum.values.firstWhere((e) => e.name == o, orElse: () => OcasionEnum.CASUAL))
+            .toList() ??
+        [];
 
-    dynamic prendaArriba;
-    dynamic prendaAbajo;
-    dynamic prendaCuerpoEntero;
+    final raw = outfit['imagen'];
 
-    for (final articulo in articulosPropios) {
-      final subStr = articulo['subcategoria'];
-      if (subStr == null) continue;
-
-      try {
-        final sub = SubcategoriaRopaEnum.values.firstWhere((e) => e.name == subStr);
-
-        if (cuerpoEntero.contains(sub)) {
-          prendaCuerpoEntero = articulo;
-        } else if (partesArriba.contains(sub)) {
-          prendaArriba = articulo;
-        } else if (partesAbajo.contains(sub)) {
-          prendaAbajo = articulo;
-        }
-      } catch (_) {
-        // Ignora subcategorías que no están en SubcategoriaRopaEnum
-        continue;
+    Uint8List? imagenBytes;
+    try {
+      final raw = outfit['imagen'];
+      if (raw != null && raw.isNotEmpty) {
+        final base64Str = raw.contains(',') ? raw.split(',').last : raw;
+        imagenBytes = base64Decode(base64Str);
       }
+    } catch (e) {
+      print("ERROR al decodificar imagen: $e");
     }
 
-    Widget buildImagen(dynamic articulo, {double width = 220, double height = 220}) {
-      final imagenBase64 = articulo['imagen'];
-      final imagenBytes = base64Decode(imagenBase64);
-      return Image.memory(
-        imagenBytes,
-        width: width,
-        height: height,
-        fit: BoxFit.contain,
-      );
-    }
-
-
-    Widget buildInfo(String label, String value) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "$label: ",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Flexible(child: Text(value)),
-          ],
-        ),
-      );
-    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Outfit generado')),
-      body: SafeArea(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).cardColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+        title: Image.asset('assets/logo_reverie_text.png', height: 32),
+      ),
+      body: Stack(
+  children: [
+    if (imagenBytes != null)
+      SizedBox(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.width * 1.5, 
+        child: Image.memory(imagenBytes, fit: BoxFit.contain),
+      ),
+
+    Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(titulo, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              if (descripcion != null && descripcion!.isNotEmpty)
-                Text(descripcion!, style: const TextStyle(fontSize: 16, color: Colors.black87)),
-              const SizedBox(height: 24),
               Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (prendaCuerpoEntero != null)
-                      buildImagen(prendaCuerpoEntero, height: 320, width: 320),
-                    if (prendaCuerpoEntero == null && prendaArriba != null)
-                      buildImagen(prendaArriba, height: 220, width: 220),
-                    if (prendaCuerpoEntero == null && prendaArriba != null && prendaAbajo != null)
-                      const SizedBox(height: 12),
-                    if (prendaCuerpoEntero == null && prendaAbajo != null)
-                      buildImagen(prendaAbajo, height: 220, width: 220),
-                  ],
+                child: Text(
+                  outfit['titulo'] ?? '',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
-
-
-
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 12),
-              buildInfo(
-                "Ocasiones",
-                 ocasiones.map((c) => c.value).join(", "),
-              ),
-              buildInfo(
-                "Colores",
-                colores.map((c) => c.value).join(", "),
-              ),
-              buildInfo(
-                "Temporadas",
-                temporadas.map((t) => t.value).join(", "),
-              ),
+              if ((outfit['descripcion_generacion'] ?? '').toString().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Center(child: Text(outfit['descripcion_generacion'])),
+              ],
+              if (mostrarAcciones) ...[
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                        onPressed: onAceptar,
+                        child: const Text("Aceptar"),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: onRechazar,
+                        child: const Text("Rechazar"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
       ),
+    ),
+  ],
+),
+
     );
+  }
+
+  Widget _buildPrettyRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 16))),
+        ],
+      ),
+    );
+  }
+
+  Color _getColorFromEnum(ColorEnum color) {
+    switch (color) {
+      case ColorEnum.AMARILLO:
+        return Colors.yellow;
+      case ColorEnum.NARANJA:
+        return Colors.orange;
+      case ColorEnum.ROJO:
+        return Colors.red;
+      case ColorEnum.ROSA:
+        return Colors.pink;
+      case ColorEnum.VIOLETA:
+        return Colors.purple;
+      case ColorEnum.AZUL:
+        return Colors.blue;
+      case ColorEnum.VERDE:
+        return Colors.green;
+      case ColorEnum.MARRON:
+        return Colors.brown;
+      case ColorEnum.GRIS:
+        return Colors.grey;
+      case ColorEnum.BLANCO:
+        return Colors.white;
+      case ColorEnum.NEGRO:
+        return Colors.black;
+    }
   }
 }
