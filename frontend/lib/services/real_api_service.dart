@@ -637,4 +637,25 @@ class RealApiService implements ApiService {
       throw Exception('Error al eliminar artículo: ${response.body}');
     }
   }
+
+
+  @override
+  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
+
+    final url = Uri.parse('$_baseUrl/outfits/feed?page=$page&page_size=$pageSize');
+
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+    });
+
+    if (response.statusCode == 200) {
+      return (jsonDecode(response.body) as List).cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Error al cargar feed: ${response.body}');
+    }
+  }
+
+
 }

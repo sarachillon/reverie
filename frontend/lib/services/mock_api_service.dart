@@ -256,4 +256,9 @@ Future<void> editarArticuloPropio({
     print("Artículo con ID $id eliminado.");
   }
 
+  @override
+  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+    return fakeOutfits;
+  }
+
 }

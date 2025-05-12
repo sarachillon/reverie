@@ -94,6 +94,7 @@ flutter:
   - assets/titulos/ropa.png
   - assets/titulos/calzado.png
   - assets/titulos/accesorios.png
+  - assets/titulos/Outfits.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

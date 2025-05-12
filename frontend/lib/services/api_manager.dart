@@ -100,18 +100,6 @@ class ApiManager {
     return _instance!.procesarImagen(imagenOriginal: imagenOriginal);
   }
 
-  Future<Map<String, dynamic>> generarOutfitPropio({
-    required String titulo,
-    String? descripcion,
-    required List<OcasionEnum> ocasiones,
-    List<TemporadaEnum>? temporadas,
-    List<ColorEnum>? colores,
-  }) async {
-    if (_instance == null) {
-      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
-    }
-    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
-  }
 
   Future<void> editarArticuloPropio({
     required int id,
@@ -131,6 +119,22 @@ class ApiManager {
     return _instance!.editarArticuloPropio(id: id, foto: foto, nombre: nombre, categoria: categoria, subcategoriaAccesorios: subcategoriaAccesorios, subcategoriaCalzado: subcategoriaCalzado, subcategoriaRopa: subcategoriaRopa, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
   }
 
+  // OUTFITS 
+
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required List<OcasionEnum> ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
+  }
+
+
 
   Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros}) async* {
     if (_instance == null) {
@@ -145,6 +149,14 @@ class ApiManager {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
     await _instance!.deleteOutfitPropio(id: id);
+  }
+
+  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getFeedOutfits();
+  
   }
 
 
