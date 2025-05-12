@@ -14,6 +14,9 @@ from app.utils.auth import obtener_usuario_actual
 from app.utils.generacion_outfits import generar_outfit_propio
 from app.utils.s3 import *
 from app.schemas.outfit_propio import OutfitPropioResponse
+from fastapi.responses import JSONResponse
+import base64
+from app.utils.s3 import get_imagen_s3
 
 router = APIRouter(prefix="/outfits")
 
@@ -67,6 +70,7 @@ async def generar_outfit(
             outfit.imagen = ""
 
     return outfit
+
 
 
 @router.get("/stream", response_class=StreamingResponse)
@@ -129,6 +133,82 @@ async def obtener_outfits_stream(
         raise HTTPException(status_code=500, detail="Error interno al procesar outfits.")
 
 
+
+
+@router.get("/feed")
+async def obtener_feed_outfits(
+    request: Request,
+    page: int = Query(0, ge=0),
+    page_size: int = Query(5, gt=0),
+    db: Session = Depends(get_db),
+):
+    try:
+        usuario_actual = await obtener_usuario_actual(request, db)
+        if not usuario_actual:
+            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+
+        # IDs de usuarios seguidos
+        seguidos_ids = [rel.id_seguido for rel in usuario_actual.seguidos]
+
+        # Usuarios recomendados: más seguidos (excluyendo seguidos y uno mismo)
+        from sqlalchemy.orm import aliased
+
+        Seguidor = aliased(Usuario)
+
+        subquery = (
+            db.query(Usuario.id)
+            .join(Seguidor, Usuario.seguidores)  
+            .group_by(Usuario.id)
+            .order_by(Usuario.id.desc())
+            .filter(Usuario.id.notin_(seguidos_ids + [usuario_actual.id]))
+            .limit(5)
+            .subquery()
+        )
+
+
+        ids_finales = seguidos_ids + [id for (id,) in db.query(subquery).all()]
+
+        # Consulta de outfits
+        outfits = (
+            db.query(OutfitPropio)
+            .filter(OutfitPropio.usuario_id.in_(ids_finales))
+            .order_by(OutfitPropio.fecha_creacion.desc())
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        
+
+        resultados = []
+        for outfit in outfits:
+            # Añadir imagen a cada artículo
+            for articulo in outfit.articulos_propios:
+                try:
+                    imagen_bytes = await get_imagen_s3(articulo.foto)
+                    articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                except:
+                    articulo.imagen = ""
+
+            # Añadir imagen del collage
+            try:
+                if outfit.collage_key:
+                    collage_bytes = await get_imagen_s3(outfit.collage_key)
+                    outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+                else:
+                    outfit.imagen = ""
+            except:
+                outfit.imagen = ""
+
+            resultados.append(OutfitPropioResponse.from_orm(outfit))
+
+        return resultados
+
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+    
+
 @router.get("/{outfit_id}", response_model=OutfitPropioResponse)
 async def obtener_outfit(
     outfit_id: int,
@@ -139,7 +219,6 @@ async def obtener_outfit(
         raise HTTPException(status_code=404, detail="Outfit no encontrado")
 
     return outfit
-
 
 @router.delete("/{outfit_id}") 
 async def eliminar_outfit(
@@ -158,3 +237,5 @@ async def eliminar_outfit(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar el outfit: {str(e)}")
+    
+
