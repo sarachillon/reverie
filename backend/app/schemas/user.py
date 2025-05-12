@@ -15,7 +15,7 @@ class UserOut(BaseModel):
     genero_pref: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TokenUserResponse(BaseModel):
     access_token: str

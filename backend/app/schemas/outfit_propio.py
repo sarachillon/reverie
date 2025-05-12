@@ -12,6 +12,7 @@ class OutfitPropioResponse(BaseModel):
     colores: Optional[List[ColorEnum]]
     articulos_propios: List[ArticuloPropioConImagen]
     collage_key: Optional[str]
+    imagen: Optional[str] 
 
     class Config:
         from_attributes = True

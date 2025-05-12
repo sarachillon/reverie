@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:frontend/services/fake_db.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'api_service.dart';
@@ -42,6 +42,55 @@ class MockApiService implements ApiService {
     }
   }
 
+
+  @override
+  Future<Map<String, dynamic>> getUsuarioActual() async {
+    return {
+        'id': 1,
+        'isername': 'Testing',
+        'fotoUrl': 'testing.reverie@gmail.com',
+        'edad': 23,
+        'genero_pref': GeneroPrefEnum.AMBOS.name,
+        "articulos_propios": [
+          {
+            "id": 1,
+            "nombre": "Camiseta blanca",
+            "foto_url": "https://example.com/mock/camiseta.png",
+            "categoria": CategoriaEnum.ROPA,
+            "subcategoria_ropa": SubcategoriaRopaEnum.CAMISETAS,
+            "colores": [ColorEnum.AZUL],
+            "temporadas": [TemporadaEnum.ENTRETIEMPO],
+            "ocasiones": [OcasionEnum.CASUAL],
+          },
+          {
+            "id": 2,
+            "nombre": "Pantalón negro",
+            "foto_url": "https://example.com/mock/pantalon.png",
+            "categoria": CategoriaEnum.ROPA,
+            "subcategoria_ropa": SubcategoriaRopaEnum.PANTALONES,
+            "colores": [ColorEnum.GRIS],
+            "temporadas": [TemporadaEnum.ENTRETIEMPO],
+            "ocasiones": [OcasionEnum.CASUAL],
+          }
+        ],
+        "outfits_propios": [
+
+        ]
+      };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    return fakeUsuarios;
+  }
+
+
+  @override
+  Future<Map<String, dynamic>> getUserById({required int id}) async {
+    return fakeUsuarios.firstWhere((user) => user['id'] == id);
+  }
+
+
   @override
   Future<String> ping() async {
     return 'Pong!';
@@ -80,28 +129,7 @@ class MockApiService implements ApiService {
 
   @override
   Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
-    // Simulación de respuesta de artículos propios
-    return [
-      {
-        'nombre': 'Camiseta de prueba',
-        'fotoUrl': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-        'categoria': CategoriaEnum.ROPA.name,
-        'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS.name,
-        'ocasiones': [OcasionEnum.CASUAL.name],
-        'temporadas': [TemporadaEnum.VERANO.name],
-        'colores': [ColorEnum.AZUL.name],
-
-      },
-      {
-        'nombre': 'Pantalones de prueba',
-        'fotoUrl': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-        'categoria': CategoriaEnum.ROPA.name,
-        'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES.name,
-        'ocasiones': [OcasionEnum.TRABAJO_FORMAL.name],
-        'temporadas': [TemporadaEnum.INVIERNO.name],
-        'colores': [ColorEnum.ROJO.name],
-      },
-    ];
+    return fakeArticulos;
   }
 
   @override
@@ -125,31 +153,11 @@ class MockApiService implements ApiService {
 
   @override
   Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
-    final articulos = [
-        {
-          'nombre': 'Camiseta de prueba',
-          'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-          'categoria': CategoriaEnum.ROPA.name,
-          'subcategoriaRopa': SubcategoriaRopaEnum.CAMISAS.name,
-          'ocasiones': [OcasionEnum.CASUAL.name],
-          'temporadas': [TemporadaEnum.VERANO.name],
-          'colores': [ColorEnum.AZUL.name],
-        },
-        {
-          'nombre': 'Pantalones de prueba',
-          'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-          'categoria': CategoriaEnum.ROPA.name,
-          'subcategoriaRopa': SubcategoriaRopaEnum.PANTALONES.name,
-          'ocasiones': [OcasionEnum.TRABAJO_FORMAL.name],
-          'temporadas': [TemporadaEnum.INVIERNO.name],
-          'colores': [ColorEnum.ROJO.name],
-        },
-    ];
-    
-    for (final articulo in articulos) {
+    for (final articulo in fakeArticulos) {
       yield articulo;
     }
   }
+
 
   @override
   Future<void> deleteArticuloPropio({required int id}) async {
@@ -229,42 +237,12 @@ Future<void> editarArticuloPropio({
 
   @override
   Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros}) async* {
-    final outfits = [
-      {
-        'titulo': 'Outfit Casual Verano',
-        'descripcion': 'Ideal para días soleados',
-        'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-        'ocasiones': [OcasionEnum.CASUAL.name],
-        'temporadas': [TemporadaEnum.VERANO.name],
-        'colores': [ColorEnum.AZUL.name],
-        'articulos_propios': [
-          {
-            'nombre': 'Camiseta Azul',
-            'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-            'subcategoria': SubcategoriaRopaEnum.CAMISETAS.name,
-          },
-          {
-            'nombre': 'Pantalón Rojo',
-            'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-            'subcategoria': SubcategoriaRopaEnum.PANTALONES.name,
-          },
-        ],
-      },
-      {
-        'titulo': 'Outfit Formal Invierno',
-        'descripcion': 'Perfecto para reuniones de trabajo',
-        'imagen': 'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAB1n0lEQVR4nAGUdWuKAU9t0COB8wRjXneXlWJc3/ici+6eC4qBBsud9x6GzNrA/EYBOQffXkcSNssH7AIUeTstAqsDeuFYWV6ozxvLtKUj7cbxw7TIh8LzsKUEuUdbInd0UhiHwFVwSJOIDzEIC7FlD/5v+MZ8CykBX2v+VSy84s0R8lPQkX8jL70Xey9RNP2984l4Yzuc/aFfKuZ3I2Y9ufm5YDmreejP7Cej+B4RUDgVTReQw9uKV93T+92k',
-        'ocasiones': [OcasionEnum.TRABAJO_FORMAL.name],
-        'temporadas': [TemporadaEnum.INVIERNO.name],
-        'colores': [ColorEnum.ROJO.name],
-        'articulos_propios': [],
-      },
-    ];
-
-    for (final outfit in outfits) {
+    for (final outfit in fakeOutfits) {
       yield outfit;
     }
   }
+
+
 
 
   @override

@@ -94,9 +94,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: (email == "testing.reverie@gmail.com")
-                    ? Image.asset('assets/mock/ropa_mock.png', width: 100, height: double.infinity, fit: BoxFit.cover)
-                    : Image.memory(imagenBytes, width: 100, height: double.infinity, fit: BoxFit.cover),
+                child: Image.memory(imagenBytes, width: 100, height: double.infinity, fit: BoxFit.cover),
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -81,14 +81,12 @@ class ArticuloPropioWidget extends StatelessWidget {
               child: SizedBox(
                 height: 130,
                 width: double.infinity,
-                child: imagenBytes != null
-                    ? Image.memory(
+                child: Image.memory(
                         imagenBytes,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             const Center(child: Icon(Icons.broken_image)),
                       )
-                    : const Center(child: Icon(Icons.image)),
               ),
             ),
             Padding(

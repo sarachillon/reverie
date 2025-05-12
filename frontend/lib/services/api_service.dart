@@ -8,6 +8,9 @@ import 'package:frontend/enums/enums.dart';
 abstract class ApiService {
   Future<String> ping();
 
+
+  // USUARIOS
+
   Future<dynamic> loginWithEmail({required String email});
 
   Future<dynamic> registerUser({
@@ -18,7 +21,16 @@ abstract class ApiService {
   });
 
   Future<dynamic> checkUserExists({required String email});
+
+  Future<Map<String, dynamic>> getUsuarioActual();
+
+  Future<List<Map<String, dynamic>>> getAllUsers();
+
+  Future<Map<String, dynamic>> getUserById({required int id});
   
+
+  // ARTICULOS 
+
   Future<void> guardarArticuloPropio({
     required Image foto,
     required String nombre, 
@@ -44,6 +56,9 @@ abstract class ApiService {
   Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required List<OcasionEnum> ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores});
 
   Future<void> editarArticuloPropio({required int id, Image? foto, String? nombre, CategoriaEnum? categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, List<OcasionEnum>? ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores });
+
+
+  // OUTFITS 
 
   Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros});
 

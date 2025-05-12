@@ -27,6 +27,25 @@ extension OcasionEnumExtension on OcasionEnum {
   }
 }
 
+enum GeneroPrefEnum {
+  HOMBRE,
+  MUJER,
+  AMBOS,
+}
+
+extension GeneroPrefEnumExtension on GeneroPrefEnum {
+  String get value {
+    switch (this) {
+      case GeneroPrefEnum.HOMBRE:
+        return 'Hombre';
+      case GeneroPrefEnum.MUJER:
+        return 'Mujer';
+      case GeneroPrefEnum.AMBOS:
+        return 'Ambos';
+    }
+  }
+}
+
 enum CategoriaEnum {
   ROPA,
   CALZADO,

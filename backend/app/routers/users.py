@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-import jwt
 from app.schemas.user import UserCreate, UserOut, TokenUserResponse
 from app.models.models import Usuario
 from app.database.database import get_db 
 import os
+import jwt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,8 +14,19 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 router = APIRouter(prefix="/auth", tags=["users"])
+
+
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return int(payload.get("sub"))
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+
+
 
 @router.post("/login")
 def login_user(email: str, db: Session = Depends(get_db)):
@@ -79,9 +91,25 @@ def get_users(db: Session = Depends(get_db)):
     return db.query(Usuario).all()
 
 
-@router.get("/users/{email}", response_model=UserOut)
+@router.get("/users/email/{email}", response_model=UserOut)
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return user
+
+
+@router.get("/users/id/{id}", response_model=UserOut)
+def get_user_by_id(id: int, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return user
+
+
+@router.get("/users/me", response_model=UserOut)
+def get_current_user(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return user

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/services/google_sign_in_service.dart';
+import 'package:frontend/services/fake_db.dart';
 
 // Define el MaterialColor personalizado
 const int _primaryValue = 0xFFC9A86A;
@@ -26,6 +27,7 @@ const MaterialColor customReverieColor = MaterialColor(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await cargarBase64();
   await dotenv.load();  
 
   // Realiza un logout forzado al inicio

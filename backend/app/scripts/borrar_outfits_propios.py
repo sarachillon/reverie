@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, text
-from app.models.models import OutfitPropio, Outfit
+from app.models.models import OutfitPropio
 
 # Cargar variables del .env
 load_dotenv()
@@ -18,7 +18,6 @@ session.execute(text("DELETE FROM outfitpropio_articulo"))
 
 # Eliminar los outfits propios y luego los outfits base
 session.query(OutfitPropio).delete()
-session.query(Outfit).filter_by(tipo_outfit="propio").delete()
 
 session.commit()
 print("Outfits propios eliminados correctamente.")

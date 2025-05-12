@@ -88,6 +88,8 @@ flutter:
   - assets/articulos/botas_altas.png
   - assets/articulos/camiseta_larga.png
   - assets/mock/ropa_mock.png
+  - assets/mock/fake_articulo.txt
+  - assets/mock/fake_outfit.txt
   - assets/titulos/MiArmario.png
   - assets/titulos/ropa.png
   - assets/titulos/calzado.png
