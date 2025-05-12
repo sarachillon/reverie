@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_manager.dart';
 import 'launcher_screen.dart';
-import 'colecciones_screen.dart';
+import 'feed/feed_screen.dart';
 import 'perfil/perfil_screen.dart';
 import 'armarioVirtual/armario_screen.dart';
 import 'outfits/outfits_screen.dart';
@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    ColeccionesScreen(),
+    FeedScreen(),
     PerfilScreen(),
     ArmarioScreen(),
     OutfitsScreen(),
@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.collections_bookmark),
-            label: 'Colecciones',
+            label: 'Feed',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

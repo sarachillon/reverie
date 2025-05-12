@@ -100,18 +100,6 @@ class ApiManager {
     return _instance!.procesarImagen(imagenOriginal: imagenOriginal);
   }
 
-  Future<Map<String, dynamic>> generarOutfitPropio({
-    required String titulo,
-    String? descripcion,
-    required List<OcasionEnum> ocasiones,
-    List<TemporadaEnum>? temporadas,
-    List<ColorEnum>? colores,
-  }) async {
-    if (_instance == null) {
-      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
-    }
-    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
-  }
 
   Future<void> editarArticuloPropio({
     required int id,
@@ -131,6 +119,22 @@ class ApiManager {
     return _instance!.editarArticuloPropio(id: id, foto: foto, nombre: nombre, categoria: categoria, subcategoriaAccesorios: subcategoriaAccesorios, subcategoriaCalzado: subcategoriaCalzado, subcategoriaRopa: subcategoriaRopa, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
   }
 
+  // OUTFITS 
+
+  Future<Map<String, dynamic>> generarOutfitPropio({
+    required String titulo,
+    String? descripcion,
+    required List<OcasionEnum> ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
+  }
+
+
 
   Stream<dynamic> getOutfitsPropiosStream({Map<String, dynamic>? filtros}) async* {
     if (_instance == null) {
@@ -147,9 +151,30 @@ class ApiManager {
     await _instance!.deleteOutfitPropio(id: id);
   }
 
+  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getFeedOutfits();
+  
+  }
+
 
 
   /*USUARIOS*/
+
+  Future<dynamic> registerUser({
+    required String email,
+    required String username,
+    required int edad,
+    required GeneroPrefEnum genero_pref,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.registerUser(email: email, username: username, edad: edad, genero_pref: genero_pref);
+  }
+
   Future<Map<String, dynamic>> getUsuarioActual() async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");

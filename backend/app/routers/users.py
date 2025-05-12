@@ -49,7 +49,7 @@ def login_user(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/users", response_model=TokenUserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(user: UserCreate = Depends(UserCreate.as_form), db: Session = Depends(get_db)):
     print(f"Guardando en base de datos: {db.bind.url}") 
     existing_user = db.query(Usuario).filter(Usuario.email == user.email).first()
     if existing_user:

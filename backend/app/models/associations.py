@@ -5,17 +5,6 @@ from app.database.database import Base
 from sqlalchemy import Enum as SqlEnum
 from app.models.enummerations import *
 
-coleccion_articulo_propio = Table(
-    "coleccion_articulo_propio", Base.metadata,
-    Column("coleccion_id", Integer, ForeignKey("colecciones.id")),
-    Column("articulo_propio_id", Integer, ForeignKey("articulos_propios.id"))
-)
-
-coleccion_outfit_propio = Table(
-    "coleccion_outfit", Base.metadata,
-    Column("coleccion_id", Integer, ForeignKey("colecciones.id")),
-    Column("outfit_propio_id", Integer, ForeignKey("outfits_propios.id"))
-)
 
 outfitpropio_articulo = Table(
     "outfitpropio_articulo", Base.metadata,
@@ -23,3 +12,8 @@ outfitpropio_articulo = Table(
     Column("articulo_propio_id", Integer, ForeignKey("articulos_propios.id"))
 )
 
+seguidores = Table(
+    "seguidores", Base.metadata,
+    Column("seguido_id", Integer, ForeignKey("usuarios.id"), primary_key=True),
+    Column("seguidor_id", Integer, ForeignKey("usuarios.id"), primary_key=True)
+)

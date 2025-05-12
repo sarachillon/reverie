@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/carga_outfit_screen.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/outfits/outfit_confirmation_screen.dart';
 
 class FormularioOutfitScreen extends StatefulWidget {
   const FormularioOutfitScreen({super.key});
@@ -41,7 +41,7 @@ class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
       final resultado = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => OutfitDetailScreen(
+          builder: (_) => OutfitConfirmationScreen(
             outfit: outfit,
             mostrarAcciones: true,
             onAceptar: () => Navigator.pop(context, outfit),

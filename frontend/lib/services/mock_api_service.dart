@@ -25,7 +25,7 @@ class MockApiService implements ApiService {
     required String email,
     required String username,
     required int edad,
-    required String genero_pref,
+    required GeneroPrefEnum genero_pref,
   }) async {
     return {
         'access_token': 'fake_access_token_123',
@@ -47,8 +47,8 @@ class MockApiService implements ApiService {
   Future<Map<String, dynamic>> getUsuarioActual() async {
     return {
         'id': 1,
-        'isername': 'Testing',
-        'fotoUrl': 'testing.reverie@gmail.com',
+        'username': 'Testing',
+        'email': 'testing.reverie@gmail.com',
         'edad': 23,
         'genero_pref': GeneroPrefEnum.AMBOS.name,
         "articulos_propios": [
@@ -254,6 +254,11 @@ Future<void> editarArticuloPropio({
   @override
   Future<void> deleteOutfitPropio({required int id}) async {
     print("Artículo con ID $id eliminado.");
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+    return fakeOutfits;
   }
 
 }

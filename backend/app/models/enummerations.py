@@ -65,11 +65,6 @@ class ColorEnum(str, Enum):
     BLANCO = "BLANCO"
     NEGRO = "NEGRO"
 
-class TipoInteraccionEnum(str, Enum):
-    BUSQUEDA = "BUSQUEDA"
-    CONSULTAR = "CONSULTAR"
-    GUARDAR = "GUARDAR"
-    ENLACE = "ENLACE"
 
 class GeneroPrefEnum(str, Enum):
     HOMBRE = "HOMBRE"
