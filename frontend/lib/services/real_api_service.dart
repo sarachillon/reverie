@@ -55,34 +55,29 @@ class RealApiService implements ApiService {
     required String email,
     required String username,
     required int edad,
-    required String genero_pref,
+    required GeneroPrefEnum genero_pref,
   }) async {
     final url = Uri.parse('$_baseUrl/auth/users');
 
-    // Crear el cuerpo de la solicitud
-    final body = jsonEncode({
-      'email': email,
-      'username': username,
-      'edad': edad,
-      'genero_pref': genero_pref,
-    });
+    final request = http.MultipartRequest('POST', url);
 
-    // Enviar la solicitud POST con el cuerpo
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,  // Aquí estamos incluyendo el cuerpo con los datos
-    );
+    request.fields['email'] = email;
+    request.fields['username'] = username;
+    request.fields['edad'] = edad.toString();
+    request.fields['genero_pref'] = genero_pref.name;
 
-    // Verificar la respuesta
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);  // Retorna la respuesta completa
-    } else if (response.statusCode == 404) {
-      return null;  // Usuario no encontrado
+    final response = await request.send();
+
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(responseBody);
     } else {
-      throw Exception('Error al hacer login: ${response.body}');
+      print('Error del servidor: $responseBody');
+      throw Exception('Error al registrar el usuario: $responseBody');
     }
   }
+
 
 
   @override

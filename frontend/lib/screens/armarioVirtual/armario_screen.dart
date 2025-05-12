@@ -100,10 +100,6 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Image.asset('assets/titulos/MiArmario.png', height: 40),
-      ),
       body: RefreshIndicator(
         onRefresh: _cargarArticulosPropios,
         child: _articulos.isEmpty

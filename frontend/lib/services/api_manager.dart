@@ -150,6 +150,19 @@ class ApiManager {
 
 
   /*USUARIOS*/
+
+  Future<dynamic> registerUser({
+    required String email,
+    required String username,
+    required int edad,
+    required GeneroPrefEnum genero_pref,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.registerUser(email: email, username: username, edad: edad, genero_pref: genero_pref);
+  }
+
   Future<Map<String, dynamic>> getUsuarioActual() async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");

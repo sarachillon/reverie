@@ -17,7 +17,7 @@ abstract class ApiService {
     required String email,
     required String username,
     required int edad,
-    required String genero_pref,
+    required GeneroPrefEnum genero_pref,
   });
 
   Future<dynamic> checkUserExists({required String email});

@@ -47,12 +47,8 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
   }
 
 Future<ImageProvider<Object>> decodeBase64OrMock(String? base64) async {
-  final prefs = await SharedPreferences.getInstance();
-  final email = prefs.getString('email');
-
-  if (email == 'testing.reverie@gmail.com') {
-    return const AssetImage('assets/mock/ropa_mock.png');
-  }
+  
+ 
 
   try {
     if (base64 != null && base64.isNotEmpty) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:frontend/enums/enums.dart';
 import '../services/api_manager.dart';
 import 'home_screen.dart';
 
@@ -15,7 +16,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  String _genderPref = 'Ambos';
+  GeneroPrefEnum _genderPref = GeneroPrefEnum.AMBOS;
   GoogleSignInAccount? _currentUser;
 
   @override
@@ -165,11 +166,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildGenderOption('Mujer'),
+                        _buildGenderOption(GeneroPrefEnum.MUJER),
                         const SizedBox(width: 30),
-                        _buildGenderOption('Hombre'),
+                        _buildGenderOption(GeneroPrefEnum.HOMBRE),
                         const SizedBox(width: 30),
-                        _buildGenderOption('Ambos'),
+                        _buildGenderOption(GeneroPrefEnum.AMBOS),
                       ],
                     ),
                   ],
@@ -190,26 +191,28 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildGenderOption(String gender) {
+  Widget _buildGenderOption(GeneroPrefEnum genderEnum) {
+    final label = genderEnum.name[0] + genderEnum.name.substring(1).toLowerCase(); // Ej: "Mujer"
     return InkWell(
-      onTap: () => setState(() => _genderPref = gender),
+      onTap: () => setState(() => _genderPref = genderEnum),
       child: Column(
         children: [
           Text(
-            gender,
+            label,
             style: TextStyle(
-              fontSize: _genderPref == gender ? 18 : 16,
-              fontWeight: _genderPref == gender ? FontWeight.bold : FontWeight.normal,
+              fontSize: _genderPref == genderEnum ? 18 : 16,
+              fontWeight: _genderPref == genderEnum ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           const SizedBox(height: 5),
           Container(
             height: 2,
             width: 60,
-            color: _genderPref == gender ? const Color(0xFFC9A86A) : Colors.grey,
+            color: _genderPref == genderEnum ? const Color(0xFFC9A86A) : Colors.grey,
           ),
         ],
       ),
     );
   }
+
 }
