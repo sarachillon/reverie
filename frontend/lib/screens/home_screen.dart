@@ -4,9 +4,10 @@ import '../services/api_manager.dart';
 import 'launcher_screen.dart';
 import 'feed/feed_screen.dart';
 import 'perfil/perfil_screen.dart';
-import 'armarioVirtual/armario_screen.dart';
 import 'outfits/outfits_screen.dart';
 import '../services/google_sign_in_service.dart';
+import 'armarioVirtual/subir_foto_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   final String? userEmail;
@@ -19,13 +20,102 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  String? profileImageUrl;
 
   final List<Widget> _screens = [
-    FeedScreen(),
-    PerfilScreen(),
-    ArmarioScreen(),
     OutfitsScreen(),
+    FeedScreen(),
+    Container(), // Placeholder para el botón +
+    PerfilScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      profileImageUrl = prefs.getString('profile_image_url');
+    });
+  }
+
+  void _onAddPressed() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildAddOption(
+                  icon: Icons.checkroom,
+                  text: "Nuevo artículo",
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                    );
+                    if (result == true) {
+                      setState(() => _selectedIndex = 3); 
+                    }
+                  },
+                ),
+              const SizedBox(height: 16),
+              _buildAddOption(
+                icon: Icons.auto_awesome,
+                text: "Nuevo outfit",
+                onTap: () async {
+                  Navigator.pop(context);
+                  await OutfitsScreen.crearNuevoOutfit(context);
+                  setState(() => _selectedIndex = 0);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddOption({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFC9A86A), size: 28),
+            const SizedBox(width: 16),
+            Text(
+              text,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _logout() async {
     final googleSignInService = GoogleSignInService();
@@ -47,49 +137,50 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
-        title: const Text('Reverie'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Cerrar sesión',
-          )
-        ],
-      ),*/
-      body: _screens[_selectedIndex],
+      body: _screens[_selectedIndex == 2 ? 1 : _selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: _selectedIndex == 2 ? 1 : _selectedIndex,
+        onTap: (index) {
+          if (index == 2) {
+            _onAddPressed();
+          } else {
+            setState(() => _selectedIndex = index);
+          }
+        },
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
         selectedItemColor: const Color(0xFFC9A86A),
         unselectedItemColor: Colors.grey,
         selectedFontSize: 14,
+        unselectedFontSize: 12,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-        unselectedFontSize: 12,
-        selectedIconTheme: const IconThemeData(size: 30),
-        unselectedIconTheme: const IconThemeData(size: 22),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.collections_bookmark),
-            label: 'Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checkroom),
-            label: 'Armario',
-          ),
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.style),
             label: 'Outfits',
           ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Feed',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle_rounded, size: 30),
+            label: 'Nuevo',
+          ),
+          BottomNavigationBarItem(
+            icon: profileImageUrl != null
+                ? CircleAvatar(
+                    radius: 12,
+                    backgroundImage: NetworkImage(profileImageUrl!),
+                    backgroundColor: Colors.transparent,
+                  )
+                : const Icon(Icons.person),
+            label: 'Perfil',
+          ),
         ],
       ),
-
     );
   }
 }

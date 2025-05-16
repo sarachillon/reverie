@@ -257,8 +257,14 @@ Future<void> editarArticuloPropio({
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
-    return fakeOutfits;
+  Stream<Map<String, dynamic>> getFeedOutfitsStream({
+    int page = 0,
+    int pageSize = 6,
+    required String type,
+  }) async*{
+    for (final outfit in fakeOutfits) {
+      yield outfit;
+    }
   }
 
 }

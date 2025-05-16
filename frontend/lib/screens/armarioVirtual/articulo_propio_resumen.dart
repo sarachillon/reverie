@@ -83,7 +83,6 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
         final email = snapshot.data ?? '';
 
         return Container(
-          height: 120,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
@@ -94,7 +93,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.memory(imagenBytes, width: 100, height: double.infinity, fit: BoxFit.cover),
+                child: Image.memory(imagenBytes, width: 100, height: 100, fit: BoxFit.cover),
               ),
               const SizedBox(width: 12),
               Expanded(

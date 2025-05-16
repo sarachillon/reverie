@@ -151,12 +151,15 @@ class ApiManager {
     await _instance!.deleteOutfitPropio(id: id);
   }
 
-  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+Stream<Map<String, dynamic>> getFeedOutfitsStream({
+    int page = 0,
+    int pageSize = 6,
+    required String type,
+  }) async* {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
-    return _instance!.getFeedOutfits();
-  
+    yield* _instance!.getFeedOutfitsStream(page: page, pageSize: pageSize, type: type);
   }
 
 

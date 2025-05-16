@@ -64,5 +64,5 @@ abstract class ApiService {
 
   Future<void> deleteOutfitPropio({required int id});
 
-  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20});
+  Stream<Map<String, dynamic>> getFeedOutfitsStream({int page = 0, int pageSize = 6, required String type,});
 }

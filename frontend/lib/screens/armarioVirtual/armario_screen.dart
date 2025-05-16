@@ -35,50 +35,83 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   }
 
   Widget _buildCategoriaHorizontal(String categoria, List<dynamic> articulos) {
-    final articulosCategoria = articulos
-        .where((a) => (a['categoria'] ?? '').toString().toUpperCase() == categoria)
-        .toList();
+  final articulosCategoria = articulos
+      .where((a) => (a['categoria'] ?? '').toString().toUpperCase() == categoria)
+      .toList();
 
-    if (articulosCategoria.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                categoria[0] + categoria.substring(1).toLowerCase(),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              categoria[0] + categoria.substring(1).toLowerCase(),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PantallaVerTodos(categoria: categoria),
+                ),
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PantallaVerTodos(categoria: categoria),
+              child: Row(
+                children: const [
+                  Text("Ver todos", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 190,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            itemCount: articulosCategoria.isEmpty ? 1 : articulosCategoria.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              if (articulosCategoria.isEmpty) {
+                return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size: 30, color: Colors.grey.shade600),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Añadir artículo",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: const [
-                    Text("Ver todos", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 190,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: articulosCategoria.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
+              );
+
+              } else {
                 final articulo = articulosCategoria[index];
                 return SizedBox(
                   width: 150,
@@ -86,16 +119,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                     nombre: articulo['nombre'] ?? '',
                     articulo: articulo,
                     onTap: _cargarArticulosPropios,
-                    
                   ),
                 );
-              },
-            ),
+              }
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -112,41 +146,6 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                   const SizedBox(height: 80),
                 ],
               ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          showModalBottomSheet(
-            context: context,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (BuildContext context) {
-              return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.camera_alt),
-                      title: const Text('Subir prenda'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
-                        );
-                        if (result == true) {
-                          _cargarArticulosPropios();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-        child: const Icon(Icons.add),
-        tooltip: 'Añadir prenda',
       ),
     );
   }

@@ -20,6 +20,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
     _cargarPerfil();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cargarPerfil();
+  }
+
   Future<void> _cargarPerfil() async {
     final data = await _apiManager.getUsuarioActual();
     setState(() => usuario = data);
@@ -35,7 +41,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
     final int numArticulos = (usuario!['articulos_propios'] as List<dynamic>? ?? []).length;
     final int numOutfits = (usuario!['outfits_propios'] as List<dynamic>? ?? []).length;
-
 
     return DefaultTabController(
       length: 2,
@@ -79,17 +84,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                _buildStatItem('Seguidores', 10),
-                                const SizedBox(width: 12),
-                                _buildStatItem('Seguidos', 10),
-                              ],
-                            ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              _buildStatItem('Seguidores', 10),
+                              const SizedBox(width: 12),
+                              _buildStatItem('Seguidos', 10),
+                            ],
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -98,30 +103,29 @@ class _PerfilScreenState extends State<PerfilScreen> {
             ),
             const SizedBox(height: 10),
             TabBar(
-            tabs: [
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.checkroom),
-                    const SizedBox(width: 6),
-                    Text('$numArticulos Prendas', style: const TextStyle(fontSize: 12)),
-                  ],
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.checkroom),
+                      const SizedBox(width: 6),
+                      Text('$numArticulos Prendas', style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
                 ),
-              ),
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.style),
-                    const SizedBox(width: 6),
-                    Text('$numOutfits Outfits', style: const TextStyle(fontSize: 12)),
-                  ],
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.style),
+                      const SizedBox(width: 6),
+                      Text('$numOutfits Outfits', style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-
+              ],
+            ),
             const Expanded(
               child: TabBarView(
                 children: [

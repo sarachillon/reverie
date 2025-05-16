@@ -89,7 +89,7 @@ def populate_data():
                     ocasiones=[OcasionEnum.CASUAL],
                     temporadas=[TemporadaEnum.VERANO],
                     colores=[ColorEnum.BLANCO, ColorEnum.AZUL],
-                    collage_key=f"s3/outfits/{user.username}_outfit{j+1}.png",
+                    collage_key=f"articulos_propios/collage_6_1747058438.877506.png",
                     articulos_propios=articulos_usuario[j: j+3]
                 )
                 db.add(outfit)

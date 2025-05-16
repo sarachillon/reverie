@@ -640,20 +640,31 @@ class RealApiService implements ApiService {
 
 
   @override
-  Future<List<Map<String, dynamic>>> getFeedOutfits({int page = 0, int pageSize = 20}) async {
+  Stream<Map<String, dynamic>> getFeedOutfitsStream({
+    int page = 0,
+    int pageSize = 6,
+    required String type,
+  }) async* {
     final token = await GoogleSignInService().getToken();
     if (token == null) throw Exception('Token no disponible');
 
-    final url = Uri.parse('$_baseUrl/outfits/feed?page=$page&page_size=$pageSize');
+    final endpoint = type == 'seguidos' ? 'feed/seguidos' : 'feed/global';
+    final url = Uri.parse('$_baseUrl/outfits/$endpoint?page=$page&page_size=$pageSize');
 
-    final response = await http.get(url, headers: {
-      'Authorization': 'Bearer $token',
-    });
+    final request = http.Request('GET', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final response = await request.send();
 
     if (response.statusCode == 200) {
-      return (jsonDecode(response.body) as List).cast<Map<String, dynamic>>();
+      final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+      await for (final line in utf8Stream) {
+        if (line.isNotEmpty) {
+          yield jsonDecode(line);
+        }
+      }
     } else {
-      throw Exception('Error al cargar feed: ${response.body}');
+      throw Exception('Error al cargar feed: ${response.statusCode} ${await response.stream.bytesToString()}');
     }
   }
 

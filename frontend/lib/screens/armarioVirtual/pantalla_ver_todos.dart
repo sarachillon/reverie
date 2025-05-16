@@ -104,23 +104,29 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
         
         children: [
           Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              crossAxisSpacing: 30,
-              mainAxisSpacing: 30,
-              childAspectRatio: 3, // Ajusta este valor si quieres hacerlas más altas
-            ),
-            itemCount: articulosFiltrados.length,
-            itemBuilder: (context, index) {
-              final articulo = articulosFiltrados[index];
-              return ArticuloPropioResumen(
-                articulo: articulo,
-              );
-            },
-          ),
-        ),  
+          child: articulosFiltrados.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No hay artículos de este tipo',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 1,
+                    crossAxisSpacing: 30,
+                    mainAxisSpacing: 30,
+                    childAspectRatio: 3,
+                  ),
+                  itemCount: articulosFiltrados.length,
+                  itemBuilder: (context, index) {
+                    final articulo = articulosFiltrados[index];
+                    return ArticuloPropioResumen(articulo: articulo);
+                  },
+                ),
+        ),
+
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,

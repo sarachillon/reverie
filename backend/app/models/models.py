@@ -15,6 +15,7 @@ class Usuario(Base):
     email = Column(String, unique=True, nullable=False)
     edad = Column(String, nullable=False)
     genero_pref = Column(SqlEnum(GeneroPrefEnum), nullable=False)
+    foto_perfil = Column(String, nullable=True)
 
     articulos_propios = relationship("ArticuloPropio", back_populates="usuario")
     outfits_propios = relationship("OutfitPropio", back_populates="usuario")

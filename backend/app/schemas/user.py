@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 from app.models.enummerations import GeneroPrefEnum
 from fastapi import Form
@@ -29,6 +30,7 @@ class UserOut(BaseModel):
     email: str
     edad: int
     genero_pref: str
+    foto_perfil: Optional[str] = None 
 
     class Config:
         from_attributes = True
