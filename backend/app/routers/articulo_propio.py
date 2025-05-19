@@ -16,6 +16,8 @@ from typing import List, Optional
 import json
 import base64
 from PIL import Image
+from sqlalchemy.orm import joinedload
+
 
 router = APIRouter(prefix="/articulos-propios", tags=["Artículos Propios"])
 
@@ -112,7 +114,10 @@ async def obtener_articulos_propios(
     if not usuario_actual:
         raise HTTPException(status_code=401, detail="Usuario no autenticado.")
     
-    query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_actual.id)
+
+    query = db.query(ArticuloPropio)\
+        .options(joinedload(ArticuloPropio.usuario))\
+        .filter(ArticuloPropio.usuario_id == usuario_actual.id)
 
     if categoria:
         query = query.filter(ArticuloPropio.categoria == categoria)
@@ -141,10 +146,10 @@ async def obtener_articulos_propios(
             imagen_bytes = await get_imagen_s3(articulo.foto)
             imagen_base64 = base64.b64encode(imagen_bytes).decode('utf-8')
             print(f"BASE64 code: {imagen_base64}")
-            articulos_con_imagenes.append(ArticuloPropioConImagen(
-                **articulo.__dict__,
-                imagen=imagen_base64
-            ))
+            schema = ArticuloPropioConImagen.from_orm(articulo).dict()
+            schema["imagen"] = imagen_base64
+            articulos_con_imagenes.append(schema)
+
         except Exception as e:
             print(f"Error fetching image for {articulo.foto}: {e}") # Log the specific error
             raise HTTPException(status_code=500, detail=f"Error al obtener la imagen: {str(e)}")
@@ -198,7 +203,7 @@ async def obtener_articulos_propios_stream(
 
     
 
-    articulos = query.order_by(ArticuloPropio.id.desc()).all()
+    articulos = query.options(joinedload(ArticuloPropio.usuario)).order_by(ArticuloPropio.id.desc()).all()
 
     async def articulo_generator():
         for articulo in articulos:
@@ -206,12 +211,15 @@ async def obtener_articulos_propios_stream(
                 print(f"Fetching image for key: {articulo.foto}")
                 imagen_bytes = await get_imagen_s3(articulo.foto)
                 imagen_base64 = base64.b64encode(imagen_bytes).decode('utf-8')
-                articulo_con_imagen = ArticuloPropioConImagen(
-                    **articulo.__dict__,
-                    imagen=imagen_base64
-                )
+
+                schema = ArticuloPropioConImagen.from_orm(articulo).model_dump(exclude={"imagen"})
+                schema["imagen"] = imagen_base64
+
+                yield json.dumps(schema) + "\n"
+
+
+
                 # Serializamos el artículo a JSON
-                yield json.dumps(articulo_con_imagen.dict()) + "\n"
             except Exception as e:
                 print(f"Error fetching image for {articulo.foto}: {e}")
                 raise HTTPException(status_code=500, detail=f"Error al obtener la imagen: {str(e)}")
@@ -219,6 +227,26 @@ async def obtener_articulos_propios_stream(
     return StreamingResponse(articulo_generator(), media_type="application/json")
 
 
+@router.get("/count")
+async def contar_articulos_usuario(
+    request: Request,
+    usuario_id: Optional[int] = None,
+    categoria: Optional[CategoriaEnum] = None,
+    db: Session = Depends(get_db),
+):
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+    
+    id_objetivo = usuario_id or usuario_actual.id
+
+    query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == id_objetivo)
+
+    if categoria:
+        query = query.filter(ArticuloPropio.categoria == categoria)
+
+    total = query.count()
+    return {"total": total}
 
 
 # Obtener un artículo propio por su nombre
@@ -323,14 +351,20 @@ async def editar_articulo(
 
     if colores is not None:
         articulo.colores = [ColorEnum(c) for c in colores]
+    import time
 
     if foto is not None:
         original_bytes = await foto.read()
         imagen_sin_fondo = quitar_fondo_imagen(original_bytes)
-        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"{foto.filename.split('.')[0]}.png")
+        nombre_unico = f"{foto.filename.split('.')[0]}_{int(time.time() * 1000)}.png"
+        imagen_key = await subir_imagen_s3_bytes(imagen_sin_fondo, f"articulos_propios/{nombre_unico}")
         articulo.foto = imagen_key
 
     db.commit()
     db.refresh(articulo)
 
     return {"message": "Artículo editado exitosamente"}
+
+
+
+    

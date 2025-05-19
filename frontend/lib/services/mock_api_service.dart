@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:frontend/services/fake_db.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
@@ -90,11 +91,48 @@ class MockApiService implements ApiService {
     return fakeUsuarios.firstWhere((user) => user['id'] == id);
   }
 
+  @override
+  Future<void> editarPerfilUsuario({
+    required String username,
+    required int edad,
+    required GeneroPrefEnum generoPref,
+    File? fotoPerfil,
+  }) async {
+    // Simulación de edición de perfil
+    print("Perfil editado: $username, $edad, $generoPref");
+  }
+
+List<Map<String, dynamic>> mockSeguidos = [];
+List<Map<String, dynamic>> mockSeguidores = [];
+
+@override
+Future<void> seguirUsuario(int idUsuario) async {
+  mockSeguidos.add({'id': idUsuario, 'username': 'usuario$idUsuario'});
+}
+
+@override
+Future<void> dejarDeSeguirUsuario(int idUsuario) async {
+  mockSeguidos.removeWhere((u) => u['id'] == idUsuario);
+}
+
+@override
+Future<List<Map<String, dynamic>>> obtenerSeguidos(int idUsuario) async {
+  return mockSeguidos;
+}
+
+@override
+Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
+  return mockSeguidores;
+}
+
+
 
   @override
   Future<String> ping() async {
     return 'Pong!';
   }
+
+
 
   @override
   Future<void> guardarArticuloPropio({
@@ -267,4 +305,38 @@ Future<void> editarArticuloPropio({
     }
   }
 
+  @override
+   Future<int> getNumeroOutfits({int? usuarioId}) async {
+    return fakeOutfits.length;
+   }
+
+  @override
+  Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) async {
+    return fakeArticulos.length;
+  }
+
+  @override
+      Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
+              final Image fotoPrueba = Image.asset('assets/logo.png');
+              final String nombrePrueba = "Camiseta de prueba";
+              final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
+              final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
+              final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
+              final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
+
+              // Simulación de guardar el artículo
+              print("Guardando artículo con los siguientes valores de prueba:");
+              print("Foto: $fotoPrueba");
+              print("Nombre: $nombrePrueba");
+              print("Categoría: $categoriaPrueba");
+              print("Subcategoría Ropa: $subcategoriaRopaPrueba");
+              print("Temporadas: $temporadasPrueba");
+              print("Colores: $coloresPrueba");
+      }
+
+  @override
+  Future<void> eliminarCuenta() async {
+    // Simulación de eliminación de cuenta
+    print("Cuenta eliminada.");
+  }
 }

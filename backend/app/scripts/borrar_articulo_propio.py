@@ -7,7 +7,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
-articulo_id = 9
+articulo_id = 53
 
 with engine.begin() as conn:
     # 1. Eliminar referencias desde outfitpropio_articulo

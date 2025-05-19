@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/perfil/perfil_screen.dart';
+import 'package:frontend/services/share_utils.dart';
+
 
 class WidgetOutfitFeedSmall extends StatelessWidget {
   final List<dynamic> outfits;
@@ -68,25 +71,53 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Usuario + compartir
-                        Row(
-                          children: [
-                            fotoPerfil != null
-                                ? CircleAvatar(
-                                    radius: 20,
-                                    backgroundImage: MemoryImage(base64Decode(fotoPerfil)),
-                                  )
-                                : CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: Colors.grey.shade300,
-                                    child: const Icon(Icons.person, color: Colors.white),
-                                  ), 
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(username, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            ),
-                            const Icon(Icons.ios_share, size: 16),
-                          ],
+                        GestureDetector(
+                          onTap: () {
+                            final userId = outfit['usuario']?['id'];
+                            if (userId != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PerfilScreen(userId: userId),
+                                ),
+                              );
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.grey.shade300,
+                                backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty)
+                                    ? MemoryImage(base64Decode(
+                                        fotoPerfil.contains(',') ? fotoPerfil.split(',').last : fotoPerfil))
+                                    : null,
+                                child: (fotoPerfil == null || fotoPerfil.isEmpty)
+                                    ? const Icon(Icons.person, color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(username, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.ios_share, size: 16),
+                                onPressed: () {
+                                  final imagen = outfit['imagen'];
+                                  final nombre = outfit['usuario']?['username'] ?? 'usuario';
+                                  if (imagen != null && imagen.isNotEmpty) {
+                                    ShareUtils.compartirOutfitSinMarca(
+                                      base64Imagen: outfit['imagen'],
+                                      username: outfit['usuario']?['username'] ?? 'usuario',
+                                    );
+                                  }
+                                },
+                              ),                         
+                          
+                            ],
+                          ),
                         ),
+
                         const SizedBox(height: 6),
                         Text(
                           outfit['titulo'] ?? 'Sin título',

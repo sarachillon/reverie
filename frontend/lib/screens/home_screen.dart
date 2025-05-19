@@ -7,10 +7,12 @@ import 'perfil/perfil_screen.dart';
 import 'outfits/outfits_screen.dart';
 import '../services/google_sign_in_service.dart';
 import 'armarioVirtual/subir_foto_screen.dart';
-
+import 'outfits/laboratorio_outfit_screen.dart';
+import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   final String? userEmail;
+
 
   const HomeScreen({Key? key, this.userEmail}) : super(key: key);
 
@@ -19,13 +21,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; 
   String? profileImageUrl;
+  String? username;
+
 
   final List<Widget> _screens = [
     OutfitsScreen(),
     FeedScreen(),
-    Container(), // Placeholder para el botón +
+    Container(), 
+    LaboratorioOutfitScreen(),
     PerfilScreen(),
   ];
 
@@ -35,12 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadProfileImage();
   }
 
-  Future<void> _loadProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      profileImageUrl = prefs.getString('profile_image_url');
-    });
-  }
+Future<void> _loadProfileImage() async {
+  final user = await ApiManager().getUsuarioActual();
+  setState(() {
+    profileImageUrl = user['foto_perfil'];
+    username = user['username'];
+  });
+}
+
+
+
 
   void _onAddPressed() {
     showModalBottomSheet(
@@ -56,19 +65,19 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildAddOption(
-                  icon: Icons.checkroom,
-                  text: "Nuevo artículo",
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
-                    );
-                    if (result == true) {
-                      setState(() => _selectedIndex = 3); 
-                    }
-                  },
-                ),
+                icon: Icons.checkroom,
+                text: "Nuevo artículo",
+                onTap: () async {
+                  Navigator.pop(context);
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                  );
+                  if (result == true) {
+                    setState(() => _selectedIndex = 3); 
+                  }
+                },
+              ),
               const SizedBox(height: 16),
               _buildAddOption(
                 icon: Icons.auto_awesome,
@@ -158,26 +167,30 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.style),
+            icon: Icon(Icons.checkroom_outlined),
             label: 'Outfits',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
+            icon: Icon(Icons.search_outlined),
             label: 'Feed',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_rounded, size: 30),
             label: 'Nuevo',
           ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.science_outlined),
+            label: 'Laboratorio',
+          ),
           BottomNavigationBarItem(
-            icon: profileImageUrl != null
+            icon: profileImageUrl != null && profileImageUrl!.isNotEmpty
                 ? CircleAvatar(
                     radius: 12,
-                    backgroundImage: NetworkImage(profileImageUrl!),
+                    backgroundImage: MemoryImage(base64Decode(profileImageUrl!)),
                     backgroundColor: Colors.transparent,
                   )
                 : const Icon(Icons.person),
-            label: 'Perfil',
+            label: username,
           ),
         ],
       ),

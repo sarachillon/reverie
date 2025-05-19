@@ -3,7 +3,8 @@ import 'package:frontend/screens/outfits/widget_outfit_small.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class MostrarOutfitScreen extends StatefulWidget {
-  const MostrarOutfitScreen({super.key});
+  final int? userId;
+  const MostrarOutfitScreen({super.key, this.userId});
 
   @override
   State<MostrarOutfitScreen> createState() => _MostrarOutfitScreenState();
@@ -22,7 +23,8 @@ class _MostrarOutfitScreenState extends State<MostrarOutfitScreen> {
   Future<void> _cargarOutfits() async {
     setState(() => _outfits.clear());
     try {
-      final stream = _apiManager.getOutfitsPropiosStream();
+      final filtros = widget.userId != null ? {'usuario_id': widget.userId} : null;
+      final stream = _apiManager.getOutfitsPropiosStream(filtros: filtros);
       await for (final outfit in stream) {
         if (!mounted) return;
         setState(() => _outfits.add(outfit));

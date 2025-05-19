@@ -27,7 +27,7 @@ class ArticuloPropio(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    nombre = Column(String, nullable=False, unique=True)
+    nombre = Column(String, nullable=False)
     foto = Column(String, nullable=False)  # s3 key de la imagen del articulo
     categoria = Column(SqlEnum(CategoriaEnum), nullable=False)
     subcategoria = Column(String, nullable=False)

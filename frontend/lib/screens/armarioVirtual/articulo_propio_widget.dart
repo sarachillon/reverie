@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/armarioVirtual/articulo_propio_detail_screen.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
 
 
 class ArticuloPropioWidget extends StatelessWidget {
@@ -45,17 +45,13 @@ class ArticuloPropioWidget extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: () async {
-        final result = await Navigator.push(
+      onTap: () {
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ArticuloPropioDetailScreen(articulo: articulo),
+            builder: (_) => PantallaVerTodos(categoria: articulo['categoria']),
           ),
         );
-
-        if (result == true && onTap != null) {
-          onTap!();
-        }
       },
       child: Container(
         height: 210,

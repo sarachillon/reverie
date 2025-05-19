@@ -22,27 +22,39 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
   bool _mostrarFiltros = false;
   bool _isSearching = false;
   String _busqueda = '';
+  Map<String, dynamic>? usuarioActual;
+  bool _loading = true;
+
+
 
   @override
   void initState() {
     super.initState();
-    _cargarArticulos();
+    _inicializar();
   }
 
-  Future<void> _cargarArticulos() async {
-    setState(() => _articulos.clear());
-    try {
-      final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
-      await for (final articulo in stream) {
-        if (!mounted) return;
-        if ((articulo['categoria'] ?? '').toString().toUpperCase() == widget.categoria.toUpperCase()) {
-          setState(() => _articulos.add(articulo));
-        }
+Future<void> _inicializar() async {
+  usuarioActual = await _apiManager.getUsuarioActual();
+  await _cargarArticulos();
+  if (mounted) setState(() => _loading = false);
+}
+
+
+Future<void> _cargarArticulos() async {
+  setState(() => _articulos.clear());
+  try {
+    final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
+    await for (final articulo in stream) {
+      if (!mounted) return;
+      if ((articulo['categoria'] ?? '').toString().toUpperCase() == widget.categoria.toUpperCase()) {
+        setState(() => _articulos.add(articulo));
       }
-    } catch (e) {
-      print("Error al cargar artículos: $e");
     }
+  } catch (e) {
+    print("Error al cargar artículos: $e");
   }
+}
+
 
   void _cerrarFiltros() {
     setState(() => _mostrarFiltros = false);
@@ -50,6 +62,11 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
 
   @override
   Widget build(BuildContext context) {
+
+
+ 
+
+
     final articulosFiltrados = _articulos.where((articulo) {
       final nombre = (articulo['nombre'] ?? '').toString().toLowerCase();
       return nombre.contains(_busqueda.toLowerCase());
@@ -101,56 +118,56 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
         ],
       ),
       body: Stack(
-        
-        children: [
-          Expanded(
-          child: articulosFiltrados.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No hay artículos de este tipo',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    crossAxisSpacing: 30,
-                    mainAxisSpacing: 30,
-                    childAspectRatio: 3,
-                  ),
-                  itemCount: articulosFiltrados.length,
-                  itemBuilder: (context, index) {
-                    final articulo = articulosFiltrados[index];
-                    return ArticuloPropioResumen(articulo: articulo);
-                  },
-                ),
-        ),
-
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            top: 0,
-            right: _mostrarFiltros ? 0 : -MediaQuery.of(context).size.width * 0.8,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: Material(
-              elevation: 16,
-              child: FiltrosArticuloPropioScreen(
-                filtrosIniciales: filtros,
-                onAplicar: (nuevosFiltros) {
-                  setState(() {
-                    filtros = nuevosFiltros;
-                    _mostrarFiltros = false;
-                  });
-                  _cargarArticulos();
-                },
-                onCerrar: _cerrarFiltros,
-              ),
+  children: [
+    articulosFiltrados.isEmpty
+        ? const Center(
+            child: Text(
+              'No hay artículos de este tipo',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
           )
-        ],
+        : GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              crossAxisSpacing: 30,
+              mainAxisSpacing: 30,
+              childAspectRatio: 3,
+            ),
+            itemCount: articulosFiltrados.length,
+            itemBuilder: (context, index) {
+              final articulo = articulosFiltrados[index];
+              return ArticuloPropioResumen(
+                articulo: articulo,
+                usuarioActual: usuarioActual!,
+              );
+            },
+          ),
+    AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      top: 0,
+      right: _mostrarFiltros ? 0 : -MediaQuery.of(context).size.width * 0.8,
+      bottom: 0,
+      width: MediaQuery.of(context).size.width * 0.8,
+      child: Material(
+        elevation: 16,
+        child: FiltrosArticuloPropioScreen(
+          filtrosIniciales: filtros,
+          onAplicar: (nuevosFiltros) {
+            setState(() {
+              filtros = nuevosFiltros;
+              _mostrarFiltros = false;
+            });
+            _cargarArticulos();
+          },
+          onCerrar: _cerrarFiltros,
+        ),
       ),
+    ),
+  ],
+),
+
     );
   }
 }

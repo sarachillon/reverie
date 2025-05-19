@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/services/share_utils.dart';
+
 
 class WidgetOutfitFeedBig extends StatelessWidget {
   final List<dynamic> outfits;
@@ -71,9 +73,18 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                                   child: Text(username, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.ios_share, size: 20),
-                                  onPressed: () {},
-                                ),
+                                icon: const Icon(Icons.ios_share, size: 16),
+                                onPressed: () {
+                                  final imagen = outfit['imagen'];
+                                  final nombre = outfit['usuario']?['username'] ?? 'usuario';
+                                  if (imagen != null && imagen.isNotEmpty) {
+                                    ShareUtils.compartirOutfitSinMarca(
+                                      base64Imagen: outfit['imagen'],
+                                      username: outfit['usuario']?['username'] ?? 'usuario',
+                                    );
+                                  }
+                                },
+                              ),             
                               ],
                             ),
                             const SizedBox(height: 6),

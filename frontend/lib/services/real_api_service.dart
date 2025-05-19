@@ -1,8 +1,7 @@
-// frontend/lib/services/real_api_service.dart
-
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -161,6 +160,123 @@ class RealApiService implements ApiService {
     }
   }
 
+@override
+Future<void> editarPerfilUsuario({
+  required String username,
+  required int edad,
+  required GeneroPrefEnum generoPref,
+  File? fotoPerfil,
+}) async {
+  final url = Uri.parse('$_baseUrl/auth/users/editar');
+  final token = await GoogleSignInService().getToken();
+
+  if (token == null) throw Exception('No autenticado');
+
+  final request = http.MultipartRequest('POST', url);
+  request.headers['Authorization'] = 'Bearer $token';
+
+  request.fields['username'] = username;
+  request.fields['edad'] = edad.toString();
+  request.fields['genero_pref'] = generoPref.name;
+
+  if (fotoPerfil != null) {
+    request.files.add(await http.MultipartFile.fromPath(
+      'foto_perfil',
+      fotoPerfil.path,
+      contentType: MediaType('image', 'jpeg'),
+    ));
+  }
+
+  final response = await request.send();
+  final body = await response.stream.bytesToString();
+
+  if (response.statusCode != 200) {
+    throw Exception('Error al editar perfil: $body');
+  }
+}
+
+@override
+Future<void> eliminarCuenta() async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) throw Exception('Token no disponible');
+
+  final response = await http.delete(
+    Uri.parse('$_baseUrl/auth/users/me'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Error al eliminar cuenta: ${response.body}');
+  }
+}
+
+
+@override
+Future<void> seguirUsuario(int idUsuario) async {
+  final token = await GoogleSignInService().getToken();
+  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguir');
+
+  final response = await http.post(
+    url,
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Error al seguir usuario: ${response.body}');
+  }
+}
+
+@override
+Future<void> dejarDeSeguirUsuario(int idUsuario) async {
+  final token = await GoogleSignInService().getToken();
+  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/dejar_de_seguir');
+
+  final response = await http.post(
+    url,
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Error al dejar de seguir usuario: ${response.body}');
+  }
+}
+
+@override
+Future<List<Map<String, dynamic>>> obtenerSeguidos(int idUsuario) async {
+  final token = await GoogleSignInService().getToken();
+  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidos');
+
+  final response = await http.get(
+    url,
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Error al obtener seguidos: ${response.body}');
+  }
+}
+
+@override
+Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
+  final token = await GoogleSignInService().getToken();
+  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidores');
+
+  final response = await http.get(
+    url,
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Error al obtener seguidores: ${response.body}');
+  }
+}
+
   
 
 
@@ -252,6 +368,55 @@ class RealApiService implements ApiService {
       throw Exception('Error al guardar artículo: $body');
     }
   }
+
+@override
+Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
+  final url = Uri.parse('$_baseUrl/articulos-propios/');
+  final token = await GoogleSignInService().getToken();
+
+  if (token == null) throw Exception('Token no disponible');
+
+  final request = http.MultipartRequest('POST', url);
+  request.headers['Authorization'] = 'Bearer $token';
+
+  request.fields['nombre'] = nombre;
+  request.fields['categoria'] = categoria.name;
+
+  if (subcategoriaRopa != null) {
+    request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
+  }
+  if (subcategoriaAccesorios != null) {
+    request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
+  }
+  if (subcategoriaCalzado != null) {
+    request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
+  }
+
+  for (final o in ocasiones) {
+    request.fields['ocasiones[]'] = o.name;
+  }
+  for (final t in temporadas) {
+    request.fields['temporadas[]'] = t.name;
+  }
+  for (final c in colores) {
+    request.fields['colores[]'] = c.name;
+  }
+
+  request.files.add(http.MultipartFile.fromBytes(
+    'foto',
+    imagenBytes,
+    filename: 'articulo.png',
+    contentType: MediaType('image', 'png'),
+  ));
+
+  final response = await request.send();
+  final body = await response.stream.bytesToString();
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception('Error al guardar el artículo: $body');
+  }
+}
+
 
   @override
   Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
@@ -505,6 +670,26 @@ class RealApiService implements ApiService {
     }
   }
 
+Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) async {
+  final token = await GoogleSignInService().getToken();
+
+  final queryParams = {
+    if (usuarioId != null) 'usuario_id': usuarioId.toString(),
+    if (categoria != null) 'categoria': categoria,
+  };
+
+  final uri = Uri.parse('$_baseUrl/articulos-propios/count').replace(queryParameters: queryParams);
+
+  final response = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body)['total'] as int;
+  } else {
+    throw Exception('Error al obtener número de artículos');
+  }
+}
 
 
  /*------------------------------------------------------------
@@ -667,6 +852,25 @@ class RealApiService implements ApiService {
       throw Exception('Error al cargar feed: ${response.statusCode} ${await response.stream.bytesToString()}');
     }
   }
+
+Future<int> getNumeroOutfits({int? usuarioId}) async {
+  final token = await GoogleSignInService().getToken();
+  final uri = Uri.parse(
+    usuarioId != null
+      ? '$_baseUrl/outfits/count?usuario_id=$usuarioId'
+      : '$_baseUrl/outfits/count',
+  );
+
+  final response = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body)['total'] as int;
+  } else {
+    throw Exception('Error al obtener número de outfits');
+  }
+}
 
 
 }

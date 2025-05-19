@@ -7,6 +7,7 @@ import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
 class OutfitDetailScreen extends StatelessWidget {
   final Map<String, dynamic> outfit;
 
+
   const OutfitDetailScreen({super.key, required this.outfit});
 
   @override
@@ -25,6 +26,8 @@ class OutfitDetailScreen extends StatelessWidget {
         ColorEnum.values.firstWhere((e) => e.name == c, orElse: () => ColorEnum.BLANCO)).toList() ?? [];
 
     Uint8List? imagenBytes;
+
+
     try {
       final raw = outfit['imagen'];
       if (raw != null && raw.isNotEmpty) {
@@ -153,7 +156,7 @@ class OutfitDetailScreen extends StatelessWidget {
                       final articulo = articulos[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: ArticuloPropioResumen(articulo: articulo),
+                        child: ArticuloPropioResumen(articulo: articulo, usuarioActual: outfit['usuario']),
                       );
                     },
                   ),

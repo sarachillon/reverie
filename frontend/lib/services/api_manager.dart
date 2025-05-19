@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:frontend/enums/enums.dart';
@@ -200,4 +201,79 @@ Stream<Map<String, dynamic>> getFeedOutfitsStream({
     return _instance!.getUserById(id: id);
   }
 
+  Future<void> editarPerfilUsuario({
+    required String username,
+    required int edad,
+    required GeneroPrefEnum generoPref,
+    File? fotoPerfil,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.editarPerfilUsuario(username: username, edad: edad, generoPref: generoPref, fotoPerfil: fotoPerfil);
+  }
+
+  
+  Future<List<Map<String, dynamic>>> obtenerSeguidos(int idUsuario) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.obtenerSeguidos(idUsuario);
+  }
+  Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.obtenerSeguidores(idUsuario);
+  }
+  Future<void> seguirUsuario(int idUsuario) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.seguirUsuario(idUsuario);
+  }
+  Future<void> dejarDeSeguirUsuario(int idUsuario) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.dejarDeSeguirUsuario(idUsuario);
+  }
+
+
+  Future<int> getNumeroOutfits({int? usuarioId}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getNumeroOutfits(usuarioId: usuarioId);
+  }
+  Future<int> getNumeroArticulos({int? usuarioId}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getNumeroArticulos(usuarioId: usuarioId);
+  }
+
+    Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.guardarArticuloPropioDesdeBytes(
+      imagenBytes: imagenBytes,
+      nombre: nombre,
+      categoria: categoria,
+      subcategoriaRopa: subcategoriaRopa,
+      subcategoriaAccesorios: subcategoriaAccesorios,
+      subcategoriaCalzado: subcategoriaCalzado,
+      ocasiones: ocasiones,
+      temporadas: temporadas,
+      colores: colores,
+    );
+  }
+
+  Future<void> eliminarCuenta() async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    await _instance!.eliminarCuenta();
+  }
 }

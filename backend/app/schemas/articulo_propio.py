@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 from app.models.enummerations import *
+from app.schemas.user import UserOut
+
 
 class ArticuloCreate(BaseModel):
     id: int
@@ -28,7 +30,9 @@ class ArticuloPropioConImagen(BaseModel):
     temporadas: List[TemporadaEnum] = []
     colores: List[ColorEnum] = []
     foto: str # URL de la imagen en S3
-    imagen: str  # imagen como tal
+    imagen: Optional[str] = None 
+    usuario: UserOut
+
 
     class Config:
         #orm_mode = True  #  Para trabajar con objetos SQLAlchemy
