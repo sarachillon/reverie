@@ -1,14 +1,13 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 import 'package:frontend/screens/outfits/mostrar_outfits_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/perfil/editar_perfil_screen.dart';
 import 'package:frontend/screens/perfil/seguidores_seguidos_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:frontend/services/google_sign_in_service.dart';
 import 'package:frontend/screens/launcher_screen.dart';
-
+import 'package:frontend/services/google_sign_in_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PerfilScreen extends StatefulWidget {
   final int? userId;
@@ -35,23 +34,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
     _cargarPerfil();
   }
 
-Future<void> _logout() async {
-  final googleSignInService = GoogleSignInService();
-  await googleSignInService.logout();
+  Future<void> _logout() async {
+    final googleSignInService = GoogleSignInService();
+    await googleSignInService.logout();
 
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.clear();
-  ApiManager.reset();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    ApiManager.reset();
 
-  if (mounted) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LauncherScreen()),
-      (route) => false,
-    );
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LauncherScreen()),
+        (route) => false,
+      );
+    }
   }
-}
-
 
   Future<void> _cargarPerfil() async {
     final actual = await _apiManager.getUsuarioActual();
@@ -69,30 +67,22 @@ Future<void> _logout() async {
       usuarioPerfil = actual;
     }
 
-   final List<dynamic> resultados = await Future.wait([
-  _apiManager.getNumeroArticulos(usuarioId: usuarioPerfil['id']),
-  _apiManager.getNumeroOutfits(usuarioId: usuarioPerfil['id']),
-  _apiManager.obtenerSeguidos(usuarioPerfil['id']),
-  _apiManager.obtenerSeguidores(usuarioPerfil['id']),
-]);
+    final List<dynamic> resultados = await Future.wait([
+      _apiManager.getNumeroArticulos(usuarioId: usuarioPerfil['id']),
+      _apiManager.getNumeroOutfits(usuarioId: usuarioPerfil['id']),
+      _apiManager.obtenerSeguidos(usuarioPerfil['id']),
+      _apiManager.obtenerSeguidores(usuarioPerfil['id']),
+    ]);
 
-final int articulos = resultados[0] as int;
-final int outfits = resultados[1] as int;
-final List<Map<String, dynamic>> seguidos = resultados[2] as List<Map<String, dynamic>>;
-final List<Map<String, dynamic>> seguidores = resultados[3] as List<Map<String, dynamic>>;
-
-setState(() {
-  usuario = usuarioPerfil;
-  esPropioPerfil = esPropio;
-  numArticulos = articulos;
-  numOutfits = outfits;
-  numSeguidos = seguidos.length;
-  numSeguidores = seguidores.length;
-});
-
+    setState(() {
+      usuario = usuarioPerfil;
+      esPropioPerfil = esPropio;
+      numArticulos = resultados[0] as int;
+      numOutfits = resultados[1] as int;
+      numSeguidos = (resultados[2] as List).length;
+      numSeguidores = (resultados[3] as List).length;
+    });
   }
-
-  
 
   Future<void> _toggleSeguir() async {
     if (usuario == null) return;
@@ -102,6 +92,10 @@ setState(() {
       await _apiManager.seguirUsuario(usuario!['id']);
     }
     setState(() => siguiendo = !siguiendo);
+  }
+
+  void _actualizarContadoresDesdeTab() {
+    if (esPropioPerfil) _cargarPerfil();
   }
 
   @override
@@ -121,7 +115,7 @@ setState(() {
           centerTitle: true,
           title: Image.asset('assets/logo_reverie_text.png', height: 35),
           actions: [
-            if (esPropioPerfil)
+            if (esPropioPerfil) ...[
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
@@ -138,10 +132,9 @@ setState(() {
               ),
               IconButton(
                 icon: const Icon(Icons.logout_outlined, color: Colors.black),
-                onPressed: () async {
-                  _logout();
-                },
+                onPressed: _logout,
               ),
+            ],
           ],
         ),
         body: Column(
@@ -252,7 +245,10 @@ setState(() {
             Expanded(
               child: TabBarView(
                 children: [
-                  ArmarioScreen(userId: usuario!['id']),
+                  ArmarioScreen(
+                    userId: usuario!['id'],
+                    onContenidoActualizado: _actualizarContadoresDesdeTab,
+                  ),
                   MostrarOutfitScreen(userId: usuario!['id']),
                 ],
               ),

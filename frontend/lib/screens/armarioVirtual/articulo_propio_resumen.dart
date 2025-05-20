@@ -8,11 +8,13 @@ import 'package:frontend/services/api_manager.dart';
 class ArticuloPropioResumen extends StatefulWidget {
   final dynamic articulo;
   final Map<String, dynamic>? usuarioActual;
+  final Function? onActualizado;
 
   const ArticuloPropioResumen({
     super.key,
     required this.articulo,
     required this.usuarioActual,
+    this.onActualizado,
   });
 
   @override
@@ -32,9 +34,11 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
   Future<void> eliminarArticulo(int id) async {
     try {
       await _apiManager.deleteArticuloPropio(id: id);
-      Navigator.pop(context, true);
+      if (widget.onActualizado != null) {
+        widget.onActualizado!();
+      }
     } catch (e) {
-      print('Error al eliminar el artículo: $e');
+      print('Error al eliminar artículo: $e');
     }
   }
 
@@ -74,7 +78,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
     final temporadas = (articulo['temporadas'] as List?)?.map((e) =>
         TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
     final colores = (articulo['colores'] as List?)?.cast<String>().toList() ?? [];
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    final imagenUrl = articulo['foto'] ?? '';
     final id = articulo['id'];
     final emailArticulo = articulo['usuario']?['email'];
     final emailUsuarioActual = widget.usuarioActual?['email'];
@@ -91,7 +95,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.memory(imagenBytes, width: 100, height: 100, fit: BoxFit.cover),
+            child: Image.network(imagenUrl, width: 100, height: 100, fit: BoxFit.cover),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -113,7 +117,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => FormularioEdicionArticuloPropioScreen(
-                                      imagenBytes: imagenBytes,
+                                      imagenUrl: imagenUrl,
                                       articuloExistente: articulo,
                                     ),
                                   ),

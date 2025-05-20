@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
-
 
 class ArticuloPropioWidget extends StatelessWidget {
   final String nombre;
@@ -18,12 +16,12 @@ class ArticuloPropioWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    final imagenUrl = articulo['foto'] ?? '';
+
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
       orElse: () => CategoriaEnum.ROPA,
     );
-    final categoria = categoriaEnum.value;
 
     String subcategoria = '';
     switch (categoriaEnum) {
@@ -58,7 +56,7 @@ class ArticuloPropioWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 6,
@@ -77,22 +75,29 @@ class ArticuloPropioWidget extends StatelessWidget {
               child: SizedBox(
                 height: 130,
                 width: double.infinity,
-                child: Image.memory(
-                        imagenBytes,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(child: Icon(Icons.broken_image)),
-                      )
+                child: Image.network(
+                  imagenUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Center(child: Icon(Icons.broken_image)),
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
               child: Text(
                 nombre,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -101,10 +106,7 @@ class ArticuloPropioWidget extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
               child: Text(
                 subcategoria,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

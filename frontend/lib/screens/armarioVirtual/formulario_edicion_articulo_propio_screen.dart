@@ -6,12 +6,12 @@ import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class FormularioEdicionArticuloPropioScreen extends StatefulWidget {
-  final Uint8List imagenBytes;
+  final String imagenUrl;
   final dynamic articuloExistente;
 
   const FormularioEdicionArticuloPropioScreen({
     super.key,
-    required this.imagenBytes,
+    required this.imagenUrl,
     required this.articuloExistente,
   });
 
@@ -198,7 +198,7 @@ class _FormularioEdicionArticuloPropioScreenState extends State<FormularioEdicio
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.memory(widget.imagenBytes, height: 250, fit: BoxFit.cover),
+            Image.network(widget.imagenUrl, height: 250, fit: BoxFit.cover),
             const SizedBox(height: 16),
             Form(
               key: _formKey,

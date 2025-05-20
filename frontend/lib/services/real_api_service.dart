@@ -369,120 +369,64 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     }
   }
 
-@override
-Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
-  final url = Uri.parse('$_baseUrl/articulos-propios/');
-  final token = await GoogleSignInService().getToken();
-
-  if (token == null) throw Exception('Token no disponible');
-
-  final request = http.MultipartRequest('POST', url);
-  request.headers['Authorization'] = 'Bearer $token';
-
-  request.fields['nombre'] = nombre;
-  request.fields['categoria'] = categoria.name;
-
-  if (subcategoriaRopa != null) {
-    request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
-  }
-  if (subcategoriaAccesorios != null) {
-    request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
-  }
-  if (subcategoriaCalzado != null) {
-    request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
-  }
-
-  for (final o in ocasiones) {
-    request.fields['ocasiones[]'] = o.name;
-  }
-  for (final t in temporadas) {
-    request.fields['temporadas[]'] = t.name;
-  }
-  for (final c in colores) {
-    request.fields['colores[]'] = c.name;
-  }
-
-  request.files.add(http.MultipartFile.fromBytes(
-    'foto',
-    imagenBytes,
-    filename: 'articulo.png',
-    contentType: MediaType('image', 'png'),
-  ));
-
-  final response = await request.send();
-  final body = await response.stream.bytesToString();
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception('Error al guardar el artículo: $body');
-  }
-}
-
-
   @override
-  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
-  final queryString = filtros != null
-        ? filtros.entries
-            .where((e) => e.value != null)
-            .expand((e) {
-              if (e.value is List) {
-                return (e.value as List).map((v) => '${e.key}=$v');
-              } else {
-                return ['${e.key}=${e.value}'];
-              }
-            })
-            .join('&')
-        : '';
-
+  Future<void> guardarArticuloPropioDesdeArchivo({
+    required File imagenFile,
+    required String nombre,
+    required CategoriaEnum categoria,
+    SubcategoriaRopaEnum? subcategoriaRopa,
+    SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
+    SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
+    required List<TemporadaEnum> temporadas,
+    required List<ColorEnum> colores,
+  }) async {
+    final url = Uri.parse('$_baseUrl/articulos-propios/');
     final token = await GoogleSignInService().getToken();
-    if (token == null) {
-      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+
+    if (token == null) throw Exception('Token no disponible');
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['nombre'] = nombre;
+    request.fields['categoria'] = categoria.name;
+
+    if (subcategoriaRopa != null) {
+      request.fields['subcategoria_ropa'] = subcategoriaRopa.name;
+    }
+    if (subcategoriaAccesorios != null) {
+      request.fields['subcategoria_accesorios'] = subcategoriaAccesorios.name;
+    }
+    if (subcategoriaCalzado != null) {
+      request.fields['subcategoria_calzado'] = subcategoriaCalzado.name;
     }
 
-    final response = await http.get(
-      Uri.parse('$_baseUrl/articulos-propios/?$queryString'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
+    for (final o in ocasiones) {
+      request.fields['ocasiones[]'] = o.name;
+    }
+    for (final t in temporadas) {
+      request.fields['temporadas[]'] = t.name;
+    }
+    for (final c in colores) {
+      request.fields['colores[]'] = c.name;
+    }
 
-    if (response.statusCode == 200) {
-      final List<dynamic> articulos = [];
-      bool streamSuccess = true;
+    request.files.add(await http.MultipartFile.fromPath(
+      'foto',
+      imagenFile.path,
+      contentType: MediaType('image', 'png'),
+    ));
 
-      final byteStream = Stream.fromIterable([response.bodyBytes]);
-      final responseBody = byteStream.transform(
-          StreamTransformer.fromBind(utf8.decoder.bind)).transform(const LineSplitter());
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
 
-      await for (final data in responseBody) {
-        if (data.isNotEmpty) {
-          final decodedData = jsonDecode(data);
-          if (decodedData is Map<String, dynamic> && decodedData.containsKey("error")) {
-            // Handle error object
-            print("Error from stream: ${decodedData["error"]}");
-            streamSuccess = false;
-            // You might want to log this or take other actions
-          } else if (decodedData is Map<String, dynamic> && decodedData.containsKey("stream_status")) {
-            if (decodedData["stream_status"] != "success") {
-              streamSuccess = false;
-            }
-          }
-          else {
-            articulos.add(decodedData);
-          }
-        }
-      }
-
-      if (!streamSuccess) {
-        // Handle the partial failure scenario
-        print("Stream completed with errors. Some data might be incomplete.");
-      }
-
-      return articulos;
-
-    } else {
-      throw Exception('Error al cargar artículos');
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Error al guardar el artículo: $body');
     }
   }
+
+
 
 
   @override

@@ -57,7 +57,6 @@ abstract class ApiService {
     required List<ColorEnum> colores,
   });
 
-  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros});
   
   Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre});
 
@@ -71,7 +70,7 @@ abstract class ApiService {
 
   Future<void> editarArticuloPropio({required int id, Image? foto, String? nombre, CategoriaEnum? categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, List<OcasionEnum>? ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores });
 
-    Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores});
+  Future<void> guardarArticuloPropioDesdeArchivo({ required File imagenFile, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores});
 
 
   // OUTFITS 

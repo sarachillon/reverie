@@ -69,7 +69,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
     final ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e, orElse: () => OcasionEnum.CASUAL).value).join(', ') ?? '';
     final temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
     final colores = (articulo['colores'] as List?)?.cast<String>().toList() ?? [];
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    String imagenUrl = articulo['foto'] ?? '';
     final id = articulo['id'] ?? '';
 
     return FutureBuilder<String?>(
@@ -92,12 +92,12 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
-                  final imagenBytes = base64Decode(articulo['imagen']);
+                  final imagenUrl = articulo['foto'] ?? '';
                   final updatedArticulo = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => FormularioEdicionArticuloPropioScreen(
-                        imagenBytes: imagenBytes,
+                        imagenUrl: imagenUrl,
                         articuloExistente: articulo,
                       ),
                     ),
@@ -130,7 +130,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
               const SizedBox(height: 8),
               AspectRatio(
                 aspectRatio: 1,
-                child: Image.memory(imagenBytes, fit: BoxFit.cover),
+                child: Image.network(imagenUrl, fit: BoxFit.cover),
               ),
               Expanded(
                 child: SingleChildScrollView(

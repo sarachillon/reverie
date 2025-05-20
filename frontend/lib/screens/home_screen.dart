@@ -190,7 +190,7 @@ Future<void> _loadProfileImage() async {
                     backgroundColor: Colors.transparent,
                   )
                 : const Icon(Icons.person),
-            label: username,
+            label: username ?? 'Perfil',
           ),
         ],
       ),

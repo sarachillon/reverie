@@ -1,10 +1,11 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class FormularioArticuloDesdeExistenteScreen extends StatefulWidget {
   final Map<String, dynamic> articulo;
@@ -20,7 +21,7 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
   final _nombreController = TextEditingController();
   final ApiManager _apiManager = ApiManager();
 
-  Uint8List? _imagenBytes;
+  String? _imagenUrl;
 
   CategoriaEnum? _categoria;
   dynamic _subcategoria;
@@ -37,62 +38,73 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
   @override
   void initState() {
     super.initState();
-    final art = widget.articulo;
-    _nombreController.text = art['nombre'] ?? '';
-    _categoria = CategoriaEnum.values.firstWhere((e) => e.name == art['categoria'], orElse: () => CategoriaEnum.ROPA);
-    _subcategoria = art['subcategoria'];
-    _ocasiones = (art['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e)).toList() ?? [];
-    _temporadas = (art['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e)).toList() ?? [];
-    _colores = (art['colores'] as List?)?.map((e) => ColorEnum.values.firstWhere((c) => c.name == e)).toList() ?? [];
-    _imagenBytes = base64Decode(art['imagen'] ?? '');
+    final articulo = widget.articulo;
+    _nombreController.text = articulo['nombre'] ?? '';
+    _categoria = CategoriaEnum.values.firstWhere((e) => e.name == articulo['categoria'], orElse: () => CategoriaEnum.ROPA);
+    _subcategoria = articulo['subcategoria'];
+    _ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e)).toList() ?? [];
+    _temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e)).toList() ?? [];
+    _colores = (articulo['colores'] as List?)?.map((e) => ColorEnum.values.firstWhere((c) => c.name == e)).toList() ?? [];
+    _imagenUrl = articulo['foto'] ?? '';
   }
+
+
 
   Future<void> _guardarPrenda() async {
-    if (!_formKey.currentState!.validate() ||
-        _categoria == null ||
-        _subcategoria == null ||
-        _ocasiones.isEmpty ||
-        _temporadas.isEmpty ||
-        _colores.isEmpty ||
-        _imagenBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
-      );
-      return;
-    }
-
-    try {
-      SubcategoriaRopaEnum? subRopa;
-      SubcategoriaAccesoriosEnum? subAccesorio;
-      SubcategoriaCalzadoEnum? subCalzado;
-
-      if (_categoria == CategoriaEnum.ROPA) {
-        subRopa = SubcategoriaRopaEnum.values.firstWhere((e) => e.name == _subcategoria);
-      } else if (_categoria == CategoriaEnum.ACCESORIOS) {
-        subAccesorio = SubcategoriaAccesoriosEnum.values.firstWhere((e) => e.name == _subcategoria);
-      } else if (_categoria == CategoriaEnum.CALZADO) {
-        subCalzado = SubcategoriaCalzadoEnum.values.firstWhere((e) => e.name == _subcategoria);
-      }
-
-      await _apiManager.guardarArticuloPropioDesdeBytes(
-        imagenBytes: _imagenBytes!,
-        nombre: _nombreController.text,
-        categoria: _categoria!,
-        subcategoriaRopa: subRopa,
-        subcategoriaAccesorios: subAccesorio,
-        subcategoriaCalzado: subCalzado,
-        ocasiones: _ocasiones,
-        temporadas: _temporadas,
-        colores: _colores,
-      );
-
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar la prenda: $e")),
-      );
-    }
+  if (!_formKey.currentState!.validate() ||
+      _categoria == null ||
+      _subcategoria == null ||
+      _ocasiones.isEmpty ||
+      _temporadas.isEmpty ||
+      _colores.isEmpty ||
+      _imagenUrl == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
+    );
+    return;
   }
+
+  try {
+    // 1. Descargar imagen de la URL y guardarla como File temporal
+    final response = await http.get(Uri.parse(_imagenUrl!));
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/articulo.png');
+    await tempFile.writeAsBytes(response.bodyBytes);
+
+    // 2. Mapear subcategoría
+    SubcategoriaRopaEnum? subRopa;
+    SubcategoriaAccesoriosEnum? subAccesorio;
+    SubcategoriaCalzadoEnum? subCalzado;
+
+    if (_categoria == CategoriaEnum.ROPA) {
+      subRopa = SubcategoriaRopaEnum.values.firstWhere((e) => e.name == _subcategoria);
+    } else if (_categoria == CategoriaEnum.ACCESORIOS) {
+      subAccesorio = SubcategoriaAccesoriosEnum.values.firstWhere((e) => e.name == _subcategoria);
+    } else if (_categoria == CategoriaEnum.CALZADO) {
+      subCalzado = SubcategoriaCalzadoEnum.values.firstWhere((e) => e.name == _subcategoria);
+    }
+
+    // 3. Llamada al API
+    await _apiManager.guardarArticuloPropioDesdeArchivo(
+      imagenFile: tempFile,
+      nombre: _nombreController.text,
+      categoria: _categoria!,
+      subcategoriaRopa: subRopa,
+      subcategoriaAccesorios: subAccesorio,
+      subcategoriaCalzado: subCalzado,
+      ocasiones: _ocasiones,
+      temporadas: _temporadas,
+      colores: _colores,
+    );
+
+    if (mounted) Navigator.pop(context, true);
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error al guardar la prenda: $e")),
+    );
+  }
+}
+
 
   Color _getColorFromEnum(ColorEnum color) {
     switch (color) {
@@ -118,8 +130,8 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _imagenBytes != null
-              ? Image.memory(_imagenBytes!, height: 250, fit: BoxFit.cover)
+            _imagenUrl != null
+              ? Image.network(_imagenUrl!, height: 250, fit: BoxFit.cover)
               : const SizedBox(height: 250, child: Center(child: Text("Sin imagen disponible"))),
             const SizedBox(height: 16),
             Form(

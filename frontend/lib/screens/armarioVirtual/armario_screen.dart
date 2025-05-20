@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
+import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
 import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class ArmarioScreen extends StatefulWidget {
   final int? userId;
+  final VoidCallback? onContenidoActualizado;
 
-  const ArmarioScreen({super.key, this.userId});
+  const ArmarioScreen({
+    super.key,
+    this.userId,
+    this.onContenidoActualizado,
+  });
 
   @override
   State<ArmarioScreen> createState() => _ArmarioScreenState();
@@ -37,8 +43,15 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
     }
   }
 
-  Widget _buildCategoriaHorizontal(String categoria, List<dynamic> articulos) {
-    final articulosCategoria = articulos
+  void _recargarArticulos() {
+    setState(() {
+      _cargarArticulosPropios();
+    });
+  }
+
+
+  Widget _buildCategoriaHorizontal(String categoria) {
+    final articulosCategoria = _articulos
         .where((a) => (a['categoria'] ?? '').toString().toUpperCase() == categoria)
         .toList();
 
@@ -55,12 +68,15 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PantallaVerTodos(categoria: categoria),
-                  ),
-                ),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PantallaVerTodos(categoria: categoria),
+                    ),
+                  );
+                  _recargarArticulos(); 
+                },
                 child: Row(
                   children: const [
                     Text("Ver todos", style: TextStyle(fontSize: 12, color: Colors.grey)),
@@ -113,18 +129,35 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                       ),
                     ),
                   );
-                } else if (articulosCategoria.isNotEmpty) {
+                } else {
                   final articulo = articulosCategoria[index];
                   return SizedBox(
                     width: 150,
-                    child: ArticuloPropioWidget(
-                      nombre: articulo['nombre'] ?? '',
-                      articulo: articulo,
-                      onTap: _cargarArticulosPropios,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final actual = await _apiManager.getUsuarioActual();
+                        final resultado = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ArticuloPropioResumen(
+                              articulo: articulo,
+                              usuarioActual: actual,
+                              onActualizado: _recargarArticulos,
+                            ),
+                          ),
+                        );
+
+                        if (resultado == true) {
+                          await _cargarArticulosPropios();
+                          widget.onContenidoActualizado?.call();
+                        }
+                      },
+                      child: ArticuloPropioWidget(
+                        nombre: articulo['nombre'] ?? '',
+                        articulo: articulo,
+                      ),
                     ),
                   );
-                } else {
-                  return const SizedBox.shrink();
                 }
               },
             ),
@@ -143,9 +176,9 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
             ? const Center(child: Text('No se encontraron artículos.'))
             : ListView(
                 children: [
-                  _buildCategoriaHorizontal('ROPA', _articulos),
-                  _buildCategoriaHorizontal('CALZADO', _articulos),
-                  _buildCategoriaHorizontal('ACCESORIOS', _articulos),
+                  _buildCategoriaHorizontal('ROPA'),
+                  _buildCategoriaHorizontal('CALZADO'),
+                  _buildCategoriaHorizontal('ACCESORIOS'),
                   const SizedBox(height: 80),
                 ],
               ),

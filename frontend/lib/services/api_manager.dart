@@ -64,14 +64,6 @@ class ApiManager {
     );
   }
 
-  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
-    if (_instance == null) {
-      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
-    }
-    return _instance!.getArticulosPropios(filtros: filtros);
-  }
-
-
   Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
@@ -253,12 +245,12 @@ Stream<Map<String, dynamic>> getFeedOutfitsStream({
     return _instance!.getNumeroArticulos(usuarioId: usuarioId);
   }
 
-    Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
+    Future<void> guardarArticuloPropioDesdeArchivo({ required File imagenFile, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
-    await _instance!.guardarArticuloPropioDesdeBytes(
-      imagenBytes: imagenBytes,
+    await _instance!.guardarArticuloPropioDesdeArchivo(
+      imagenFile: imagenFile,
       nombre: nombre,
       categoria: categoria,
       subcategoriaRopa: subcategoriaRopa,

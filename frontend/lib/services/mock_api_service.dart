@@ -166,11 +166,6 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
 
 
   @override
-  Future<List<dynamic>> getArticulosPropios({Map<String, dynamic>? filtros}) async {
-    return fakeArticulos;
-  }
-
-  @override
   Future<List<dynamic>> getArticulosPropiosPorNombre({required String nombre}) async {
     // Simulación de respuesta de artículos propios por nombre
     return [
@@ -316,23 +311,33 @@ Future<void> editarArticuloPropio({
   }
 
   @override
-      Future<void> guardarArticuloPropioDesdeBytes({ required Uint8List imagenBytes, required String nombre, required CategoriaEnum categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, required List<OcasionEnum> ocasiones, required List<TemporadaEnum> temporadas, required List<ColorEnum> colores}) async {
-              final Image fotoPrueba = Image.asset('assets/logo.png');
-              final String nombrePrueba = "Camiseta de prueba";
-              final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
-              final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
-              final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
-              final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
+  Future<void> guardarArticuloPropioDesdeArchivo({ 
+    required File imagenFile,
+    required String nombre,
+    required CategoriaEnum categoria,
+    SubcategoriaRopaEnum? subcategoriaRopa,
+    SubcategoriaAccesoriosEnum? subcategoriaAccesorios,
+    SubcategoriaCalzadoEnum? subcategoriaCalzado,
+    required List<OcasionEnum> ocasiones,
+    required List<TemporadaEnum> temporadas,
+    required List<ColorEnum> colores,}) async {
+          
+      final Image fotoPrueba = Image.asset('assets/logo.png');
+      final String nombrePrueba = "Camiseta de prueba";
+      final CategoriaEnum categoriaPrueba = CategoriaEnum.ROPA; 
+      final SubcategoriaRopaEnum subcategoriaRopaPrueba = SubcategoriaRopaEnum.CAMISAS;
+      final List<TemporadaEnum> temporadasPrueba = [TemporadaEnum.VERANO, TemporadaEnum.ENTRETIEMPO];
+      final List<ColorEnum> coloresPrueba = [ColorEnum.AZUL, ColorEnum.BLANCO];
 
               // Simulación de guardar el artículo
-              print("Guardando artículo con los siguientes valores de prueba:");
-              print("Foto: $fotoPrueba");
-              print("Nombre: $nombrePrueba");
-              print("Categoría: $categoriaPrueba");
-              print("Subcategoría Ropa: $subcategoriaRopaPrueba");
-              print("Temporadas: $temporadasPrueba");
-              print("Colores: $coloresPrueba");
-      }
+      print("Guardando artículo con los siguientes valores de prueba:");
+      print("Foto: $fotoPrueba");
+      print("Nombre: $nombrePrueba");
+      print("Categoría: $categoriaPrueba");
+      print("Subcategoría Ropa: $subcategoriaRopaPrueba");
+      print("Temporadas: $temporadasPrueba");
+      print("Colores: $coloresPrueba");
+    }
 
   @override
   Future<void> eliminarCuenta() async {
