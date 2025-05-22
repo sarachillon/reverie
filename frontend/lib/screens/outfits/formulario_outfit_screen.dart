@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
-import 'package:frontend/screens/outfits/carga_outfit_screen.dart';
+import 'package:frontend/screens/carga_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/outfit_confirmation_screen.dart';
 
@@ -11,58 +11,70 @@ class FormularioOutfitScreen extends StatefulWidget {
   State<FormularioOutfitScreen> createState() => _FormularioOutfitScreenState();
 }
 
-class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _tituloController = TextEditingController();
-  final _descripcionController = TextEditingController();
-  final ApiManager _apiManager = ApiManager();
+  class _FormularioOutfitScreenState extends State<FormularioOutfitScreen> {
+    final _formKey = GlobalKey<FormState>();
+    final _tituloController = TextEditingController();
+    final _descripcionController = TextEditingController();
+    final ApiManager _apiManager = ApiManager();
 
-  List<OcasionEnum> _ocasiones = [];
-  List<TemporadaEnum> _temporadas = [];
-  List<ColorEnum> _colores = [];
+    List<OcasionEnum> _ocasiones = [];
+    List<TemporadaEnum> _temporadas = [];
+    List<ColorEnum> _colores = [];
 
-  void generarOutfit(BuildContext context) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CargandoOutfitScreen()),
-    );
-
-    try {
-      final outfit = await _apiManager.generarOutfitPropio(
-        titulo: _tituloController.text,
-        descripcion: _descripcionController.text,
-        ocasiones: _ocasiones,
-        temporadas: _temporadas,
-        colores: _colores,
-      );
-
-      Navigator.pop(context); // cerrar carga
-
-      final resultado = await Navigator.push(
+    Future<bool?> generarOutfit(BuildContext context) async {
+      // Mostrar loader de outfit
+      Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => OutfitConfirmationScreen(
-            outfit: outfit,
-            mostrarAcciones: true,
-            onAceptar: () => Navigator.pop(context, outfit),
-            onRechazar: () async {
-              await _apiManager.deleteOutfitPropio(id: outfit['id']);
-              Navigator.pop(context);
-            },
-          ),
+          builder: (_) => const CargandoScreen(type: CargandoType.outfit),
         ),
       );
 
-      if (resultado != null && mounted) {
-        Navigator.pop(context, resultado);
+      try {
+        final outfit = await _apiManager.generarOutfitPropio(
+          titulo: _tituloController.text,
+          descripcion: _descripcionController.text,
+          ocasiones: _ocasiones,
+          temporadas: _temporadas,
+          colores: _colores,
+        );
+
+        // Cerrar loader
+        Navigator.pop(context);
+
+        // Confirmar resultado
+        final bool? resultado = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OutfitConfirmationScreen(
+              outfit: outfit,
+              mostrarAcciones: true,
+              onAceptar: () => Navigator.pop(context, true),
+              onRechazar: () async {
+                await _apiManager.deleteOutfitPropio(id: outfit['id']);
+                Navigator.pop(context, false);
+              },
+            ),
+          ),
+        );
+
+        // Si el usuario aceptó, cierra este formulario devolviendo true
+        if (resultado == true && mounted) {
+          Navigator.pop(context, true);
+          return true;
+        }
+      } catch (e) {
+        // Cerrar loader en caso de error
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al generar outfit: $e')),
+        );
+        return false;
       }
-    } catch (e) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar outfit: $e')),
-      );
+
+      // En cualquier otro caso, devuelve false
+      return false;
     }
-  }
 
   @override
   Widget build(BuildContext context) {

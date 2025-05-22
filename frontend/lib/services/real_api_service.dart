@@ -160,122 +160,122 @@ class RealApiService implements ApiService {
     }
   }
 
-@override
-Future<void> editarPerfilUsuario({
-  required String username,
-  required int edad,
-  required GeneroPrefEnum generoPref,
-  File? fotoPerfil,
-}) async {
-  final url = Uri.parse('$_baseUrl/auth/users/editar');
-  final token = await GoogleSignInService().getToken();
+  @override
+  Future<void> editarPerfilUsuario({
+    required String username,
+    required int edad,
+    required GeneroPrefEnum generoPref,
+    File? fotoPerfil,
+  }) async {
+    final url = Uri.parse('$_baseUrl/auth/users/editar');
+    final token = await GoogleSignInService().getToken();
 
-  if (token == null) throw Exception('No autenticado');
+    if (token == null) throw Exception('No autenticado');
 
-  final request = http.MultipartRequest('POST', url);
-  request.headers['Authorization'] = 'Bearer $token';
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
 
-  request.fields['username'] = username;
-  request.fields['edad'] = edad.toString();
-  request.fields['genero_pref'] = generoPref.name;
+    request.fields['username'] = username;
+    request.fields['edad'] = edad.toString();
+    request.fields['genero_pref'] = generoPref.name;
 
-  if (fotoPerfil != null) {
-    request.files.add(await http.MultipartFile.fromPath(
-      'foto_perfil',
-      fotoPerfil.path,
-      contentType: MediaType('image', 'jpeg'),
-    ));
+    if (fotoPerfil != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'foto_perfil',
+        fotoPerfil.path,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+    }
+
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al editar perfil: $body');
+    }
   }
 
-  final response = await request.send();
-  final body = await response.stream.bytesToString();
+  @override
+  Future<void> eliminarCuenta() async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
 
-  if (response.statusCode != 200) {
-    throw Exception('Error al editar perfil: $body');
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/auth/users/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al eliminar cuenta: ${response.body}');
+    }
   }
-}
 
-@override
-Future<void> eliminarCuenta() async {
-  final token = await GoogleSignInService().getToken();
-  if (token == null) throw Exception('Token no disponible');
 
-  final response = await http.delete(
-    Uri.parse('$_baseUrl/auth/users/me'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+  @override
+  Future<void> seguirUsuario(int idUsuario) async {
+    final token = await GoogleSignInService().getToken();
+    final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguir');
 
-  if (response.statusCode != 200) {
-    throw Exception('Error al eliminar cuenta: ${response.body}');
+    final response = await http.post(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al seguir usuario: ${response.body}');
+    }
   }
-}
 
+  @override
+  Future<void> dejarDeSeguirUsuario(int idUsuario) async {
+    final token = await GoogleSignInService().getToken();
+    final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/dejar_de_seguir');
 
-@override
-Future<void> seguirUsuario(int idUsuario) async {
-  final token = await GoogleSignInService().getToken();
-  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguir');
+    final response = await http.post(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-  final response = await http.post(
-    url,
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception('Error al seguir usuario: ${response.body}');
+    if (response.statusCode != 200) {
+      throw Exception('Error al dejar de seguir usuario: ${response.body}');
+    }
   }
-}
 
-@override
-Future<void> dejarDeSeguirUsuario(int idUsuario) async {
-  final token = await GoogleSignInService().getToken();
-  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/dejar_de_seguir');
+  @override
+  Future<List<Map<String, dynamic>>> obtenerSeguidos(int idUsuario) async {
+    final token = await GoogleSignInService().getToken();
+    final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidos');
 
-  final response = await http.post(
-    url,
-    headers: {'Authorization': 'Bearer $token'},
-  );
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-  if (response.statusCode != 200) {
-    throw Exception('Error al dejar de seguir usuario: ${response.body}');
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Error al obtener seguidos: ${response.body}');
+    }
   }
-}
 
-@override
-Future<List<Map<String, dynamic>>> obtenerSeguidos(int idUsuario) async {
-  final token = await GoogleSignInService().getToken();
-  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidos');
+  @override
+  Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
+    final token = await GoogleSignInService().getToken();
+    final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidores');
 
-  final response = await http.get(
-    url,
-    headers: {'Authorization': 'Bearer $token'},
-  );
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-  if (response.statusCode == 200) {
-    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
-  } else {
-    throw Exception('Error al obtener seguidos: ${response.body}');
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Error al obtener seguidores: ${response.body}');
+    }
   }
-}
-
-@override
-Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
-  final token = await GoogleSignInService().getToken();
-  final url = Uri.parse('$_baseUrl/auth/users/$idUsuario/seguidores');
-
-  final response = await http.get(
-    url,
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  if (response.statusCode == 200) {
-    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
-  } else {
-    throw Exception('Error al obtener seguidores: ${response.body}');
-  }
-}
 
   
 
@@ -369,6 +369,7 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     }
   }
 
+
   @override
   Future<void> guardarArticuloPropioDesdeArchivo({
     required File imagenFile,
@@ -425,8 +426,6 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
       throw Exception('Error al guardar el artículo: $body');
     }
   }
-
-
 
 
   @override
@@ -521,6 +520,8 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     }
   }
 
+
+  @override
   Future<void> editarArticuloPropio({
     required int id,
     Image? foto,
@@ -587,6 +588,8 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     }
   }
 
+
+  @override
   Future<File?> procesarImagen({required File imagenOriginal}) async {
     final url = Uri.parse('$_baseUrl/imagen/procesar');
     final token = await GoogleSignInService().getToken();
@@ -614,7 +617,9 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     }
   }
 
-Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) async {
+
+  @override
+  Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) async {
   final token = await GoogleSignInService().getToken();
 
   final queryParams = {
@@ -797,7 +802,9 @@ Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) async {
     }
   }
 
-Future<int> getNumeroOutfits({int? usuarioId}) async {
+
+  @override
+  Future<int> getNumeroOutfits({int? usuarioId}) async {
   final token = await GoogleSignInService().getToken();
   final uri = Uri.parse(
     usuarioId != null

@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_propio_existente.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:frontend/screens/armarioVirtual/imagen_articulo_widget.dart';
+ 
 
 class ArticuloPropioResumen extends StatefulWidget {
   final dynamic articulo;
@@ -95,7 +96,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(imagenUrl, width: 100, height: 100, fit: BoxFit.cover),
+            child: ImagenArticulo(url: imagenUrl),
           ),
           const SizedBox(width: 12),
           Expanded(

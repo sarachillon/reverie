@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
@@ -25,18 +23,17 @@ class OutfitDetailScreen extends StatelessWidget {
     final List<ColorEnum> colores = (outfit['colores'] as List?)?.map((c) =>
         ColorEnum.values.firstWhere((e) => e.name == c, orElse: () => ColorEnum.BLANCO)).toList() ?? [];
 
-    Uint8List? imagenBytes;
+    String? imagenUrl = outfit['imagen'];
 
 
     try {
-      final raw = outfit['imagen'];
-      if (raw != null && raw.isNotEmpty) {
-        final base64Str = raw.contains(',') ? raw.split(',').last : raw;
-        imagenBytes = base64Decode(base64Str);
-      }
+      imagenUrl != null
+      ? Image.network(imagenUrl)
+      : Placeholder();
     } catch (e) {
       print("ERROR al decodificar imagen: $e");
     }
+
 
     return DefaultTabController(
       length: 2,
@@ -91,12 +88,12 @@ class OutfitDetailScreen extends StatelessWidget {
                   ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     children: [
-                      if (imagenBytes != null)
+                      if (imagenUrl != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 24),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            child: Image.memory(imagenBytes, fit: BoxFit.contain),
+                            child: Image.network(imagenUrl, fit: BoxFit.contain),
                           ),
                         ),
                       Container(
@@ -124,23 +121,30 @@ class OutfitDetailScreen extends StatelessWidget {
                             const SizedBox(height: 8),
                             _buildInfoRow("Temporadas", temporadas.join(', ')),
                             const SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const Text("Colores:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                const SizedBox(width: 8),
-                                ...colores.map((c) => Container(
-                                  width: 16,
-                                  height: 16,
-                                  margin: const EdgeInsets.only(right: 6),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _getColorFromEnum(c),
-                                    border: Border.all(color: Colors.grey.shade600),
+                            if (colores.isNotEmpty) ...[
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    "Colores:",
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
-                                )),
-                              ],
-                            ),
+                                  const SizedBox(width: 8),
+                                  // ojo al toList() para que Dart entienda que son Widgets
+                                  ...colores.map((c) => Container(
+                                        width: 16,
+                                        height: 16,
+                                        margin: const EdgeInsets.only(right: 6),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: _getColorFromEnum(c),
+                                          border: Border.all(color: Colors.grey.shade600),
+                                        ),
+                                      )).toList(),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                           ],
                         ),
                       ),
@@ -170,18 +174,35 @@ class OutfitDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String? value) {
+    // Si no hay valor, no pinta nada
+    if (value == null || value.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    // Si hay valor, pinta la fila
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
         ],
       ),
     );
   }
+
 
   Color _getColorFromEnum(ColorEnum color) {
     switch (color) {

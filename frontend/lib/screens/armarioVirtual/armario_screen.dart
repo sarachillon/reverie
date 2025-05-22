@@ -90,77 +90,91 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
           const SizedBox(height: 10),
           SizedBox(
             height: 190,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: articulosCategoria.isEmpty ? 1 : articulosCategoria.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                if (articulosCategoria.isEmpty && widget.userId == null) {
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+            child: articulosCategoria.isEmpty
+                ? ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    children: [
+                      if (widget.userId != null)
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                            );
+                          },
+                          child: Container(
+                            width: 150,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add, size: 30, color: Colors.grey),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Añadir ${categoria.toLowerCase()}',
+                                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          height: 120,
+                          width: 150,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                          ),
+                          child: Text(
+                            'No hay ${categoria.toLowerCase()}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ),
+                    ],
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    itemCount: articulosCategoria.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final articulo = articulosCategoria[index];
+                      return SizedBox(
+                        width: 150,
+                        child: GestureDetector(
+                          onTap: () async {
+                            final actual = await _apiManager.getUsuarioActual();
+                            final resultado = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ArticuloPropioResumen(
+                                  articulo: articulo,
+                                  usuarioActual: actual,
+                                  onActualizado: _recargarArticulos,
+                                ),
+                              ),
+                            );
+                            if (resultado == true) {
+                              await _cargarArticulosPropios();
+                              widget.onContenidoActualizado?.call();
+                            }
+                          },
+                          child: ArticuloPropioWidget(
+                            nombre: articulo['nombre'] ?? '',
+                            articulo: articulo,
+                          ),
+                        ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, size: 30, color: Colors.grey.shade600),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Añadir artículo",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                } else {
-                  final articulo = articulosCategoria[index];
-                  return SizedBox(
-                    width: 150,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final actual = await _apiManager.getUsuarioActual();
-                        final resultado = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ArticuloPropioResumen(
-                              articulo: articulo,
-                              usuarioActual: actual,
-                              onActualizado: _recargarArticulos,
-                            ),
-                          ),
-                        );
-
-                        if (resultado == true) {
-                          await _cargarArticulosPropios();
-                          widget.onContenidoActualizado?.call();
-                        }
-                      },
-                      child: ArticuloPropioWidget(
-                        nombre: articulo['nombre'] ?? '',
-                        articulo: articulo,
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
+                  ),
           ),
         ],
       ),

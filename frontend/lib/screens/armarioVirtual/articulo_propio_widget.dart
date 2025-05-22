@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
+import 'package:frontend/screens/armarioVirtual/imagen_articulo_widget.dart';
+
 
 class ArticuloPropioWidget extends StatelessWidget {
   final String nombre;
@@ -75,22 +77,7 @@ class ArticuloPropioWidget extends StatelessWidget {
               child: SizedBox(
                 height: 130,
                 width: double.infinity,
-                child: Image.network(
-                  imagenUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Center(child: Icon(Icons.broken_image)),
-                ),
+                child: ImagenArticulo(url: imagenUrl)
               ),
             ),
             Padding(

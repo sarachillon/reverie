@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/formulario_outfit_screen.dart';
 import 'package:frontend/screens/outfits/filtros_outfit_screen.dart';
-import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+//import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
 import 'package:frontend/screens/outfits/widget_outfit_small.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/widget_outfit_big.dart';

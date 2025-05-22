@@ -60,6 +60,7 @@ class _SubirFotoScreenState extends State<SubirFotoScreen> {
       await _pedirPermisos();
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
+      
 
       if (pickedFile != null) {
         final originalFile = File(pickedFile.path);

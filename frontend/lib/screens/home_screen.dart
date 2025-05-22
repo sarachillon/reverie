@@ -1,57 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_manager.dart';
-import 'launcher_screen.dart';
-import 'feed/feed_screen.dart';
-import 'perfil/perfil_screen.dart';
-import 'outfits/outfits_screen.dart';
-import '../services/google_sign_in_service.dart';
-import 'armarioVirtual/subir_foto_screen.dart';
-import 'outfits/laboratorio_outfit_screen.dart';
+import 'package:frontend/services/api_manager.dart';
+import 'package:frontend/screens/launcher_screen.dart';
+import 'package:frontend/screens/feed/feed_screen.dart';
+import 'package:frontend/screens/perfil/perfil_screen.dart';
+import 'package:frontend/screens/outfits/formulario_outfit_screen.dart';
+import 'package:frontend/services/google_sign_in_service.dart';
+import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
+import 'package:frontend/screens/outfits/laboratorio_outfit_screen.dart';
+import 'package:frontend/screens/outfits/mostrar_outfits_screen.dart';
 import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   final String? userEmail;
 
-
   const HomeScreen({Key? key, this.userEmail}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 1; 
+  int _selectedIndex = 1;
   String? profileImageUrl;
   String? username;
 
-
   final List<Widget> _screens = [
-    OutfitsScreen(),
+    MostrarOutfitScreen(),
     FeedScreen(),
-    Container(), 
+    Container(),
     LaboratorioOutfitScreen(),
     PerfilScreen(),
   ];
-
+  
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
   }
 
-Future<void> _loadProfileImage() async {
-  final user = await ApiManager().getUsuarioActual();
-  setState(() {
-    profileImageUrl = user['foto_perfil'];
-    username = user['username'];
-  });
-}
-
-
-
+  Future<void> _loadProfileImage() async {
+    final user = await ApiManager().getUsuarioActual();
+    setState(() {
+      profileImageUrl = user['foto_perfil'];
+      username = user['username'];
+    });
+  }
 
   void _onAddPressed() {
+    final previousIndex = _selectedIndex;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -69,12 +67,14 @@ Future<void> _loadProfileImage() async {
                 text: "Nuevo artículo",
                 onTap: () async {
                   Navigator.pop(context);
-                  final result = await Navigator.push(
+                  final result = await Navigator.push<bool?>(
                     context,
-                    MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const SubirFotoScreen(),
+                    ),
                   );
                   if (result == true) {
-                    setState(() => _selectedIndex = 3); 
+                    setState(() => _selectedIndex = previousIndex);
                   }
                 },
               ),
@@ -84,8 +84,16 @@ Future<void> _loadProfileImage() async {
                 text: "Nuevo outfit",
                 onTap: () async {
                   Navigator.pop(context);
-                  await OutfitsScreen.crearNuevoOutfit(context);
-                  setState(() => _selectedIndex = 0);
+                  
+                  final result = await Navigator.push<bool?>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FormularioOutfitScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    setState(() => _selectedIndex = previousIndex);
+                  }
                 },
               ),
             ],
@@ -115,11 +123,8 @@ Future<void> _loadProfileImage() async {
         child: Row(
           children: [
             Icon(icon, color: const Color(0xFFC9A86A), size: 28),
-            const SizedBox(width: 16),
-            Text(
-              text,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            const SizedBox(width: 12),
+            Text(text, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),

@@ -54,16 +54,14 @@ async def generar_outfit(
         .options(joinedload(OutfitPropio.articulos_propios))\
         .filter(OutfitPropio.id == outfit.id).first()
 
-    # Aquí inyectamos las imágenes en base64 en cada artículo
+    # Aquí inyectamos las url firmadas de s3 de las imagenes de cada artículo
     for articulo in outfit.articulos_propios:
-        imagen_bytes = await get_imagen_s3(articulo.foto)
-        articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+        articulo.imagen = generar_url_firmada(articulo.foto)
 
     # Añadir imagen del collage 
     if outfit.collage_key:
         try:
-            collage_bytes = await get_imagen_s3(outfit.collage_key)
-            outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+            outfit.imagen = generar_url_firmada(outfit.collage_key)
         except Exception as e:
             print(f"Error al obtener collage: {e}")
             outfit.imagen = ""
@@ -104,8 +102,7 @@ async def obtener_outfits_stream(
                     # Añadir imagen a cada artículo
                     for articulo in outfit.articulos_propios:
                         try:
-                            imagen_bytes = await get_imagen_s3(articulo.foto)
-                            articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                            articulo.imagen = generar_url_firmada(articulo.foto)
                         except Exception as e_img:
                             print(f"⚠️  Error al obtener imagen del artículo {articulo.id}: {e_img}")
                             articulo.imagen = ""
@@ -114,8 +111,7 @@ async def obtener_outfits_stream(
                     imagen_collage = ""
                     if outfit.collage_key:
                         try:
-                            collage_bytes = await get_imagen_s3(outfit.collage_key)
-                            imagen_collage = base64.b64encode(collage_bytes).decode("utf-8")
+                            imagen_collage = generar_url_firmada(outfit.collage_key)
                         except Exception as e_col:
                             print(f"⚠️  Error al obtener collage {outfit.collage_key}: {e_col}")
 
@@ -199,16 +195,18 @@ async def obtener_feed_outfits(
             # Añadir imagen a cada artículo
             for articulo in outfit.articulos_propios:
                 try:
-                    imagen_bytes = await get_imagen_s3(articulo.foto)
-                    articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                    #imagen_bytes = await get_imagen_s3(articulo.foto)
+                    #articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                    articulo.imagen = generar_url_firmada(articulo.foto)
                 except:
                     articulo.imagen = ""
 
             # Añadir imagen del collage
             try:
                 if outfit.collage_key:
-                    collage_bytes = await get_imagen_s3(outfit.collage_key)
-                    outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+                    #collage_bytes = await get_imagen_s3(outfit.collage_key)
+                    #outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+                    outfit.imagen = generar_url_firmada(outfit.collage_key)
                 else:
                     outfit.imagen = ""
             except:
@@ -252,14 +250,12 @@ async def feed_seguidos_stream(
         for outfit in outfits:
             for articulo in outfit.articulos_propios:
                 try:
-                    imagen_bytes = await get_imagen_s3(articulo.foto)
-                    articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                    articulo.imagen = generar_url_firmada(articulo.foto)
                 except:
                     articulo.imagen = ""
             try:
                 if outfit.collage_key:
-                    collage_bytes = await get_imagen_s3(outfit.collage_key)
-                    outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+                    outfit.imagen = generar_url_firmada(outfit.collage_key)
                 else:
                     outfit.imagen = ""
             except:
@@ -325,14 +321,12 @@ async def feed_global_stream(
 
                 for articulo in outfit.articulos_propios:
                     try:
-                        imagen_bytes = await get_imagen_s3(articulo.foto)
-                        articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
+                        articulo.imagen = generar_url_firmada(articulo.foto)
                     except:
                         articulo.imagen = ""
                 try:
                     if outfit.collage_key:
-                        collage_bytes = await get_imagen_s3(outfit.collage_key)
-                        outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
+                        outfit.imagen = generar_url_firmada(outfit.collage_key)
                     else:
                         outfit.imagen = ""
                 except:
@@ -361,6 +355,8 @@ async def obtener_outfit(
         raise HTTPException(status_code=404, detail="Outfit no encontrado")
 
     return outfit
+
+
 
 @router.delete("/{outfit_id}") 
 async def eliminar_outfit(

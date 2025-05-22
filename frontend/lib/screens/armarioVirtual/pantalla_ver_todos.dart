@@ -23,7 +23,7 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
   final List<dynamic> _articulos = [];
   final TextEditingController _searchController = TextEditingController();
   Map<String, dynamic> filtros = {};
-  bool _mostrarFiltros = false;
+  //bool _mostrarFiltros = false;
   bool _isSearching = false;
   String _busqueda = '';
   Map<String, dynamic>? usuarioActual;
@@ -71,13 +71,13 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
           onAplicar: (nuevosFiltros) {
             setState(() {
               filtros = nuevosFiltros;
-              _mostrarFiltros = false;
+              //_mostrarFiltros = true;
             });
             _cargarArticulos();
           },
           onCerrar: () {
             setState(() {
-              _mostrarFiltros = false;
+              //_mostrarFiltros = false;
             });
           },
         ),

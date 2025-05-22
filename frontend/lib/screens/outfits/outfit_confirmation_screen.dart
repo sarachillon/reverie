@@ -19,30 +19,13 @@ class OutfitConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titulo = outfit['titulo'] ?? '';
-    final descripcion = outfit['descripcion_generacion'] ?? '';
-    final colores = (outfit['colores'] as List?)
-            ?.map((c) => ColorEnum.values.firstWhere((e) => e.name == c, orElse: () => ColorEnum.BLANCO))
-            .toList() ??
-        [];
-    final temporadas = (outfit['temporadas'] as List?)
-            ?.map((t) => TemporadaEnum.values.firstWhere((e) => e.name == t, orElse: () => TemporadaEnum.VERANO))
-            .toList() ??
-        [];
-    final ocasiones = (outfit['ocasiones'] as List?)
-            ?.map((o) => OcasionEnum.values.firstWhere((e) => e.name == o, orElse: () => OcasionEnum.CASUAL))
-            .toList() ??
-        [];
 
-    final raw = outfit['imagen'];
+    final String? imagenUrl = outfit['imagen'];
 
-    Uint8List? imagenBytes;
     try {
-      final raw = outfit['imagen'];
-      if (raw != null && raw.isNotEmpty) {
-        final base64Str = raw.contains(',') ? raw.split(',').last : raw;
-        imagenBytes = base64Decode(base64Str);
-      }
+      imagenUrl != null
+      ? Image.network(imagenUrl)
+      : Placeholder();
     } catch (e) {
       print("ERROR al decodificar imagen: $e");
     }
@@ -62,11 +45,11 @@ class OutfitConfirmationScreen extends StatelessWidget {
       ),
       body: Stack(
   children: [
-    if (imagenBytes != null)
+    if (imagenUrl != null)
       SizedBox(
         width: double.infinity,
         height: MediaQuery.of(context).size.width * 1.5, 
-        child: Image.memory(imagenBytes, fit: BoxFit.contain),
+        child: Image.network(imagenUrl, fit: BoxFit.contain),
       ),
 
     Align(
@@ -100,17 +83,17 @@ class OutfitConfirmationScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, textStyle: const TextStyle(color: Colors.white)),
                         onPressed: onAceptar,
-                        child: const Text("Aceptar"),
+                        child: const Text("Aceptar", style: TextStyle(color: Colors.white)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, textStyle: const TextStyle(color: Colors.white)),
                         onPressed: onRechazar,
-                        child: const Text("Rechazar"),
+                        child: const Text("Rechazar", style: TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],

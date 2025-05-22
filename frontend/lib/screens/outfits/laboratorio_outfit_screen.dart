@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'package:frontend/enums/enums.dart';
 
 class LaboratorioOutfitScreen extends StatefulWidget {
   const LaboratorioOutfitScreen({super.key});

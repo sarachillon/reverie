@@ -1,24 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
-import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
 import 'package:frontend/services/share_utils.dart';
-
+import 'package:http/http.dart' as http;
 
 class WidgetOutfitFeedBig extends StatelessWidget {
   final List<dynamic> outfits;
 
   const WidgetOutfitFeedBig({super.key, required this.outfits});
-
-  Future<ImageProvider<Object>> _decodeImage(String? base64) async {
-    try {
-      if (base64 != null && base64.isNotEmpty) {
-        final bytes = base64Decode(base64);
-        return MemoryImage(bytes);
-      }
-    } catch (_) {}
-    return const AssetImage('assets/mock/ropa_mock.png');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +17,10 @@ class WidgetOutfitFeedBig extends StatelessWidget {
       itemCount: outfits.length,
       itemBuilder: (context, index) {
         final outfit = outfits[index];
-        final imagenPrincipalFuture = _decodeImage(outfit['imagen']);
+        final imagenUrl = outfit['imagen'];
+        print("Imagen URL: $imagenUrl");
         final username = outfit['usuario']?['username'] ?? 'demo_user';
-        final fotoPerfil = outfit['usuario']?['foto_perfil'];
+        final fotoPerfilUrl = outfit['usuario']?['foto_perfil'];
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -58,33 +48,39 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                             // Usuario
                             Row(
                               children: [
-                                fotoPerfil != null
-                                ? CircleAvatar(
-                                    radius: 20,
-                                    backgroundImage: MemoryImage(base64Decode(fotoPerfil)),
-                                  )
-                                : CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: Colors.grey.shade300,
-                                    child: const Icon(Icons.person, color: Colors.white),
-                                  ), 
+                                fotoPerfilUrl != null
+                                    ? CircleAvatar(
+                                        radius: 20,
+                                        backgroundImage: NetworkImage(fotoPerfilUrl),
+                                      )
+                                    : CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: Colors.grey.shade300,
+                                        child: const Icon(Icons.person, color: Colors.white),
+                                      ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(username, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                                 IconButton(
-                                icon: const Icon(Icons.ios_share, size: 16),
-                                onPressed: () {
-                                  final imagen = outfit['imagen'];
-                                  final nombre = outfit['usuario']?['username'] ?? 'usuario';
-                                  if (imagen != null && imagen.isNotEmpty) {
-                                    ShareUtils.compartirOutfitSinMarca(
-                                      base64Imagen: outfit['imagen'],
-                                      username: outfit['usuario']?['username'] ?? 'usuario',
-                                    );
-                                  }
-                                },
-                              ),             
+                                  icon: const Icon(Icons.ios_share, size: 16),
+                                  onPressed: () async {
+                                    if (imagenUrl != null && imagenUrl.isNotEmpty) {
+                                      try {
+                                        final response = await http.get(Uri.parse(imagenUrl));
+                                        if (response.statusCode == 200) {
+                                          final base64Img = base64Encode(response.bodyBytes);
+                                          ShareUtils.compartirOutfitSinMarca(
+                                            base64Imagen: base64Img,
+                                            username: username,
+                                          );
+                                        }
+                                      } catch (e) {
+                                        print("❌ Error al compartir imagen: $e");
+                                      }
+                                    }
+                                  },
+                                ),
                               ],
                             ),
                             const SizedBox(height: 6),
@@ -102,25 +98,19 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                               style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                             ),
                             const SizedBox(height: 10),
-                            // Imagen
-                            FutureBuilder<ImageProvider<Object>>(
-                              future: imagenPrincipalFuture,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                  return ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image(
-                                      image: snapshot.data!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: constraints.maxHeight * 0.60,
-                                    ),
-                                  );
-                                } else {
-                                  return SizedBox(height: constraints.maxHeight * 0.48);
-                                }
-                              },
-                            ),
+                            // Imagen principal
+                            if (imagenUrl != null && imagenUrl.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imagenUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: constraints.maxHeight * 0.60,
+                                ),
+                              )
+                            else
+                              SizedBox(height: constraints.maxHeight * 0.48),
                             const SizedBox(height: 10),
                             // Miniaturas
                             Container(
@@ -132,27 +122,20 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: (outfit['articulos_propios'] as List).take(5).map((articulo) {
-                                  final imagenMiniFuture = _decodeImage(articulo['imagen']);
-                                  return FutureBuilder<ImageProvider<Object>>(
-                                    future: imagenMiniFuture,
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                                          height: 36,
-                                          width: 36,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.black12),
-                                            color: Colors.white,
-                                          ),
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(image: snapshot.data!, fit: BoxFit.cover),
-                                        );
-                                      } else {
-                                        return const SizedBox(height: 36, width: 36);
-                                      }
-                                    },
+                                  final miniUrl = articulo['imagen'];
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    height: 36,
+                                    width: 36,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.black12),
+                                      color: Colors.white,
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: miniUrl != null && miniUrl.isNotEmpty
+                                        ? Image.network(miniUrl, fit: BoxFit.cover)
+                                        : const SizedBox(),
                                   );
                                 }).toList(),
                               ),

@@ -108,7 +108,7 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                                   if (imagen != null && imagen.isNotEmpty) {
                                     ShareUtils.compartirOutfitSinMarca(
                                       base64Imagen: outfit['imagen'],
-                                      username: outfit['usuario']?['username'] ?? 'usuario',
+                                      username: nombre,
                                     );
                                   }
                                 },

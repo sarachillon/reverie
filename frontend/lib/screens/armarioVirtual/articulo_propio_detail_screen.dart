@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
@@ -75,7 +74,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
     return FutureBuilder<String?>(
       future: _getEmail(),
       builder: (context, snapshot) {
-        final email = snapshot.data ?? '';
+        //final email = snapshot.data ?? '';
 
         return Scaffold(
           backgroundColor: Colors.white,

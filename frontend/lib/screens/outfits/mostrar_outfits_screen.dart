@@ -36,6 +36,12 @@ class _MostrarOutfitScreenState extends State<MostrarOutfitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    
+    if (_outfits.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return WidgetOutfitSmall(outfits: _outfits);
   }
+
 }
+
