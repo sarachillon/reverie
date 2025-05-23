@@ -30,7 +30,7 @@ class ArticuloPropioConImagen(BaseModel):
     temporadas: List[TemporadaEnum] = []
     colores: List[ColorEnum] = []
     foto: str # URL de la imagen en S3
-    imagen: Optional[str] = None 
+    urlFirmada: Optional[str] = None # URL firmada para acceder a la imagen del s3
     usuario: UserOut
 
 

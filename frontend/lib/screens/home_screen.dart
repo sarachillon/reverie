@@ -9,12 +9,14 @@ import 'package:frontend/services/google_sign_in_service.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/screens/outfits/laboratorio_outfit_screen.dart';
 import 'package:frontend/screens/outfits/mostrar_outfits_screen.dart';
+import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
+  final int? userId;
   final String? userEmail;
 
-  const HomeScreen({Key? key, this.userEmail}) : super(key: key);
+  const HomeScreen({Key? key, this.userId, this.userEmail}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -25,12 +27,20 @@ class _HomeScreenState extends State<HomeScreen> {
   String? profileImageUrl;
   String? username;
 
-  final List<Widget> _screens = [
+ final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
+
+
+  List<Widget> get _screens => [
     MostrarOutfitScreen(),
     FeedScreen(),
     Container(),
     LaboratorioOutfitScreen(),
-    PerfilScreen(),
+    //PerfilScreen(),
+    PerfilScreen(
+      key: const ValueKey('PerfilScreen'),
+      userId: widget.userId,
+      armarioKey: armarioKey,
+    ),
   ];
   
   @override
@@ -75,6 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   if (result == true) {
                     setState(() => _selectedIndex = previousIndex);
+                    // forzar la recarga de artículos en el armario
+                    armarioKey.currentState?.cargarArticulosPropios();
                   }
                 },
               ),

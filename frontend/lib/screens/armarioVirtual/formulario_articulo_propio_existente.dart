@@ -45,7 +45,7 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
     _ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e)).toList() ?? [];
     _temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e)).toList() ?? [];
     _colores = (articulo['colores'] as List?)?.map((e) => ColorEnum.values.firstWhere((c) => c.name == e)).toList() ?? [];
-    _imagenUrl = articulo['foto'] ?? '';
+    _imagenUrl = articulo['urlFirmada'] ?? '';
   }
 
 

@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
-
-
-
-class ImagenArticulo extends StatefulWidget {
+class ImagenAjustada extends StatefulWidget {
   final String url;
+  final double width;
+  final double height;
 
-  const ImagenArticulo({super.key, required this.url});
+  const ImagenAjustada({
+    super.key,
+    required this.url,
+    required this.width,
+    required this.height,
+  });
 
   @override
-  State<ImagenArticulo> createState() => _ImagenArticuloState();
+  State<ImagenAjustada> createState() => _ImagenAjustadaState();
 }
 
-class _ImagenArticuloState extends State<ImagenArticulo> {
+class _ImagenAjustadaState extends State<ImagenAjustada> {
   double? ratio;
 
   @override
@@ -34,12 +38,11 @@ class _ImagenArticuloState extends State<ImagenArticulo> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 110,
-      height: 110,
+      width: widget.width,
+      height: widget.height,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.transparent,
@@ -64,7 +67,4 @@ class _ImagenArticuloState extends State<ImagenArticulo> {
       ),
     );
   }
-
-
-
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
-import 'package:frontend/screens/carga_screen.dart';
+import 'package:frontend/screens/utils/carga_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/outfit_confirmation_screen.dart';
 

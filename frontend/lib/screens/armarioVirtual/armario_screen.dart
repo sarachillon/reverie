@@ -10,26 +10,32 @@ class ArmarioScreen extends StatefulWidget {
   final VoidCallback? onContenidoActualizado;
 
   const ArmarioScreen({
-    super.key,
+    Key? key,
     this.userId,
     this.onContenidoActualizado,
-  });
+  }): super(key: key);
 
   @override
-  State<ArmarioScreen> createState() => _ArmarioScreenState();
+  State<ArmarioScreen> createState() => ArmarioScreenState();
 }
 
-class _ArmarioScreenState extends State<ArmarioScreen> {
+class ArmarioScreenState extends State<ArmarioScreen> {
   final ApiManager _apiManager = ApiManager();
   final List<dynamic> _articulos = [];
 
   @override
   void initState() {
     super.initState();
-    _cargarArticulosPropios();
+    cargarArticulosPropios();
   }
 
-  Future<void> _cargarArticulosPropios() async {
+  @override
+  void didUpdateWidget(covariant ArmarioScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    cargarArticulosPropios();
+  }
+
+  Future<void> cargarArticulosPropios() async {
     setState(() => _articulos.clear());
     try {
       final filtros = widget.userId != null ? {'usuario_id': widget.userId} : null;
@@ -45,7 +51,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
 
   void _recargarArticulos() {
     setState(() {
-      _cargarArticulosPropios();
+      cargarArticulosPropios();
     });
   }
 
@@ -69,14 +75,22 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
               const Spacer(),
               GestureDetector(
                 onTap: () async {
+                  // 1) Lanza VerTodos con el callback
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PantallaVerTodos(categoria: categoria),
+                      builder: (_) => PantallaVerTodos(
+                        categoria: categoria,
+                        onContenidoActualizado: widget.onContenidoActualizado,
+                      ),
                     ),
                   );
-                  _recargarArticulos(); 
+                  // 2) Recarga tu lista interna
+                  await cargarArticulosPropios();
+                  // 3) Notifica al padre (PerfilScreen)
+                  widget.onContenidoActualizado?.call();
                 },
+
                 child: Row(
                   children: const [
                     Text("Ver todos", style: TextStyle(fontSize: 12, color: Colors.grey)),
@@ -97,12 +111,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                     children: [
                       if (widget.userId != null)
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final resultado = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
                             );
+                            if (resultado == true) {
+                              // Solo notifico; el nuevo ArmarioScreen se encarga de recargar en initState
+                              widget.onContenidoActualizado?.call();
+                            }
                           },
+
                           child: Container(
                             width: 150,
                             height: 160,
@@ -151,19 +170,17 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
                         width: 150,
                         child: GestureDetector(
                           onTap: () async {
-                            final actual = await _apiManager.getUsuarioActual();
                             final resultado = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ArticuloPropioResumen(
                                   articulo: articulo,
-                                  usuarioActual: actual,
                                   onActualizado: _recargarArticulos,
                                 ),
                               ),
                             );
                             if (resultado == true) {
-                              await _cargarArticulosPropios();
+                              await cargarArticulosPropios();
                               widget.onContenidoActualizado?.call();
                             }
                           },
@@ -185,7 +202,7 @@ class _ArmarioScreenState extends State<ArmarioScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: _cargarArticulosPropios,
+        onRefresh: cargarArticulosPropios,
         child: _articulos.isEmpty
             ? const Center(child: Text('No se encontraron artículos.'))
             : ListView(

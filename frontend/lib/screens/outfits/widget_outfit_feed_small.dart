@@ -4,12 +4,15 @@ import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
 import 'package:frontend/screens/perfil/perfil_screen.dart';
 import 'package:frontend/services/share_utils.dart';
+import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 
 
 class WidgetOutfitFeedSmall extends StatelessWidget {
   final List<dynamic> outfits;
 
-  const WidgetOutfitFeedSmall({super.key, required this.outfits});
+  WidgetOutfitFeedSmall({super.key, required this.outfits});
+  
+  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
 
   Future<ImageProvider<Object>> _decodeImage(String? base64) async {
     try {
@@ -78,7 +81,7 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => PerfilScreen(userId: userId),
+                                  builder: (_) => PerfilScreen(userId: userId, armarioKey: armarioKey,),
                                 ),
                               );
                             }

@@ -9,9 +9,15 @@ import 'package:frontend/screens/launcher_screen.dart';
 import 'package:frontend/services/google_sign_in_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 class PerfilScreen extends StatefulWidget {
   final int? userId;
-  const PerfilScreen({super.key, this.userId});
+  final GlobalKey<ArmarioScreenState> armarioKey;
+  const PerfilScreen({
+    Key? key,
+    this.userId,
+    required this.armarioKey,
+  }) : super(key: key);
 
   @override
   State<PerfilScreen> createState() => _PerfilScreenState();
@@ -31,6 +37,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarPerfil();
+  }
+
+  @override
+  void didUpdateWidget(covariant PerfilScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
     _cargarPerfil();
   }
 
@@ -246,6 +258,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
               child: TabBarView(
                 children: [
                   ArmarioScreen(
+                    key: widget.armarioKey,
                     userId: usuario!['id'],
                     onContenidoActualizado: _actualizarContadoresDesdeTab,
                   ),

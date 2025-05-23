@@ -3,18 +3,16 @@ import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_articulo_propio_existente.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'package:frontend/screens/armarioVirtual/imagen_articulo_widget.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
  
 
 class ArticuloPropioResumen extends StatefulWidget {
   final dynamic articulo;
-  final Map<String, dynamic>? usuarioActual;
   final Function? onActualizado;
 
   const ArticuloPropioResumen({
     super.key,
     required this.articulo,
-    required this.usuarioActual,
     this.onActualizado,
   });
 
@@ -25,12 +23,22 @@ class ArticuloPropioResumen extends StatefulWidget {
 class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
   final ApiManager _apiManager = ApiManager();
   late dynamic articulo;
+  int idUsuarioActual = 0;
 
   @override
   void initState() {
     super.initState();
     articulo = widget.articulo;
+    _cargarUsuarioActual();
   }
+
+  Future<void> _cargarUsuarioActual() async {
+    final data = await _apiManager.getUsuarioActual();
+    setState(() {
+      idUsuarioActual = data['id'];
+    });
+  }
+
 
   Future<void> eliminarArticulo(int id) async {
     try {
@@ -79,11 +87,13 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
     final temporadas = (articulo['temporadas'] as List?)?.map((e) =>
         TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
     final colores = (articulo['colores'] as List?)?.cast<String>().toList() ?? [];
-    final imagenUrl = articulo['foto'] ?? '';
+    
+    final imagenUrl = articulo['urlFirmada'] ?? '';
+    print("URL IMAGEN: $imagenUrl");
     final id = articulo['id'];
-    final emailArticulo = articulo['usuario']?['email'];
-    final emailUsuarioActual = widget.usuarioActual?['email'];
-    final esPropio = emailUsuarioActual != null && emailUsuarioActual == emailArticulo;
+
+    final idUsuarioArticulo = articulo['usuario']['id'];
+    final esPropio = (idUsuarioActual == idUsuarioArticulo);
 
     return Container(
       decoration: BoxDecoration(
@@ -96,7 +106,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: ImagenArticulo(url: imagenUrl),
+            child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
           ),
           const SizedBox(width: 12),
           Expanded(

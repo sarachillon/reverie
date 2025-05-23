@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class OutfitDetailScreen extends StatelessWidget {
   final Map<String, dynamic> outfit;
@@ -23,9 +24,8 @@ class OutfitDetailScreen extends StatelessWidget {
     final List<ColorEnum> colores = (outfit['colores'] as List?)?.map((c) =>
         ColorEnum.values.firstWhere((e) => e.name == c, orElse: () => ColorEnum.BLANCO)).toList() ?? [];
 
+    
     String? imagenUrl = outfit['imagen'];
-
-
     try {
       imagenUrl != null
       ? Image.network(imagenUrl)
@@ -93,7 +93,11 @@ class OutfitDetailScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 24),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            child: Image.network(imagenUrl, fit: BoxFit.contain),
+                            child: ImagenAjustada(
+                              url: imagenUrl, 
+                              width: double.infinity,
+                              height: 500,
+                            ),
                           ),
                         ),
                       Container(
@@ -130,7 +134,6 @@ class OutfitDetailScreen extends StatelessWidget {
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
                                   const SizedBox(width: 8),
-                                  // ojo al toList() para que Dart entienda que son Widgets
                                   ...colores.map((c) => Container(
                                         width: 16,
                                         height: 16,
@@ -160,7 +163,7 @@ class OutfitDetailScreen extends StatelessWidget {
                       final articulo = articulos[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: ArticuloPropioResumen(articulo: articulo, usuarioActual: outfit['usuario']),
+                        child: ArticuloPropioResumen(articulo: articulo),
                       );
                     },
                   ),

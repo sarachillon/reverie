@@ -56,7 +56,7 @@ async def generar_outfit(
 
     # Aquí inyectamos las url firmadas de s3 de las imagenes de cada artículo
     for articulo in outfit.articulos_propios:
-        articulo.imagen = generar_url_firmada(articulo.foto)
+        articulo.urlFirmada = generar_url_firmada(articulo.foto)
 
     # Añadir imagen del collage 
     if outfit.collage_key:
@@ -83,7 +83,10 @@ async def obtener_outfits_stream(
         if not usuario_actual:
             raise HTTPException(status_code=401, detail="Usuario no autenticado.")
 
-        query = db.query(OutfitPropio).filter(OutfitPropio.usuario_id == usuario_actual.id)
+        # Filtramos por su ID
+        query = db.query(OutfitPropio).filter(
+            OutfitPropio.usuario == usuario_actual
+        )
 
         if ocasiones:
             query = query.filter(or_(*[OutfitPropio.ocasiones.any(t) for t in ocasiones]))
@@ -102,10 +105,10 @@ async def obtener_outfits_stream(
                     # Añadir imagen a cada artículo
                     for articulo in outfit.articulos_propios:
                         try:
-                            articulo.imagen = generar_url_firmada(articulo.foto)
+                            articulo.urlFirmada = generar_url_firmada(articulo.foto)
                         except Exception as e_img:
                             print(f"⚠️  Error al obtener imagen del artículo {articulo.id}: {e_img}")
-                            articulo.imagen = ""
+                            articulo.urlFirmada = ""
 
                     # Añadir imagen del collage
                     imagen_collage = ""
@@ -196,10 +199,10 @@ async def obtener_feed_outfits(
             for articulo in outfit.articulos_propios:
                 try:
                     #imagen_bytes = await get_imagen_s3(articulo.foto)
-                    #articulo.imagen = base64.b64encode(imagen_bytes).decode("utf-8")
-                    articulo.imagen = generar_url_firmada(articulo.foto)
+                    #articulo.urlFirmada = base64.b64encode(imagen_bytes).decode("utf-8")
+                    articulo.urlFirmada = generar_url_firmada(articulo.foto)
                 except:
-                    articulo.imagen = ""
+                    articulo.urlFirmada = ""
 
             # Añadir imagen del collage
             try:
@@ -250,9 +253,9 @@ async def feed_seguidos_stream(
         for outfit in outfits:
             for articulo in outfit.articulos_propios:
                 try:
-                    articulo.imagen = generar_url_firmada(articulo.foto)
+                    articulo.urlFirmada = generar_url_firmada(articulo.foto)
                 except:
-                    articulo.imagen = ""
+                    articulo.urlFirmada = ""
             try:
                 if outfit.collage_key:
                     outfit.imagen = generar_url_firmada(outfit.collage_key)
@@ -321,9 +324,9 @@ async def feed_global_stream(
 
                 for articulo in outfit.articulos_propios:
                     try:
-                        articulo.imagen = generar_url_firmada(articulo.foto)
+                        articulo.urlFirmada = generar_url_firmada(articulo.foto)
                     except:
-                        articulo.imagen = ""
+                        articulo.urlFirmada = ""
                 try:
                     if outfit.collage_key:
                         outfit.imagen = generar_url_firmada(outfit.collage_key)

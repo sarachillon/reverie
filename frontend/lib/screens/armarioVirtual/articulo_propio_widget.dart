@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
-import 'package:frontend/screens/armarioVirtual/imagen_articulo_widget.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 
 class ArticuloPropioWidget extends StatelessWidget {
@@ -18,7 +18,7 @@ class ArticuloPropioWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagenUrl = articulo['foto'] ?? '';
+    final imagenUrl = articulo['urlFirmada'] ?? '';
 
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
@@ -77,7 +77,7 @@ class ArticuloPropioWidget extends StatelessWidget {
               child: SizedBox(
                 height: 130,
                 width: double.infinity,
-                child: ImagenArticulo(url: imagenUrl)
+                child: ImagenAjustada(url: imagenUrl, width: 100, height:100)
               ),
             ),
             Padding(

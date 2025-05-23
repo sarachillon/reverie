@@ -204,7 +204,7 @@ async def obtener_articulos_propios_stream(
             try:
                 url = generar_url_firmada(articulo.foto)
                 schema = ArticuloPropioConUrl.from_orm(articulo).dict()
-                schema["foto"] = url
+                schema["urlFirmada"] = url
                 yield json.dumps(schema) + "\n"
             except Exception as e:
                 print(f"Error generando URL para {articulo.foto}: {e}")

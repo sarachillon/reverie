@@ -97,6 +97,7 @@ flutter:
   - assets/titulos/calzado.png
   - assets/titulos/accesorios.png
   - assets/titulos/Outfits.png
+  - assets/google_logo.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:frontend/services/share_utils.dart';
 import 'package:http/http.dart' as http;
 
@@ -102,12 +103,13 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                             if (imagenUrl != null && imagenUrl.isNotEmpty)
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
+                                /*child: Image.network(
                                   imagenUrl,
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   height: constraints.maxHeight * 0.60,
-                                ),
+                                ),*/
+                                child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
                               )
                             else
                               SizedBox(height: constraints.maxHeight * 0.48),

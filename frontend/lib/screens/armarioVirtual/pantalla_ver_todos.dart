@@ -155,7 +155,6 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
                       final articulo = articulosFiltrados[index];
                       return ArticuloPropioResumen(
                         articulo: articulo,
-                        usuarioActual: usuarioActual,
                         onActualizado: _cargarArticulos,
                       );
                     },
@@ -164,16 +163,23 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
         ],
       ),
       floatingActionButton: usuarioActual != null
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
-                );
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
+    ? FloatingActionButton(
+        onPressed: () async {
+          final resultado = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+          );
+          if (resultado == true) {
+            // recarga esta pantalla
+            await _cargarArticulos();
+            // notifica al padre (PerfilScreen) para recargar todo
+            widget.onContenidoActualizado?.call();
+          }
+        },
+        child: const Icon(Icons.add),
+      )
+    : null,
+
     );
   }
 }

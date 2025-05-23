@@ -4,6 +4,7 @@ import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class WidgetOutfitSmall extends StatelessWidget {
   final List<dynamic> outfits;
@@ -74,20 +75,7 @@ class WidgetOutfitSmall extends StatelessWidget {
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        imagenUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        // Indicador de carga
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
-                        },
-                        // En caso de error al cargar
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(child: Icon(Icons.broken_image));
-                        },
-                      ),
+                      child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
                     ),
                   ),
                 ],

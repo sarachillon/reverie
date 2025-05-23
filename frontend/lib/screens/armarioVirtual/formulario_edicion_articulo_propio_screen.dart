@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class FormularioEdicionArticuloPropioScreen extends StatefulWidget {
@@ -197,7 +198,7 @@ class _FormularioEdicionArticuloPropioScreenState extends State<FormularioEdicio
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.network(widget.imagenUrl, height: 250, fit: BoxFit.cover),
+            ImagenAjustada(url: widget.imagenUrl, width: 300, height:300),
             const SizedBox(height: 16),
             Form(
               key: _formKey,
