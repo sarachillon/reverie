@@ -1,4 +1,5 @@
 # backend/app/routers/articulo_propios.py
+import os
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import or_, any_, func
@@ -20,6 +21,95 @@ from sqlalchemy.orm import joinedload
 
 
 router = APIRouter(prefix="/articulos-propios", tags=["Artículos Propios"])
+
+
+# Crea un artículo propio partiendo de una imagen ya existente
+@router.post("/from-key")
+async def crear_articulo_desde_key(
+    request: Request,
+    key_imagen_original: str = Form(..., alias="keyImagen"),
+
+    usuario: int = Form(..., alias="usuario"),
+    nombre: str = Form(...),
+
+    categoria: CategoriaEnum = Form(...),
+    subcategoria_ropa: Optional[SubcategoriaRopaEnum] = Form(None),
+    subcategoria_calzado: Optional[SubcategoriaCalzadoEnum] = Form(None),
+    subcategoria_accesorios: Optional[SubcategoriaAccesoriosEnum] = Form(None),
+
+    ocasiones: List[str] = Form(..., alias="ocasiones[]"),
+    temporadas: List[str] = Form(..., alias="temporadas[]"),
+    colores: List[str] = Form(..., alias="colores[]"),
+
+    estilo: EstiloEnum = Form(...),
+    formalidad: int = Form(...),
+
+    db: Session = Depends(get_db),
+):
+    """
+    Crea un ArticuloPropio tomando la imagen ya subida a S3 (keyImagen) y
+    copiándola con un nombre único.  Todos los atributos se reciben por formulario;
+    no se infiere estilo ni formalidad.
+    """
+
+    # ───────── Validación de subcategoría ─────────
+    if categoria == CategoriaEnum.ROPA:
+        if not subcategoria_ropa:
+            raise HTTPException(status_code=400, detail="Subcategoría de ropa es obligatoria.")
+        subcategoria = SubcategoriaRopaEnum(subcategoria_ropa).name
+    elif categoria == CategoriaEnum.CALZADO:
+        if not subcategoria_calzado:
+            raise HTTPException(status_code=400, detail="Subcategoría de calzado es obligatoria.")
+        subcategoria = SubcategoriaCalzadoEnum(subcategoria_calzado).name
+    elif categoria == CategoriaEnum.ACCESORIOS:
+        if not subcategoria_accesorios:
+            raise HTTPException(status_code=400, detail="Subcategoría de accesorios es obligatoria.")
+        subcategoria = SubcategoriaAccesoriosEnum(subcategoria_accesorios).name
+
+    # ───────── Copiar / renombrar la imagen ───────
+    try:
+        original_bytes = await get_imagen_s3(key_imagen_original)
+
+        nuevo_nombre  = generar_nombre_unico(os.path.basename(key_imagen_original))
+        imagen_key    = await subir_imagen_s3_bytes(original_bytes, nuevo_nombre)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
+
+
+    # ───────── Mapear listas a enums ─────────
+    try:
+        ocasiones_enum  = [OcasionEnum(o)   for o in ocasiones]
+        temporadas_enum = [TemporadaEnum(t) for t in temporadas]
+        colores_enum    = [ColorEnum(c)     for c in colores]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Valor inválido en ocasiones/temporadas/colores: {e}")
+
+    # ───────── Crear artículo ─────────
+    usuario = db.get(Usuario, usuario)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    nuevo_articulo = ArticuloPropio(
+        nombre       = nombre,
+        categoria    = categoria,
+        subcategoria = subcategoria,
+        foto         = imagen_key,
+        ocasiones    = ocasiones_enum,
+        temporadas   = temporadas_enum,
+        colores      = colores_enum,
+        usuario      = usuario,
+        estilo       = estilo,        
+        formalidad   = formalidad,   
+    )
+
+    db.add(nuevo_articulo)
+    db.commit()
+    db.refresh(nuevo_articulo)
+
+    return {"message": "Artículo guardado exitosamente", "articulo_id": nuevo_articulo.id}
+
+
 
 # Crear un nuevo artículo propio
 @router.post("/")
@@ -98,72 +188,8 @@ async def crear_articulo(
     return {"message": "Artículo guardado exitosamente", "articulo_id": nuevo_articulo.id}
 
 
-# Obtener los artículos propios del usuario autenticado de uno en uno
-"""@router.get("/stream", response_class=StreamingResponse)
-async def obtener_articulos_propios_stream(
-    request: Request,
-    categoria: Optional[CategoriaEnum] = None,
-    subcategoria: Optional[str] = None,
-    ocasiones: Optional[List[OcasionEnum]] = Query(None),
-    temporadas: Optional[List[TemporadaEnum]] = Query(None),
-    colores: Optional[List[ColorEnum]] = Query(None),
-    db: Session = Depends(get_db),
-):
-    usuario_actual = await obtener_usuario_actual(request, db)
-    if not usuario_actual:
-        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-    
-    query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_actual.id)
-
-    if categoria:
-        try:
-            categoria_enum = CategoriaEnum[categoria.upper()]
-        except KeyError:
-            raise HTTPException(status_code=422, detail="Categoría inválida")
-        
-        query = query.filter(ArticuloPropio.categoria == categoria_enum)
-        if subcategoria:
-            query = query.filter(ArticuloPropio.subcategoria == subcategoria)
-    elif subcategoria:
-        raise HTTPException(status_code=400, detail="No se puede filtrar por subcategoría sin filtrar por categoría.")
 
 
-
-    if ocasiones:
-        query = query.filter(or_(*[ArticuloPropio.ocasiones.any(t) for t in ocasiones]))
-
-    if temporadas:
-        query = query.filter(or_(*[ArticuloPropio.temporadas.any(t) for t in temporadas]))
-
-    if colores:
-         query = query.filter(or_(*[ArticuloPropio.colores.any(t) for t in colores]))
-
-
-    
-
-    articulos = query.options(joinedload(ArticuloPropio.usuario)).order_by(ArticuloPropio.id.desc()).all()
-
-    async def articulo_generator():
-        for articulo in articulos:
-            try:
-                print(f"Fetching image for key: {articulo.foto}")
-                imagen_bytes = await get_imagen_s3(articulo.foto)
-                imagen_base64 = base64.b64encode(imagen_bytes).decode('utf-8')
-
-                schema = ArticuloPropioConImagen.from_orm(articulo).model_dump(exclude={"imagen"})
-                schema["imagen"] = imagen_base64
-
-                yield json.dumps(schema) + "\n"
-
-
-
-                # Serializamos el artículo a JSON
-            except Exception as e:
-                print(f"Error fetching image for {articulo.foto}: {e}")
-                raise HTTPException(status_code=500, detail=f"Error al obtener la imagen: {str(e)}")
-
-    return StreamingResponse(articulo_generator(), media_type="application/json")
-"""
 
 @router.get("/stream", response_class=StreamingResponse)
 async def obtener_articulos_propios_stream(

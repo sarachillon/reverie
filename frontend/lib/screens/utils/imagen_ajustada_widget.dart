@@ -29,6 +29,7 @@ class _ImagenAjustadaState extends State<ImagenAjustada> {
     final image = Image.network(widget.url).image;
     image.resolve(const ImageConfiguration()).addListener(
       ImageStreamListener((info, _) {
+        if (!mounted) return;
         final ancho = info.image.width.toDouble();
         final alto = info.image.height.toDouble();
         setState(() {

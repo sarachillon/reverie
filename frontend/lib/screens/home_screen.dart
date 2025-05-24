@@ -34,8 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     MostrarOutfitScreen(),
     FeedScreen(),
     Container(),
-    LaboratorioOutfitScreen(),
-    //PerfilScreen(),
+    LaboratorioScreen(userId: widget.userId ?? 6),   
     PerfilScreen(
       key: const ValueKey('PerfilScreen'),
       userId: widget.userId,

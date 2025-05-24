@@ -117,7 +117,6 @@ class ArmarioScreenState extends State<ArmarioScreen> {
                               MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
                             );
                             if (resultado == true) {
-                              // Solo notifico; el nuevo ArmarioScreen se encarga de recargar en initState
                               widget.onContenidoActualizado?.call();
                             }
                           },

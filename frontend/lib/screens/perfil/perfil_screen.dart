@@ -65,6 +65,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _cargarPerfil() async {
     final actual = await _apiManager.getUsuarioActual();
+    final token = await GoogleSignInService().getToken();
+    print("Token de usuario actual: $token");
     setState(() => usuarioActual = actual);
 
     Map<String, dynamic> usuarioPerfil;
