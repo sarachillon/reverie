@@ -268,4 +268,16 @@ Stream<Map<String, dynamic>> getFeedOutfitsStream({
     }
     await _instance!.eliminarCuenta();
   }
+
+   Future<bool> crearOutfitManual({
+    required String titulo,
+    required List<OcasionEnum> ocasiones,
+    required List<Map<String, dynamic>> items,
+    required String imagenBase64,
+  }) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.crearOutfitManual(titulo: titulo, ocasiones: ocasiones, items: items, imagenBase64: imagenBase64);
+  }
 }

@@ -823,4 +823,41 @@ class RealApiService implements ApiService {
 }
 
 
+  @override
+  Future<bool> crearOutfitManual({
+    required String titulo,
+    required List<OcasionEnum> ocasiones,
+    required List<Map<String, dynamic>> items,
+    required String imagenBase64,
+  }) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('Usuario no autenticado');
+    }
+
+    final url = Uri.parse('$_baseUrl/outfits/manual');
+    final body = {
+      'titulo': titulo,
+      'ocasiones': ocasiones.map((o) => o.name).toList(),
+      'items': items,
+      'imagen_base64': imagenBase64,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      final msg = response.body.isNotEmpty ? response.body : response.statusCode.toString();
+      throw Exception('Error al guardar outfit manual: $msg');
+    }
+  }
+
 }

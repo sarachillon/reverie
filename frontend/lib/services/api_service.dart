@@ -85,6 +85,7 @@ abstract class ApiService {
   
   Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) ;
 
+ Future<bool> crearOutfitManual({ required String titulo,required List<OcasionEnum> ocasiones,required List<Map<String, dynamic>> items,required String imagenBase64,});
 
 
 

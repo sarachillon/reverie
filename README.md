@@ -30,6 +30,12 @@ Conectarse a la BD (en /backend)
 Ejecutar scripts (en /backend)
     > PYTHONPATH=$PWD python3 -m app.scripts.borrar_outfits_propios
 
+
+DELETE FROM outfit_items WHERE outfit_id = 68;
+DELETE FROM outfitpropio_articulo WHERE outfit_propio_id = 68;
+DELETE FROM outfits_propios WHERE id = 68;
+
+
 Tema de la hora
     > date
     > sudo ntpdate time.google.com

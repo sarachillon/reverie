@@ -1,23 +1,28 @@
-import traceback
+from io import BytesIO
+from PIL import Image
 import json
 import base64
 from enum import Enum
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Form, Request, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, Form, Request, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload, aliased
 from sqlalchemy import or_, any_, func
-from app.models.models import ArticuloPropio, Usuario, OutfitPropio
+from app.models.models import ArticuloPropio, OutfitItem, Usuario, OutfitPropio
 from app.models.enummerations import TemporadaEnum, OcasionEnum, ColorEnum
 from app.database.database import get_db
 from app.utils.auth import obtener_usuario_actual
 from app.utils.generacion_outfits import generar_outfit_propio
 from app.utils.s3 import *
-from app.schemas.outfit_propio import OutfitPropioConUsuarioResponse, OutfitPropioSimpleResponse
+from app.schemas.outfit_propio import OutfitPropioConUsuarioResponse, OutfitPropioSimpleResponse, OutfitItemResponse
 from app.schemas.user import UserOut
+from datetime import datetime
 
 
 router = APIRouter(prefix="/outfits")
+
+
 
 @router.post("/generar")
 async def generar_outfit(
@@ -29,45 +34,133 @@ async def generar_outfit(
     colores: Optional[List[ColorEnum]] = Form([], alias="colores[]"),
     db: Session = Depends(get_db)
 ):
-    usuario_actual: Usuario = await obtener_usuario_actual(request, db)
-    if not usuario_actual:
-        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-    
+    user = await obtener_usuario_actual(request, db)
+    if not user:
+        raise HTTPException(401, "Usuario no autenticado")
+
     outfit = await generar_outfit_propio(
-        usuario=usuario_actual,
+        usuario=user,
         titulo=titulo,
         descripcion_generacion=descripcion,
         temporadas=temporadas,
         ocasiones=ocasiones,
         colores=colores,
     )
-
     if not outfit:
-        raise HTTPException(status_code=404, detail="No se ha podido generar un outfit con los filtros proporcionados.")
+        raise HTTPException(404, "No se pudo generar outfit con esos filtros")
 
     db.add(outfit)
     db.commit()
     db.refresh(outfit)
 
-    # Volver a cargar con los artículos asociados
+    # precarga relaciones
     outfit = db.query(OutfitPropio)\
-        .options(joinedload(OutfitPropio.articulos_propios))\
-        .filter(OutfitPropio.id == outfit.id).first()
+        .options(
+            joinedload(OutfitPropio.articulos_propios),
+            joinedload(OutfitPropio.items)
+        )\
+        .get(outfit.id)
 
-    # Aquí inyectamos las url firmadas de s3 de las imagenes de cada artículo
-    for articulo in outfit.articulos_propios:
-        articulo.urlFirmada = generar_url_firmada(articulo.foto)
-
-    # Añadir imagen del collage 
+    # urlFirmada para cada artículo e imagen
+    for art in outfit.articulos_propios:
+        art.urlFirmada = generar_url_firmada(art.foto)
     if outfit.collage_key:
-        try:
-            outfit.imagen = generar_url_firmada(outfit.collage_key)
-        except Exception as e:
-            print(f"Error al obtener collage: {e}")
-            outfit.imagen = ""
+        outfit.imagen = generar_url_firmada(outfit.collage_key)
 
     return outfit
 
+
+class OutfitItemCreate(BaseModel):
+    articulo_id: int
+    x: float
+    y: float
+    scale: float
+    rotation: float
+    z_index: int
+
+class ManualOutfitCreate(BaseModel):
+    titulo: str
+    ocasiones: List[OcasionEnum]
+    items: List[OutfitItemCreate]
+    imagen_base64: str
+
+@router.post("/manual", response_model=OutfitPropioConUsuarioResponse, status_code=201)
+async def crear_outfit_manual(
+    request: Request,
+    payload: ManualOutfitCreate = Body(...),
+    db: Session = Depends(get_db),
+):
+    usuario = await obtener_usuario_actual(request, db)
+    if not usuario:
+        raise HTTPException(401, "Usuario no autenticado")
+
+    # 2) Decodificar Base64 y recortar bordes transparentes
+    try:
+        raw = base64.b64decode(payload.imagen_base64)
+        im = Image.open(BytesIO(raw)).convert("RGBA")
+        bbox = im.getbbox()
+        if bbox:
+            im = im.crop(bbox)
+        # (opcional) redimensionar a un ancho fijo, e.g. 800px de ancho:
+        max_w = 800
+        if im.width > max_w:
+            ratio = max_w / im.width
+            im = im.resize((max_w, int(im.height * ratio)), Image.Resampling.LANCZOS)
+        buf = BytesIO()
+        im.save(buf, format="PNG")
+        png_bytes = buf.getvalue()
+    except Exception:
+        raise HTTPException(status_code=400, detail="imagen_base64 no es un PNG válido")
+
+    key = await subir_imagen_s3_bytes(
+        png_bytes,
+        f"manual_{usuario.id}_{int(datetime.utcnow().timestamp())}.png"
+    )
+
+    # 3) Crear OutfitPropio
+    outfit = OutfitPropio(
+        usuario=usuario,
+        titulo=payload.titulo,
+        descripcion_generacion="",
+        fecha_creacion=datetime.utcnow(),
+        ocasiones=payload.ocasiones,
+        temporadas=[],
+        colores=[],
+        collage_key=key
+    )
+    db.add(outfit)
+    db.flush()  # para obtener outfit.id antes de commit
+
+    # 4) Crear OutfitItem para cada posición
+    for it in payload.items:
+        db.add(OutfitItem(
+            outfit_id=outfit.id,
+            articulo_id=it.articulo_id,
+            x=it.x,
+            y=it.y,
+            scale=it.scale,
+            rotation=it.rotation,
+            z_index=it.z_index,
+        ))
+
+    db.commit()
+    db.refresh(outfit)
+
+    # 5) Eager-load relaciones necesarias para la respuesta
+    outfit = db.query(OutfitPropio) \
+        .options(
+            joinedload(OutfitPropio.articulos_propios),
+            joinedload(OutfitPropio.items),
+            joinedload(OutfitPropio.usuario),
+        ) \
+        .get(outfit.id)
+
+    # 6) Firmar URLs
+    for art in outfit.articulos_propios:
+        art.urlFirmada = generar_url_firmada(art.foto)
+    outfit.imagen = generar_url_firmada(outfit.collage_key) if outfit.collage_key else ""
+
+    return outfit
 
 
 @router.get("/stream", response_class=StreamingResponse)
@@ -78,60 +171,41 @@ async def obtener_outfits_stream(
     colores: Optional[List[ColorEnum]] = Query(None),
     db: Session = Depends(get_db),
 ):
-    try:
-        usuario_actual = await obtener_usuario_actual(request, db)
-        if not usuario_actual:
-            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(401, "Usuario no autenticado.")
 
-        # Filtramos por su ID
-        query = db.query(OutfitPropio).filter(
-            OutfitPropio.usuario == usuario_actual
-        )
+    # Base query
+    query = db.query(OutfitPropio).filter(OutfitPropio.usuario == usuario_actual)
 
-        if ocasiones:
-            query = query.filter(or_(*[OutfitPropio.ocasiones.any(t) for t in ocasiones]))
-        if temporadas:
-            query = query.filter(or_(*[OutfitPropio.temporadas.any(t) for t in temporadas]))
-        if colores:
-            query = query.filter(or_(*[OutfitPropio.colores.any(t) for t in colores]))
+    # filtros opcionales...
+    if ocasiones:
+        query = query.filter(or_(*[OutfitPropio.ocasiones.any(o) for o in ocasiones]))
+    if temporadas:
+        query = query.filter(or_(*[OutfitPropio.temporadas.any(t) for t in temporadas]))
+    if colores:
+        query = query.filter(or_(*[OutfitPropio.colores.any(c) for c in colores]))
 
-        outfits = query.options(
-            joinedload(OutfitPropio.articulos_propios).joinedload(ArticuloPropio.usuario)
-        ).order_by(OutfitPropio.id.desc()).all()
+    # **Eager-load** articulos_propios, items y usuario
+    outfits = query.options(
+        joinedload(OutfitPropio.articulos_propios),
+        joinedload(OutfitPropio.items),
+        joinedload(OutfitPropio.usuario),
+    ).order_by(OutfitPropio.id.desc()).all()
 
-        async def outfit_generator():
-            for outfit in outfits:
-                try:
-                    # Añadir imagen a cada artículo
-                    for articulo in outfit.articulos_propios:
-                        try:
-                            articulo.urlFirmada = generar_url_firmada(articulo.foto)
-                        except Exception as e_img:
-                            print(f"⚠️  Error al obtener imagen del artículo {articulo.id}: {e_img}")
-                            articulo.urlFirmada = ""
+    async def streamer():
+        for outfit in outfits:
+            # firmar URLs
+            for art in outfit.articulos_propios:
+                art.urlFirmada = generar_url_firmada(art.foto)
+            outfit.imagen = generar_url_firmada(outfit.collage_key) if outfit.collage_key else ""
 
-                    # Añadir imagen del collage
-                    imagen_collage = ""
-                    if outfit.collage_key:
-                        try:
-                            imagen_collage = generar_url_firmada(outfit.collage_key)
-                        except Exception as e_col:
-                            print(f"⚠️  Error al obtener collage {outfit.collage_key}: {e_col}")
+            # serializar con usuario e items
+            schema = OutfitPropioConUsuarioResponse.from_orm(outfit).dict()
+            yield json.dumps(schema) + "\n"
 
-                    setattr(outfit, "imagen", imagen_collage)
-                    ###
-                    schema = OutfitPropioSimpleResponse.from_orm(outfit).dict()
-                    
-                    yield json.dumps(schema) + "\n"
+    return StreamingResponse(streamer(), media_type="application/json")
 
-                except Exception as e_outfit:
-                    traceback.print_exc()
-
-        return StreamingResponse(outfit_generator(), media_type="application/json")
-
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Error interno al procesar outfits.")
 
 
 @router.get("/count")
@@ -151,79 +225,6 @@ async def contar_outfits_usuario(
     return {"total": total}
 
 
-"""@router.get("/feed")
-async def obtener_feed_outfits(
-    request: Request,
-    page: int = Query(0, ge=0),
-    page_size: int = Query(6, gt=0),
-    db: Session = Depends(get_db),
-):
-    try:
-        usuario_actual = await obtener_usuario_actual(request, db)
-        if not usuario_actual:
-            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
-
-        # IDs de usuarios seguidos
-        seguidos_ids = [rel.id_seguido for rel in usuario_actual.seguidos]
-
-        Seguidor = aliased(Usuario)
-
-        subquery = (
-            db.query(Usuario.id)
-            .join(Seguidor, Usuario.seguidores)  
-            .group_by(Usuario.id)
-            .order_by(Usuario.id.desc())
-            .filter(Usuario.id.notin_(seguidos_ids + [usuario_actual.id]))
-            .limit(5)
-            .subquery()
-        )
-
-
-        ids_finales = seguidos_ids + [id for (id,) in db.query(subquery).all()]
-
-        # Consulta de outfits
-        outfits = (
-            db.query(OutfitPropio)
-            .filter(OutfitPropio.usuario_id.in_(ids_finales))
-            .order_by(OutfitPropio.fecha_creacion.desc())
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-
-        
-
-        resultados = []
-        for outfit in outfits:
-            # Añadir imagen a cada artículo
-            for articulo in outfit.articulos_propios:
-                try:
-                    #imagen_bytes = await get_imagen_s3(articulo.foto)
-                    #articulo.urlFirmada = base64.b64encode(imagen_bytes).decode("utf-8")
-                    articulo.urlFirmada = generar_url_firmada(articulo.foto)
-                except:
-                    articulo.urlFirmada = ""
-
-            # Añadir imagen del collage
-            try:
-                if outfit.collage_key:
-                    #collage_bytes = await get_imagen_s3(outfit.collage_key)
-                    #outfit.imagen = base64.b64encode(collage_bytes).decode("utf-8")
-                    outfit.imagen = generar_url_firmada(outfit.collage_key)
-                else:
-                    outfit.imagen = ""
-            except:
-                outfit.imagen = ""
-
-            resultados.append(OutfitPropioResponse.from_orm(outfit))
-
-        return resultados
-
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": str(e)})"""
-    
-
 @router.get("/feed/seguidos", response_class=StreamingResponse)
 async def feed_seguidos_stream(
     request: Request,
@@ -231,52 +232,44 @@ async def feed_seguidos_stream(
     page_size: int = Query(20, gt=0),
     db: Session = Depends(get_db)
 ):
-    try:
-        usuario_actual = await obtener_usuario_actual(request, db)
-        if not usuario_actual:
-            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
 
-        seguidos_ids = [u.id for u in usuario_actual.seguidos]
+    # IDs de los usuarios a los que sigue el usuario actual
+    seguidos_ids = [u.id for u in usuario_actual.seguidos]
 
-        query = db.query(OutfitPropio)\
-            .filter(OutfitPropio.usuario_id.in_(seguidos_ids))\
-            .order_by(OutfitPropio.fecha_creacion.desc())\
-            .offset(page * page_size)\
-            .limit(page_size)
+    # Trae todos los outfits de esos usuarios, ordenados por fecha desc.
+    outfits = (
+        db.query(OutfitPropio)
+          .filter(OutfitPropio.usuario_id.in_(seguidos_ids))
+          .options(
+              joinedload(OutfitPropio.articulos_propios),
+              joinedload(OutfitPropio.items),
+              joinedload(OutfitPropio.usuario),
+          )
+          .order_by(OutfitPropio.fecha_creacion.desc())
+          .offset(page * page_size)
+          .limit(page_size)
+          .all()
+    )
 
-        outfits = query.options(
-            joinedload(OutfitPropio.articulos_propios).joinedload(ArticuloPropio.usuario),
-            joinedload(OutfitPropio.usuario)
-        ).all()
-
-        schemas = []
+    async def streamer():
         for outfit in outfits:
-            for articulo in outfit.articulos_propios:
-                try:
-                    articulo.urlFirmada = generar_url_firmada(articulo.foto)
-                except:
-                    articulo.urlFirmada = ""
-            try:
-                if outfit.collage_key:
-                    outfit.imagen = generar_url_firmada(outfit.collage_key)
-                else:
-                    outfit.imagen = ""
-            except:
-                outfit.imagen = ""
+            # Firmar URLs de cada artículo
+            for art in outfit.articulos_propios:
+                art.urlFirmada = generar_url_firmada(art.foto)
+            # Firmar URL del collage
+            outfit.imagen = (
+                generar_url_firmada(outfit.collage_key)
+                if outfit.collage_key
+                else ""
+            )
+            # Serializar incluyendo usuario e items
+            schema = OutfitPropioConUsuarioResponse.from_orm(outfit).dict()
+            yield json.dumps(schema) + "\n"
 
-            schema = OutfitPropioConUsuarioResponse.from_orm(outfit).dict(exclude={"usuario"})
-            schema["usuario"] = UserOut.from_orm(outfit.usuario).dict()
-            schemas.append(json.dumps(schema))
-
-        async def stream():
-            for s in schemas:
-                yield s + "\n"
-
-        return StreamingResponse(stream(), media_type="application/json")
-
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": str(e)})
+    return StreamingResponse(streamer(), media_type="application/json")
 
 
 
@@ -285,79 +278,69 @@ async def feed_global_stream(
     request: Request,
     page: int = Query(0, ge=0),
     page_size: int = Query(20, gt=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    try:
-        usuario_actual = await obtener_usuario_actual(request, db)
-        if not usuario_actual:
-            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
 
+    # Traemos TODOS los outfits, sin filtro, ordenados por fecha descendente
+    outfits = (
+        db.query(OutfitPropio)
+          .options(
+             joinedload(OutfitPropio.articulos_propios),
+             joinedload(OutfitPropio.items),
+             joinedload(OutfitPropio.usuario),
+          )
+          .order_by(OutfitPropio.fecha_creacion.desc())
+          .offset(page * page_size)
+          .limit(page_size)
+          .all()
+    )
 
-        Seguidor = aliased(Usuario)
-        subquery = (
-            db.query(Usuario.id)
-            .join(Seguidor, Usuario.seguidores)
-            .group_by(Usuario.id)
-            .order_by(func.count().desc())
-            .limit(20)
-            .subquery()
-        )
+    async def streamer():
+        for outfit in outfits:
+            # Firmar URLs de artículos
+            for art in outfit.articulos_propios:
+                art.urlFirmada = generar_url_firmada(art.foto)
+            # Firmar URL del collage
+            outfit.imagen = (
+                generar_url_firmada(outfit.collage_key)
+                if outfit.collage_key
+                else ""
+            )
+            # Serializar incluyendo usuario e items
+            schema = OutfitPropioConUsuarioResponse.from_orm(outfit).dict()
+            yield json.dumps(schema) + "\n"
 
-        ids_recomendados = [id for (id,) in db.query(subquery).all()]
-
-        query = db.query(OutfitPropio)\
-            .filter(OutfitPropio.usuario_id.in_(ids_recomendados))\
-            .order_by(OutfitPropio.fecha_creacion.desc())\
-            .offset(page * page_size)\
-            .limit(page_size)
-
-        #outfits = query.options(joinedload(OutfitPropio.articulos_propios)).all()
-        outfits = query.options(
-            joinedload(OutfitPropio.articulos_propios).joinedload(ArticuloPropio.usuario),
-            joinedload(OutfitPropio.usuario)
-        ).all()
-
-
-        async def stream():
-            for outfit in outfits:
-                
-
-                for articulo in outfit.articulos_propios:
-                    try:
-                        articulo.urlFirmada = generar_url_firmada(articulo.foto)
-                    except:
-                        articulo.urlFirmada = ""
-                try:
-                    if outfit.collage_key:
-                        outfit.imagen = generar_url_firmada(outfit.collage_key)
-                    else:
-                        outfit.imagen = ""
-                except:
-                    outfit.imagen = ""
-                schema = OutfitPropioConUsuarioResponse.from_orm(outfit).dict(exclude={"usuario"})
-                schema["usuario"] = UserOut.from_orm(outfit.usuario).dict()
-                yield json.dumps(schema) + "\n"
-
-
-
-        return StreamingResponse(stream(), media_type="application/json")
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": str(e)})
+    return StreamingResponse(streamer(), media_type="application/json")
 
 
 
 
-@router.get("/{outfit_id}", response_model=OutfitPropioSimpleResponse)
+@router.get("/{outfit_id}", response_model=OutfitPropioConUsuarioResponse)
 async def obtener_outfit(
     outfit_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    outfit = db.query(OutfitPropio).filter(OutfitPropio.id == outfit_id).first()
+    outfit = (
+        db.query(OutfitPropio)
+          .options(
+             joinedload(OutfitPropio.articulos_propios),
+             joinedload(OutfitPropio.items),
+             joinedload(OutfitPropio.usuario),
+          )
+          .filter(OutfitPropio.id == outfit_id)
+          .first()
+    )
     if not outfit:
-        raise HTTPException(status_code=404, detail="Outfit no encontrado")
-
+        raise HTTPException(404, "Outfit no encontrado")
+    # firmar URLs
+    for art in outfit.articulos_propios:
+        art.urlFirmada = generar_url_firmada(art.foto)
+    outfit.imagen = generar_url_firmada(outfit.collage_key) if outfit.collage_key else ""
     return outfit
+
 
 
 
@@ -379,4 +362,6 @@ async def eliminar_outfit(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar el outfit: {str(e)}")
     
+
+
 

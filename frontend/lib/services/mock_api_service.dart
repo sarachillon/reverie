@@ -344,4 +344,19 @@ Future<void> editarArticuloPropio({
     // Simulación de eliminación de cuenta
     print("Cuenta eliminada.");
   }
+
+  @override
+   Future<bool> crearOutfitManual({
+    required String titulo,
+    required List<OcasionEnum> ocasiones,
+    required List<Map<String, dynamic>> items,
+    required String imagenBase64,
+  }) async {
+    // Simulación de creación de un outfit manual
+    print("Outfit manual creado con título: $titulo");
+    print("Ocasiones: $ocasiones");
+    print("Items: $items");
+    print("Imagen Base64: $imagenBase64");
+    return true; // Simulación de éxito
+  }
 }

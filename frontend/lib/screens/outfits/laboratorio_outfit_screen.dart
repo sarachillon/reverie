@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/enums/enums.dart';
 import 'package:frontend/services/real_api_service.dart';
 import '../utils/imagen_ajustada_widget.dart';
 
@@ -20,8 +22,11 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
   final RealApiService _api = RealApiService();
   late final StreamSubscription _subscription;
   List<Map<String, dynamic>> _articles = [];
-  List<CollageItem> _items = [];
+  // ahora usamos GlobalKey para poder extraer estado de cada CollageItem
+  final List<GlobalKey<_CollageItemState>> _itemKeys = [];
+  final List<CollageItem> _items = [];
   final GlobalKey _canvasKey = GlobalKey();
+  final TextEditingController _tituloController = TextEditingController();
 
   late TabController _mainTabController;
   late TabController _subTabController;
@@ -45,10 +50,8 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(
-      length: _categories.length,
-      vsync: this,
-    )..addListener(() {
+    _mainTabController = TabController(length: _categories.length, vsync: this)
+      ..addListener(() {
         if (!_mainTabController.indexIsChanging) {
           setState(() {
             if (_mainTabController.index != 0) {
@@ -57,10 +60,8 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
           });
         }
       });
-    _subTabController = TabController(
-      length: _subTabs.length,
-      vsync: this,
-    )..addListener(() {
+    _subTabController = TabController(length: _subTabs.length, vsync: this)
+      ..addListener(() {
         if (!_subTabController.indexIsChanging) setState(() {});
       });
 
@@ -82,7 +83,7 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
 
   void _onArticleError(error) {
     if (!mounted) return;
-    debugPrint('Error loading articles: \$error');
+    debugPrint('Error loading articles: $error');
   }
 
   @override
@@ -90,71 +91,188 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
     _subscription.cancel();
     _mainTabController.dispose();
     _subTabController.dispose();
+    _tituloController.dispose();
     super.dispose();
   }
 
-void _addItem(Map<String, dynamic> article) {
-  final key = UniqueKey();
-  setState(() {
-    _items.add(
-      CollageItem(
-        key: key,
-        article: article,
-        onRemove: () => setState(() => _items.removeWhere((w) => w.key == key)),
-        onDragStart: () => setState(() => _showTrash = true),
-        onDragEnd: (offset) {
-          // ocultamos el icono de papelera
-          setState(() => _showTrash = false);
+  void _addItem(Map<String, dynamic> article) {
+    final key = GlobalKey<_CollageItemState>();
+    _itemKeys.add(key);
+    setState(() {
+      _items.add(
+        CollageItem(
+          key: key,
+          article: article,
+          onRemove: () {
+            setState(() {
+              final idx = _items.indexWhere((w) => w.key == key);
+              _items.removeAt(idx);
+              _itemKeys.removeAt(idx);
+            });
+          },
+          onDragStart: () => setState(() => _showTrash = true),
+          onDragEnd: (offset) {
+            setState(() => _showTrash = false);
+            final screen = MediaQuery.of(context).size;
+            const iconSize = 30.0, padding = 20.0;
+            final trashArea = Rect.fromLTWH(
+              screen.width - padding - iconSize,
+              padding,
+              iconSize,
+              iconSize,
+            ).inflate(120);
+            if (trashArea.contains(offset)) {
+              setState(() {
+                final idx = _items.indexWhere((w) => w.key == key);
+                _items.removeAt(idx);
+                _itemKeys.removeAt(idx);
+              });
+            }
+          },
+        ),
+      );
+    });
+  }
 
-          final screen = MediaQuery.of(context).size;
-          const double iconSize = 30.0;
-          const double padding = 20.0;
+  void _clearGrid() => setState(() {
+        _items.clear();
+        _itemKeys.clear();
+      });
 
-          // Definimos el área de la papelera en la esquina superior derecha,
-          // 20px de margen, icono de 30px y 120px de tolerancia
-          final trashRect = Rect.fromLTWH(
-            screen.width - padding - iconSize,
-            padding,
-            iconSize,
-            iconSize,
-          ).inflate(120.0);
+Future<void> _saveManualOutfit() async {
+  // 1) Renderizamos el canvas
+  final boundary =
+      _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  final image = await boundary.toImage(pixelRatio: 3.0);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  final pngBytes = byteData!.buffer.asUint8List();
 
-          // Si el punto final del gesto (offset) cae dentro de esa área,
-          // eliminamos el elemento
-          if (trashRect.contains(offset)) {
-            setState(() => _items.removeWhere((w) => w.key == key));
-          }
-        },
-      ),
-    );
-  });
+  // 2) Construimos payload de items
+  final itemsPayload = <Map<String, dynamic>>[];
+  for (var i = 0; i < _items.length; i++) {
+    final state = _itemKeys[i].currentState!;
+    itemsPayload.add({
+      'articulo_id': _items[i].article['id'],
+      'x': state.position.dx,
+      'y': state.position.dy,
+      'scale': state.scale,
+      'rotation': state.rotation,
+      'z_index': i,
+    });
+  }
+
+  // 3) Diálogo de confirmación
+    final saved = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      String title = '';
+      List<OcasionEnum> selectedOcasiones = [];
+
+      return StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Guardar outfit'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Campo de título
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Título *',
+                  ),
+                  onChanged: (v) => setState(() => title = v.trim()),
+                ),
+                const SizedBox(height: 8),
+
+                // Ocasiones
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Ocasión *',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: OcasionEnum.values.map((o) {
+                    final isSelected = selectedOcasiones.contains(o);
+                    return ChoiceChip(
+                      label: Text(o.value, style: const TextStyle(fontSize: 12)),
+                      selected: isSelected,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                      showCheckmark: false,
+                      onSelected: (sel) {
+                        setState(() {
+                          if (sel) {
+                            selectedOcasiones.add(o);
+                          } else {
+                            selectedOcasiones.remove(o);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+
+                // Previsualización
+                Container(
+                  width: 260,
+                  height: 260,
+                  color: Colors.white,
+                  child: Center(
+                    child: Image.memory(
+                      pngBytes,
+                      width: 240,
+                      height: 240,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              // sólo habilita si hay título y al menos una ocasión
+              onPressed: title.isNotEmpty && selectedOcasiones.isNotEmpty
+                  ? () async {
+                      final ok = await _api.crearOutfitManual(
+                        titulo: title,
+                        ocasiones: selectedOcasiones,
+                        items: itemsPayload,
+                        imagenBase64: base64Encode(pngBytes),
+                      );
+                      Navigator.of(context).pop(ok);
+                    }
+                  : null,
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  // 4) Feedback
+  if (saved == true) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Outfit guardado')));
+  } else if (saved == false) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Error al guardar')));
+  }
 }
 
-
-
-
-
-
-  void _clearGrid() => setState(() => _items.clear());
-
-
-  Future<void> _saveOutfit() async {
-    final boundary =
-        _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData = await
-        image.toByteData(format: ui.ImageByteFormat.png);
-    final pngBytes = byteData!.buffer.asUint8List();
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('Mi Collage')),
-          body: Center(child: Image.memory(pngBytes)),
-        ),
-      ),
-    );
-  }
 
   List<Map<String, dynamic>> _currentList() {
     final cat = _categories[_mainTabController.index];
@@ -170,9 +288,8 @@ void _addItem(Map<String, dynamic> article) {
     }
     if (_searchMode && _searchQuery.isNotEmpty) {
       list = list
-          .where((a) => (a['nombre'] ?? '')
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase()))
+          .where((a) =>
+              (a['nombre'] ?? '').toLowerCase().contains(_searchQuery))
           .toList();
     }
     return list;
@@ -184,116 +301,91 @@ void _addItem(Map<String, dynamic> article) {
       appBar: AppBar(
         title: const Text('Laboratorio de Outfits'),
         actions: [
-          IconButton(onPressed: _clearGrid, icon: const Icon(Icons.clear_all)),
           TextButton(
-            onPressed: _saveOutfit,
+            onPressed: _saveManualOutfit,
             child: const Text(
               'Guardar Outfit',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+              style:
+                  TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CustomPaint(size: Size.infinite, painter: _GridPainter()),
-                      RepaintBoundary(
-                        key: _canvasKey,
-                        child: Container(
-                          color: Colors.transparent,
-                          child: Stack(
-                              clipBehavior: Clip.none, children: _items),
-                        ),
-                      ),
-                    ],
+        child: Stack(children: [
+          Column(children: [
+            Expanded(
+              child: Stack(clipBehavior: Clip.none, children: [
+                CustomPaint(size: Size.infinite, painter: _GridPainter()),
+                RepaintBoundary(
+                  key: _canvasKey,
+                  child: Container(
+                    color: Colors.transparent,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: _items,
+                    ),
                   ),
                 ),
-                const Divider(height: 1),
-                _buildBottomPanel(),
-              ],
+              ]),
             ),
-            if (_showTrash)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Opacity(
-                  opacity: 0.7,
-                  child: Icon(
-                    Icons.delete,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-              )
-          ],
-        ),
+            const Divider(height: 1),
+            _buildBottomPanel(),
+          ]),
+          if (_showTrash)
+            const Positioned(
+              top: 20,
+              right: 20,
+              child: Opacity(
+                opacity: 0.7,
+                child: Icon(Icons.delete, size: 30, color: Colors.black),
+              ),
+            ),
+        ]),
       ),
     );
   }
 
   Widget _buildBottomPanel() {
-  return Container(
-    color: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _searchMode
-                  ? TextField(
-                      decoration: const InputDecoration(
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          Expanded(
+            child: _searchMode
+                ? TextField(
+                    decoration: const InputDecoration(
                         hintText: 'Buscar por nombre',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      onChanged: (v) => setState(() => _searchQuery = v),
-                    )
-                  : TabBar(
-                      controller: _mainTabController,
-                      tabs: _categories.map((c) => Tab(text: c)).toList(),
-                      isScrollable: true,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                    ),
-            ),
-            IconButton(
-              icon: Icon(_searchMode ? Icons.close : Icons.search),
-              onPressed: () => setState(() {
-                _searchMode = !_searchMode;
-                _searchQuery = '';
-              }),
-            ),
-            IconButton(
-              onPressed: _clearGrid,
-              icon: const Icon(Icons.cleaning_services),
-              tooltip: 'Limpiar grid',
-            ),
-          ],
-        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12)),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  )
+                : TabBar(
+                    controller: _mainTabController,
+                    tabs: _categories.map((c) => Tab(text: c)).toList(),
+                    isScrollable: true,
+                  ),
+          ),
+          IconButton(
+            icon: Icon(_searchMode ? Icons.close : Icons.search),
+            onPressed: () =>
+                setState(() => _searchMode = !_searchMode),
+          ),
+          IconButton(
+            onPressed: _clearGrid,
+            icon: const Icon(Icons.cleaning_services),
+          ),
+        ]),
         const Divider(height: 0),
-
-        // Sub-tabs sólo para sección RO PA
-        if (_mainTabController.index == 0 && !_searchMode) ...[
+        if (_mainTabController.index == 0 && !_searchMode)
           TabBar(
             controller: _subTabController,
             tabs: _subTabs.map((s) => Tab(text: s)).toList(),
             labelColor: Theme.of(context).primaryColor,
             unselectedLabelColor: Colors.black54,
-            indicatorColor: Theme.of(context).primaryColor,
           ),
-        ],
         const Divider(height: 0),
-        // Lista de artículos
         SizedBox(
           height: 150,
           child: TabBarView(
@@ -326,11 +418,9 @@ void _addItem(Map<String, dynamic> article) {
             }).toList(),
           ),
         ),
-      ],
-    ),
-  );
-}
-
+      ]),
+    );
+  }
 }
 
 class _GridPainter extends CustomPainter {
@@ -368,57 +458,59 @@ class CollageItem extends StatefulWidget {
 }
 
 class _CollageItemState extends State<CollageItem> {
-  Offset _position = const Offset(100, 100);
-  double _scale = 1.0;
-  late Offset _startFocalPoint;
-  late Offset _startPosition;
-  late double _startScale;
-  late Offset _lastGlobalFocal;
-  bool _hapticTriggered = false;
+  Offset position = const Offset(100, 100);
+  double scale = 1.0;
+  double rotation = 0.0;
+
+  // Guarda estado al iniciar el gesto
+  late Offset _startFocal, _startPos, _lastFocal;
+  late double _startScale, _startRotation;
 
   @override
   Widget build(BuildContext context) {
-    final screen = MediaQuery.of(context).size;
-    final trashRect = Rect.fromLTWH(
-      (screen.width - 60) / 2,
-      screen.height - 180,
-      60,
-      60,
-    );
     return Positioned(
-      left: _position.dx,
-      top: _position.dy,
+      left: position.dx,
+      top: position.dy,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onScaleStart: (details) {
           widget.onDragStart();
-          _startFocalPoint = details.focalPoint;
-          _startPosition = _position;
-          _startScale = _scale;
-          _lastGlobalFocal = details.focalPoint;
-          _hapticTriggered = false;
+          _startFocal = details.focalPoint;
+          _startPos = position;
+          _startScale = scale;
+          _startRotation = rotation;        // <-- ROTACIÓN INICIAL
+          _lastFocal = details.focalPoint;
         },
         onScaleUpdate: (details) {
+          final dx = details.focalPoint.dx - _startFocal.dx;
+          final dy = details.focalPoint.dy - _startFocal.dy;
+
           setState(() {
-            _lastGlobalFocal = details.focalPoint;
-            _position =
-                _startPosition + (details.focalPoint - _startFocalPoint);
-            _scale = (_startScale * details.scale).clamp(0.5, 2.0);
+            // Muevo la imagen
+            position = _startPos + Offset(dx, dy);
+            
+            // Ajusto el scale sólo si difiere lo suficiente de 1
+            if ((details.scale - 1).abs() > 0.01) {
+              scale = (_startScale * details.scale).clamp(0.5, 2.0);
+            }
+            
+            // Ajusto la rotación sólo si supera un umbral
+            if (details.rotation.abs() > 0.01) {
+              rotation = _startRotation + details.rotation;
+            }
           });
-          if (!_hapticTriggered && trashRect.contains(_lastGlobalFocal)) {
-            HapticFeedback.lightImpact();
-            _hapticTriggered = true;
-          }
+
+          _lastFocal = details.focalPoint;
         },
-        onScaleEnd: (details) {
-          widget.onDragEnd(_lastGlobalFocal);
-          if (trashRect.contains(_lastGlobalFocal)) {
-            widget.onRemove();
-          }
-        },
+        onScaleEnd: (details) =>
+          widget.onDragEnd(_lastFocal),
         child: Transform(
           origin: const Offset(55, 55),
-          transform: Matrix4.identity()..scale(_scale),
+          transform: Matrix4.identity()
+            ..translate(55.0, 55.0)
+            ..rotateZ(rotation)
+            ..scale(scale)
+            ..translate(-55.0, -55.0),
           child: ImagenAjustada(
             url: widget.article['urlFirmada'],
             width: 110,
