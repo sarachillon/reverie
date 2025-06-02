@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/services/api_manager.dart';
@@ -112,7 +113,14 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Editar perfil"),
+        title: Text(
+        'Editar Perfil',
+        style: GoogleFonts.dancingScript(
+          fontSize: 30,
+          color: Color(0xFFD4AF37),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),

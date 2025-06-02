@@ -72,7 +72,7 @@ class ApiManager {
   }
 
 
-  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
+Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
@@ -279,5 +279,40 @@ Stream<Map<String, dynamic>> getFeedOutfitsStream({
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
     return _instance!.crearOutfitManual(titulo: titulo, ocasiones: ocasiones, items: items, imagenBase64: imagenBase64);
+  }
+
+  Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<String, dynamic>> items,required String imagenBase64,}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.editarCollageOutfitPropio(outfitId: outfitId,items: items,imagenBase64: imagenBase64);
+  }
+
+   Future<Map<String, dynamic>> getArticuloPropioPorId({required int id,}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getArticuloPropioPorId(id: id);
+  }
+
+  Future<Map<String, dynamic>> getOutfitById({required int id}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getOutfitById(id: id);
+  }
+
+  Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.getTodosLosArticulosDeBD();
+  }
+
+  Future<void> editarOutfitPropio({required int id,String? titulo,String? descripcion,List<OcasionEnum>? ocasiones,List<TemporadaEnum>? temporadas,List<ColorEnum>? colores,}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.editarOutfitPropio(id: id, titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores);
   }
 }

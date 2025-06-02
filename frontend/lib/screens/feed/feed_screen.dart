@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
+import 'package:frontend/screens/feed/buscador_usuarios_widget.dart';
+import 'package:frontend/screens/perfil/perfil_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/widget_outfit_feed_small.dart';
 import 'package:frontend/screens/outfits/widget_outfit_feed_big.dart';
@@ -14,6 +17,8 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   final ApiManager _apiManager = ApiManager();
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
+
 
   List<Map<String, dynamic>> _outfitsStreamed = [];
   StreamSubscription<Map<String, dynamic>>? _subscription;
@@ -101,6 +106,11 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
               });
             },
           ),
+            IconButton(
+              icon: const Icon(Icons.people_alt, color: Color(0xFFD4AF37)), // Social icon
+              onPressed: _abrirBuscadorUsuarios,
+              tooltip: "Buscar usuarios",
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -117,4 +127,27 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
               : WidgetOutfitFeedBig(outfits: outfitsFiltrados),
     );
   }
+
+
+  void _abrirBuscadorUsuarios() async {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => SizedBox(
+      height: MediaQuery.of(context).size.height * 0.8,
+      child: BuscadorUsuariosWidget(
+        onUsuarioTap: (usuario) {
+          Navigator.of(context).pop(); // Cierra el modal
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PerfilScreen(userId: usuario['id'], armarioKey: armarioKey,),
+          ));
+        },
+      ),
+    ),
+  );
+}
+
 }

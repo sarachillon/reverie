@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/armarioVirtual/articulo_propio_widget.dart';
+import 'package:frontend/screens/armarioVirtual/mini_armario_horizontal.dart';
+import 'package:frontend/screens/armarioVirtual/seleccionar_prendas_user.dart';
 import 'package:frontend/screens/utils/carga_screen.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/outfit_confirmation_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FormularioOutfitScreen extends StatefulWidget {
-  const FormularioOutfitScreen({super.key});
+  const FormularioOutfitScreen({super.key, this.userId});
+  final int? userId;
+
 
   @override
   State<FormularioOutfitScreen> createState() => _FormularioOutfitScreenState();
@@ -20,6 +27,34 @@ class FormularioOutfitScreen extends StatefulWidget {
     List<OcasionEnum> _ocasiones = [];
     List<TemporadaEnum> _temporadas = [];
     List<ColorEnum> _colores = [];
+
+    List<Map<String, dynamic>> prendasFijadas = []; 
+    List<Map<String, dynamic>> articulosUsuario = [];
+
+  @override
+  void initState() {
+    super.initState();
+    cargarArticulosUsuario();
+  }
+
+  Future<void> cargarArticulosUsuario() async {
+    setState(() => articulosUsuario = []);
+    try {
+      final stream = _apiManager.getArticulosPropiosStream();
+      List<Map<String, dynamic>> nuevos = [];
+      await for (final articulo in stream) {
+        if (!mounted) return;
+        if (articulo is Map && articulo.containsKey('categoria')) {
+          nuevos.add(articulo as Map<String, dynamic>);
+        }
+      }
+      setState(() {
+        articulosUsuario = nuevos;
+      });
+    } catch (e) {
+      print("Error al cargar artículos: $e");
+    }
+  }
 
     Future<bool?> generarOutfit(BuildContext context) async {
       // Mostrar loader de outfit
@@ -76,13 +111,117 @@ class FormularioOutfitScreen extends StatefulWidget {
       return false;
     }
 
+  Future<List<Map<String, dynamic>>?> showSeleccionarPrendasModal(
+  BuildContext context,
+  List<Map<String, dynamic>> articulosUsuario,
+  List<Map<String, dynamic>> yaSeleccionados,
+) async {
+  final seleccionados = [...yaSeleccionados];
+
+  return showModalBottomSheet<List<Map<String, dynamic>>>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Selecciona prendas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: articulosUsuario.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, i) {
+                        final articulo = articulosUsuario[i];
+                        final url = articulo['urlFirmada'] ?? '';
+                        final yaFijado = seleccionados.any((a) => a['id'] == articulo['id']);
+                        return ListTile(
+                          leading: url.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ImagenAjustada(
+                                    url: url,
+                                    width: 48,
+                                    height: 48,
+                                  ),
+                                )
+                              : const SizedBox(width: 48, height: 48, child: Icon(Icons.image)),
+                          title: Text(articulo['nombre'] ?? 'Sin nombre'),
+                          trailing: Checkbox(
+                            value: yaFijado,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val == true) {
+                                  seleccionados.add(articulo);
+                                } else {
+                                  seleccionados.removeWhere((a) => a['id'] == articulo['id']);
+                                }
+                              });
+                            },
+                          ),
+                          onTap: () {
+                            setState(() {
+                              if (yaFijado) {
+                                seleccionados.removeWhere((a) => a['id'] == articulo['id']);
+                              } else {
+                                seleccionados.add(articulo);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFD4AF37),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () => Navigator.pop(context, seleccionados),
+                      child: const Text("Guardar", style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     final primeraFila = ColorEnum.values.take(6);
     final segundaFila = ColorEnum.values.skip(6);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Nuevo Outfit")),
+      appBar: AppBar(leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+      'Generar Outfit Automáticamente',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+      ),
+    ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -91,6 +230,38 @@ class FormularioOutfitScreen extends StatefulWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+              _buildTitulo("Escoge una prenda para fijar"),
+              const SizedBox(height: 12),
+              MiniArmarioFijar(
+                  prendasFijadas: prendasFijadas,
+                  onAddPressed: () async {
+                    // Espera a que termine de cargar si sigue vacío
+                    if (articulosUsuario.isEmpty) await cargarArticulosUsuario();
+
+                    final seleccionados = await showModalBottomSheet<List<Map<String, dynamic>>>(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (_) => SeleccionarPrendasUsuarioWidget(
+                        articulosUsuario: articulosUsuario,
+                        yaSeleccionados: prendasFijadas,
+                      ),
+                    );
+                    if (seleccionados != null) {
+                      setState(() {
+                        prendasFijadas = seleccionados;
+                      });
+                    }
+                  },
+                  onRemove: (index) {
+                    setState(() {
+                      prendasFijadas.removeAt(index);
+                    });
+                  },
+                ),
+
                 _buildTitulo("Información básica"),
                 const SizedBox(height: 12),
                 const Text("Nombre del outfit", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),

@@ -87,6 +87,13 @@ abstract class ApiService {
 
  Future<bool> crearOutfitManual({ required String titulo,required List<OcasionEnum> ocasiones,required List<Map<String, dynamic>> items,required String imagenBase64,});
 
+Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<String, dynamic>> items,required String imagenBase64,});
 
+   Future<Map<String, dynamic>> getArticuloPropioPorId({required int id,});
 
+   Future<Map<String, dynamic>> getOutfitById({required int id});
+
+   Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD();
+
+   Future<void> editarOutfitPropio({required int id,String? titulo,String? descripcion,List<OcasionEnum>? ocasiones,List<TemporadaEnum>? temporadas,List<ColorEnum>? colores,});
 }

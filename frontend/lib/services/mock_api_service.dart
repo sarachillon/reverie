@@ -359,4 +359,44 @@ Future<void> editarArticuloPropio({
     print("Imagen Base64: $imagenBase64");
     return true; // Simulación de éxito
   }
+
+  @override
+  Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<String, dynamic>> items,required String imagenBase64,}) async {
+    // Simulación de edición de un collage de outfit propio
+    print("Collage de outfit con ID $outfitId editado.");
+    print("Items: $items");
+    print("Imagen Base64: $imagenBase64");
+    return true; // Simulación de éxito
+  }
+
+  @override
+   Future<Map<String, dynamic>> getArticuloPropioPorId({required int id,}) async {
+    // Simulación de obtención de un artículo propio por ID
+    return fakeArticulos.firstWhere((articulo) => articulo['id'] == id);
+
+   }
+
+  @override
+  Future<Map<String, dynamic>> getOutfitById({required int id}) async {
+    // Simulación de obtención de un outfit por ID
+    return fakeOutfits.firstWhere((outfit) => outfit['id'] == id);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
+    // Simulación de obtención de todos los artículos de la base de datos
+    return fakeArticulos;
+  }
+
+
+  @override
+  Future<void> editarOutfitPropio({required int id,String? titulo,String? descripcion,List<OcasionEnum>? ocasiones,List<TemporadaEnum>? temporadas,List<ColorEnum>? colores,}) async {
+    // Simulación de edición de un outfit propio
+    print("Outfit con ID $id editado.");
+    if (titulo != null) print("Nuevo título: $titulo");
+    if (descripcion != null) print("Nueva descripción: $descripcion");
+    if (ocasiones != null) print("Nuevas ocasiones: $ocasiones");
+    if (temporadas != null) print("Nuevas temporadas: $temporadas");
+    if (colores != null) print("Nuevos colores: $colores");
+  }
 }

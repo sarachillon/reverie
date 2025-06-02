@@ -1,7 +1,7 @@
 # backend/app/routers/articulo_propios.py
 import os
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, Query
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, Path, UploadFile, File, Form, HTTPException, Request, Query
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import or_, any_, func
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import array
@@ -194,6 +194,7 @@ async def crear_articulo(
 @router.get("/stream", response_class=StreamingResponse)
 async def obtener_articulos_propios_stream(
     request: Request,
+    usuario_id: Optional[int] = None,
     categoria: Optional[CategoriaEnum] = None,
     subcategoria: Optional[str] = None,
     ocasiones: Optional[List[OcasionEnum]] = Query(None),
@@ -201,11 +202,20 @@ async def obtener_articulos_propios_stream(
     colores: Optional[List[ColorEnum]] = Query(None),
     db: Session = Depends(get_db),
 ):
-    usuario_actual = await obtener_usuario_actual(request, db)
-    if not usuario_actual:
-        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+    if usuario_id:
+        # Si se especifica usuario_id => usa ese
+        query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_id)
+    else:
+        # Si no se especifica => usa el usuario autenticado
+        usuario_actual = await obtener_usuario_actual(request, db)
+        if not usuario_actual:
+            raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+        query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_actual.id)
     
-    query = db.query(ArticuloPropio).filter(ArticuloPropio.usuario_id == usuario_actual.id)
+    articulos = query.options(joinedload(ArticuloPropio.usuario)).order_by(ArticuloPropio.id.desc()).all()
+
+    if not articulos:
+        return JSONResponse(content=[])
 
     if categoria:
         query = query.filter(ArticuloPropio.categoria == categoria)
@@ -261,6 +271,56 @@ async def contar_articulos_usuario(
     total = query.count()
     return {"total": total}
 
+
+@router.get("/all-with-url", response_model=List[ArticuloPropioConUrl])
+async def obtener_todos_los_articulos_con_url(
+    db: Session = Depends(get_db)
+):
+    """
+    Devuelve todos los artículos de la BD (de cualquier usuario), cada uno con su urlFirmada.
+    """
+    articulos = db.query(ArticuloPropio).options(joinedload(ArticuloPropio.usuario)).all()
+    result = []
+    for articulo in articulos:
+        try:
+            url = generar_url_firmada(articulo.foto)
+        except Exception as e:
+            url = ""
+        schema = ArticuloPropioConUrl.from_orm(articulo)
+        result.append(schema.copy(update={"urlFirmada": url}))
+    return result
+
+
+
+@router.get("/{articulo_id}", response_model=ArticuloPropioConUrl)
+async def obtener_articulo_por_id(
+    request: Request,
+    articulo_id: int = Path(..., description="ID del artículo propio"),
+    db: Session = Depends(get_db),
+):
+    usuario_actual = await obtener_usuario_actual(request, db)
+    if not usuario_actual:
+        raise HTTPException(status_code=401, detail="Usuario no autenticado.")
+
+    articulo = (
+        db.query(ArticuloPropio)
+          .filter(ArticuloPropio.id == articulo_id, ArticuloPropio.usuario_id == usuario_actual.id)
+          .first()
+    )
+    if not articulo:
+        raise HTTPException(status_code=404, detail="Artículo no encontrado.")
+
+    try:
+        url = generar_url_firmada(articulo.foto)
+        if not url:
+            raise ValueError("URL generada vacía")
+    except Exception as e:
+        url = ""  # Devuelve una cadena vacía si falla la generación
+        print(f"Error generando URL para artículo {articulo_id}: {e}")
+
+
+    schema = ArticuloPropioConUrl.from_orm(articulo)
+    return schema.copy(update={"urlFirmada": url})
 
 # Obtener un artículo propio por su nombre
 @router.get("/{nombre}", response_model=ArticuloCreate)

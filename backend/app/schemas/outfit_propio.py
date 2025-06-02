@@ -5,28 +5,6 @@ from app.models.enummerations import OcasionEnum, TemporadaEnum, ColorEnum
 from app.schemas.user import UserOut
 
 
-if TYPE_CHECKING:
-    from __main__ import OutfitItemResponse 
-    
-# Este para /feed (incluye el usuario completo)
-class OutfitPropioConUsuarioResponse(BaseModel):
-    id: int
-    titulo: str
-    descripcion_generacion: Optional[str]
-    ocasiones: List[OcasionEnum]
-    temporadas: Optional[List[TemporadaEnum]]
-    colores: Optional[List[ColorEnum]]
-    articulos_propios: List[ArticuloPropioConImagen]
-    collage_key: Optional[str]
-    imagen: Optional[str]
-    usuario: UserOut
-    items: List["OutfitItemResponse"]  # para manual
-
-
-    class Config:
-        from_attributes = True
-
-
 class OutfitItemResponse(BaseModel):
     id: int
     articulo_id: int
@@ -39,6 +17,24 @@ class OutfitItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+# Este para /feed (incluye el usuario completo)
+class OutfitPropioConUsuarioResponse(BaseModel):
+    id: int
+    titulo: str
+    descripcion_generacion: Optional[str]
+    ocasiones: List[OcasionEnum]
+    temporadas: Optional[List[TemporadaEnum]]
+    colores: Optional[List[ColorEnum]]
+    articulos_propios: List[ArticuloPropioConImagen]
+    collage_key: Optional[str]
+    imagen: Optional[str]
+    usuario: UserOut
+    items: List[OutfitItemResponse]  # para manual
+
+
+    class Config:
+        from_attributes = True
+
 
 # Este para /stream (NO incluye usuario)
 class OutfitPropioSimpleResponse(BaseModel):
@@ -51,7 +47,7 @@ class OutfitPropioSimpleResponse(BaseModel):
     articulos_propios: List[ArticuloPropioConImagen]
     collage_key: Optional[str]
     imagen: Optional[str]
-    items: List["OutfitItemResponse"]  # para manual
+    items: List[OutfitItemResponse] 
 
 
     class Config:
@@ -60,3 +56,5 @@ class OutfitPropioSimpleResponse(BaseModel):
 
 
 OutfitPropioConUsuarioResponse.update_forward_refs()
+OutfitPropioSimpleResponse.update_forward_refs()
+

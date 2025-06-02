@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/formulario_articulo_propio_existente.dart';
+import 'package:frontend/screens/outfits/outfits_screen.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/launcher_screen.dart';
@@ -8,7 +11,7 @@ import 'package:frontend/screens/outfits/formulario_outfit_screen.dart';
 import 'package:frontend/services/google_sign_in_service.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/screens/outfits/laboratorio_outfit_screen.dart';
-import 'package:frontend/screens/outfits/mostrar_outfits_screen.dart';
+import 'package:frontend/screens/perfil/mostrar_outfits_screen.dart';
 import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 import 'dart:convert';
 
@@ -31,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   List<Widget> get _screens => [
-    MostrarOutfitScreen(),
+    OutfitsScreen(),
     FeedScreen(),
     Container(),
     LaboratorioScreen(userId: widget.userId ?? 6),   
@@ -56,63 +59,59 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _onAddPressed() {
-    final previousIndex = _selectedIndex;
+void _onAddPressed() async {
+  final previousIndex = _selectedIndex;
+  final mainContext = context;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildAddOption(
-                icon: Icons.checkroom,
-                text: "Nuevo artículo",
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<bool?>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SubirFotoScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    setState(() => _selectedIndex = previousIndex);
-                    // forzar la recarga de artículos en el armario
-                    armarioKey.currentState?.cargarArticulosPropios();
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildAddOption(
-                icon: Icons.auto_awesome,
-                text: "Nuevo outfit",
-                onTap: () async {
-                  Navigator.pop(context);
-                  
-                  final result = await Navigator.push<bool?>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FormularioOutfitScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    setState(() => _selectedIndex = previousIndex);
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildAddOption(
+              icon: Icons.checkroom,
+              text: "Nuevo artículo",
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await Navigator.push<bool?>(
+                  mainContext,
+                  MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
+                );
+                if (result == true) {
+                  setState(() => _selectedIndex = previousIndex);
+                  armarioKey.currentState?.cargarArticulosPropios();
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildAddOption(
+              icon: Icons.auto_awesome,
+              text: "Nuevo outfit",
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await Navigator.push<bool?>(
+                  mainContext,
+                  MaterialPageRoute(builder: (_) => FormularioOutfitScreen(userId: widget.userId,)),
+                );
+                if (result == true) {
+                  setState(() => _selectedIndex = previousIndex);
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   Widget _buildAddOption({
     required IconData icon,
@@ -213,3 +212,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+

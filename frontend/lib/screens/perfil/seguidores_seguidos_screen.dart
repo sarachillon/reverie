@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
+import 'package:frontend/screens/perfil/perfil_screen.dart';
 import 'dart:convert';
 import 'package:frontend/services/api_manager.dart';
+
 
 class SeguidoresSeguidosScreen extends StatefulWidget {
   final int userId;
   const SeguidoresSeguidosScreen({super.key, required this.userId});
+
+
 
   @override
   State<SeguidoresSeguidosScreen> createState() => _SeguidoresSeguidosScreenState();
@@ -12,6 +17,8 @@ class SeguidoresSeguidosScreen extends StatefulWidget {
 
 class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
     with SingleTickerProviderStateMixin {
+
+  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
   final ApiManager _apiManager = ApiManager();
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
@@ -19,6 +26,7 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
 
   List<Map<String, dynamic>> _seguidores = [];
   List<Map<String, dynamic>> _seguidos = [];
+  int? _currentUserId;
 
   @override
   void initState() {
@@ -29,9 +37,11 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
   Future<void> _cargarUsuarios() async {
     final seguidores = await _apiManager.obtenerSeguidores(widget.userId);
     final seguidos = await _apiManager.obtenerSeguidos(widget.userId);
+    final yo = await _apiManager.getUsuarioActual();
     setState(() {
       _seguidores = seguidores;
       _seguidos = seguidos;
+      _currentUserId = yo['id'];
     });
   }
 
@@ -45,7 +55,14 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
   }
 
   Widget _buildUsuarioItem(Map<String, dynamic> usuario, bool siguiendo) {
-    return Container(
+  final esActual = usuario['id'] == _currentUserId;
+  return GestureDetector(
+    onTap: () {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => PerfilScreen(userId: usuario['id'], armarioKey: armarioKey,),
+      ));
+    },
+    child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -79,27 +96,30 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
-          GestureDetector(
-            onTap: () => _toggleSeguir(usuario['id'], siguiendo),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: siguiendo ? Colors.grey.shade300 : Colors.blue,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                siguiendo ? 'Siguiendo' : 'Seguir',
-                style: TextStyle(
-                  color: siguiendo ? Colors.black : Colors.white,
-                  fontWeight: FontWeight.w600,
+          if (!esActual)
+            GestureDetector(
+              onTap: () => _toggleSeguir(usuario['id'], siguiendo),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: siguiendo ? Colors.grey.shade300 : Colors.blue,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  siguiendo ? 'Siguiendo' : 'Seguir',
+                  style: TextStyle(
+                    color: siguiendo ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   List<Map<String, dynamic>> _filtrar(List<Map<String, dynamic>> lista) {
     if (_busqueda.isEmpty) return lista;
@@ -116,6 +136,10 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+            onPressed: () => Navigator.pop(context),
+          ),
           centerTitle: true,
           title: _isSearching
               ? TextField(
@@ -171,7 +195,8 @@ class _SeguidoresSeguidosScreenState extends State<SeguidoresSeguidosScreen>
       itemCount: usuarios.length,
       itemBuilder: (context, index) {
         final usuario = usuarios[index];
-        final siguiendo = _seguidos.any((u) => u['id'] == usuario['id']);
+        // El usuario está seguido SI aparece en la lista de seguidos DEL USUARIO ACTUAL, no del perfil mostrado
+        final siguiendo = _seguidos.any((u) => u['id'] == usuario['id'] && _currentUserId != usuario['id']);
         return _buildUsuarioItem(usuario, siguiendo);
       },
     );

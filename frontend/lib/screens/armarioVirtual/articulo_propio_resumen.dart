@@ -9,11 +9,13 @@ import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 class ArticuloPropioResumen extends StatefulWidget {
   final dynamic articulo;
   final Function? onActualizado;
+  final int? usuarioActual_id;
 
   const ArticuloPropioResumen({
     super.key,
     required this.articulo,
-    this.onActualizado,
+    this.onActualizado, 
+    this.usuarioActual_id,
   });
 
   @override
@@ -23,21 +25,14 @@ class ArticuloPropioResumen extends StatefulWidget {
 class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
   final ApiManager _apiManager = ApiManager();
   late dynamic articulo;
-  int idUsuarioActual = 0;
 
   @override
   void initState() {
     super.initState();
     articulo = widget.articulo;
-    _cargarUsuarioActual();
   }
 
-  Future<void> _cargarUsuarioActual() async {
-    final data = await _apiManager.getUsuarioActual();
-    setState(() {
-      idUsuarioActual = data['id'];
-    });
-  }
+
 
 
   Future<void> eliminarArticulo(int id) async {
@@ -53,6 +48,7 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
 
   @override
   Widget build(BuildContext context) {
+
     final nombre = articulo['nombre'] ?? '';
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
@@ -93,7 +89,8 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
     final id = articulo['id'];
 
     final idUsuarioArticulo = articulo['usuario']['id'];
-    final esPropio = (idUsuarioActual == idUsuarioArticulo);
+    final esPropio = (widget.usuarioActual_id == idUsuarioArticulo);
+    print("ID USUARIO ACTUAL: ${widget.usuarioActual_id} , ID USUARIO ARTICULO: $idUsuarioArticulo, ES PROPIO: $esPropio");
 
     return Container(
       decoration: BoxDecoration(

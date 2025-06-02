@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/outfits/formulario_outfit_screen.dart';
 import 'package:frontend/screens/outfits/filtros_outfit_screen.dart';
-//import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
 import 'package:frontend/screens/outfits/widget_outfit_small.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:frontend/screens/outfits/widget_outfit_big.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class OutfitsScreen extends StatefulWidget {
@@ -92,7 +93,14 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
                   border: InputBorder.none,
                 ),
               )
-            : Image.asset('assets/titulos/Outfits.png', height: 30),
+            : Text(
+              'Mis Outfits',
+              style: GoogleFonts.dancingScript(
+                fontSize: 30,
+                color: Color(0xFFD4AF37),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
         leading: IconButton(
           icon: Icon(
             _modoCuadricula ? Icons.auto_awesome_mosaic : Icons.crop_portrait,
@@ -124,8 +132,34 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: _modoCuadricula
-                ? WidgetOutfitSmall(outfits: outfitsFiltrados)
-                : WidgetOutfitBig( outfits: outfitsFiltrados),
+                ? WidgetOutfitSmall( outfits: outfitsFiltrados,
+                    onTapOutfit: (context, outfit) async {
+                      final eliminado = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OutfitDetailScreen(outfitId: outfit['id']),
+                        ),
+                      );
+                      if (eliminado == true) {
+                        _cargarOutfits();
+                      }
+                    },
+                  )
+                : WidgetOutfitBig(
+                    outfits: outfitsFiltrados,
+                    onTapOutfit: (context, outfit) async {
+                      final eliminado = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OutfitDetailScreen(outfitId: outfit['id']),
+                        ),
+                      );
+                      if (eliminado == true) {
+                        _cargarOutfits();
+                      }
+                    },
+                  ),
+
           ),
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),

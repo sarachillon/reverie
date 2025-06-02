@@ -3,15 +3,18 @@ import 'package:frontend/screens/armarioVirtual/articulo_propio_resumen.dart';
 import 'package:frontend/screens/armarioVirtual/filtros_articulo_propio_screen.dart';
 import 'package:frontend/screens/armarioVirtual/subir_foto_screen.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PantallaVerTodos extends StatefulWidget {
   final String categoria;
   final VoidCallback? onContenidoActualizado;
+  final int? usuario_id;
 
   const PantallaVerTodos({
     super.key,
     required this.categoria,
     this.onContenidoActualizado,
+    this.usuario_id,
   });
 
   @override
@@ -36,6 +39,20 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
   }
 
 
+String get _tituloImagen {
+  switch (widget.categoria.toUpperCase()) {
+    case 'ROPA':
+      return 'Ropa';
+    case 'CALZADO':
+      return 'Calzado';
+    case 'ACCESORIOS':
+      return 'Accesorios';
+    default:
+      return 'Artículos';
+  }
+}
+
+
   Future<void> _getUsuarioActual() async {
     final actual = await _apiManager.getUsuarioActual();
     setState(() => usuarioActual = actual);
@@ -49,6 +66,7 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
     final filtrosConCategoria = {
       ...filtros,
       'categoria': widget.categoria,
+      'usuario_id': widget.usuario_id,
     };
 
     final stream = _apiManager.getArticulosPropiosStream(filtros: filtrosConCategoria);
@@ -62,35 +80,6 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
     widget.onContenidoActualizado?.call();
   }
 
-  void _abrirFiltros() async {
-    final nuevosFiltros = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FiltrosArticuloPropioScreen(
-          filtrosIniciales: filtros,
-          onAplicar: (nuevosFiltros) {
-            setState(() {
-              filtros = nuevosFiltros;
-              //_mostrarFiltros = true;
-            });
-            _cargarArticulos();
-          },
-          onCerrar: () {
-            setState(() {
-              //_mostrarFiltros = false;
-            });
-          },
-        ),
-      ),
-    );
-
-    if (nuevosFiltros != null) {
-      setState(() {
-        filtros = nuevosFiltros;
-      });
-      _cargarArticulos();
-    }
-  }
 
   List<dynamic> _filtrarPorBusqueda() {
     if (_busqueda.isEmpty) return _articulos;
@@ -99,51 +88,51 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
         .toList();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final articulosFiltrados = _filtrarPorBusqueda();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.categoria),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _abrirFiltros,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
+@override
+Widget build(BuildContext context) {
+  final articulosFiltrados = _filtrarPorBusqueda();
+
+  return Scaffold(
+    appBar: AppBar(
+      centerTitle: true,
+      title: _isSearching
+          ? TextField(
               controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _busqueda = value;
-                  _isSearching = value.isNotEmpty;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Buscar por nombre',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _isSearching
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _busqueda = '';
-                            _isSearching = false;
-                          });
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              autofocus: true,
+              onChanged: (value) => setState(() => _busqueda = value),
+              style: const TextStyle(color: Colors.black),
+              decoration: const InputDecoration(
+                hintText: 'Buscar por nombre...',
+                border: InputBorder.none,
+              ),
+            )
+          :Text(
+              '${_tituloImagen}',
+              style: GoogleFonts.dancingScript(
+                fontSize: 30,
+                color: Color(0xFFD4AF37),
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
+      actions: [
+        IconButton(
+          icon: Icon(_isSearching ? Icons.close : Icons.search, color: const Color(0xFFD4AF37)),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchController.clear();
+                _busqueda = '';
+              }
+            });
+          },
+        ),
+      ],
+    ),
+      body: Column(
+        children: [
+          
           Expanded(
             child: articulosFiltrados.isEmpty
                 ? const Center(child: Text('No se encontraron artículos.'))
@@ -156,6 +145,7 @@ class _PantallaVerTodosState extends State<PantallaVerTodos> {
                       return ArticuloPropioResumen(
                         articulo: articulo,
                         onActualizado: _cargarArticulos,
+                        usuarioActual_id: usuarioActual?['id'],
                       );
                     },
                   ),

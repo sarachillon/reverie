@@ -61,8 +61,15 @@ async def generar_outfit_propio(
     arriba, abajo = random.choice(combinaciones)
     seleccion = [arriba, abajo]
 
-    zapatos = [a for a in articulos if a.subcategoria in SubcategoriaCalzadoEnum and cumple_filtros(a)]
-    accesorios = [a for a in articulos if a.subcategoria in SubcategoriaAccesoriosEnum and cumple_filtros(a)]
+    zapatos = [
+        a for a in articulos
+        if a.subcategoria in [e.value for e in SubcategoriaCalzadoEnum] and cumple_filtros(a)
+    ]
+    accesorios = [
+        a for a in articulos
+        if a.subcategoria in [e.value for e in SubcategoriaAccesoriosEnum] and cumple_filtros(a)
+    ]
+
 
     # (filtrado simples de accesorios/zapatos según colores)
     def filtrar_items(items):
@@ -115,6 +122,8 @@ async def generar_outfit_propio(
             rotation=0.0,
             z_index=meta["z_index"]
         ))
+
+    outfit.articulos_propios = seleccion
 
     return outfit
 

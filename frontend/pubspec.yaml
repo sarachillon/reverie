@@ -44,6 +44,8 @@ dependencies:
   provider: ^6.1.4
   share_plus: ^7.2.1
   path_provider: ^2.1.1
+  video_player: ^2.8.3
+
   
 
   # The following adds the Cupertino Icons font to your application.
@@ -98,6 +100,13 @@ flutter:
   - assets/titulos/accesorios.png
   - assets/titulos/Outfits.png
   - assets/google_logo.png
+  - assets/titulos/laboratorio.png
+  - assets/fondo_login.png
+  - assets/fondo_login1.png
+  - assets/videos/carga_logo.mp4
+
+
+
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

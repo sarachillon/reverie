@@ -35,19 +35,22 @@ class ArmarioScreenState extends State<ArmarioScreen> {
     cargarArticulosPropios();
   }
 
-  Future<void> cargarArticulosPropios() async {
-    setState(() => _articulos.clear());
-    try {
-      final filtros = widget.userId != null ? {'usuario_id': widget.userId} : null;
-      final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
-      await for (final articulo in stream) {
-        if (!mounted) return;
+Future<void> cargarArticulosPropios() async {
+  setState(() => _articulos.clear());
+  try {
+    final filtros = widget.userId != null ? {'usuario_id': widget.userId} : null;
+    final stream = _apiManager.getArticulosPropiosStream(filtros: filtros);
+    await for (final articulo in stream) {
+      if (!mounted) return;
+      if (articulo is Map && articulo.containsKey('categoria')) {
         setState(() => _articulos.add(articulo));
       }
-    } catch (e) {
-      print("Error al cargar artículos propios: $e");
     }
+  } catch (e) {
+    print("Error al cargar artículos propios: $e");
   }
+}
+
 
   void _recargarArticulos() {
     setState(() {
@@ -82,6 +85,7 @@ class ArmarioScreenState extends State<ArmarioScreen> {
                       builder: (_) => PantallaVerTodos(
                         categoria: categoria,
                         onContenidoActualizado: widget.onContenidoActualizado,
+                        usuario_id: widget.userId,
                       ),
                     ),
                   );
@@ -168,21 +172,6 @@ class ArmarioScreenState extends State<ArmarioScreen> {
                       return SizedBox(
                         width: 150,
                         child: GestureDetector(
-                          onTap: () async {
-                            final resultado = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ArticuloPropioResumen(
-                                  articulo: articulo,
-                                  onActualizado: _recargarArticulos,
-                                ),
-                              ),
-                            );
-                            if (resultado == true) {
-                              await cargarArticulosPropios();
-                              widget.onContenidoActualizado?.call();
-                            }
-                          },
                           child: ArticuloPropioWidget(
                             nombre: articulo['nombre'] ?? '',
                             articulo: articulo,

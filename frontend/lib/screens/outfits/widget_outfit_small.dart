@@ -8,8 +8,10 @@ import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class WidgetOutfitSmall extends StatelessWidget {
   final List<dynamic> outfits;
+  final void Function(BuildContext, Map<String, dynamic>) onTapOutfit;
 
-  const WidgetOutfitSmall({super.key, required this.outfits});
+
+  const WidgetOutfitSmall({super.key, required this.outfits,required this.onTapOutfit,});
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +33,7 @@ class WidgetOutfitSmall extends StatelessWidget {
               .join(', ');
 
           return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => OutfitDetailScreen(outfit: outfit)),
-              );
-            },
+            onTap: () => onTapOutfit(context, outfit),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),

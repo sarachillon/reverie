@@ -3,6 +3,7 @@ import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -125,7 +126,19 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Nueva Prenda")),
+      appBar: AppBar(leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+      'Copiar prenda',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+      ),
+    ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

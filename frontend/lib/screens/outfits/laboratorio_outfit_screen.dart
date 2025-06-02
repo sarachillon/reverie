@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/services/real_api_service.dart';
 import '../utils/imagen_ajustada_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 class LaboratorioScreen extends StatefulWidget {
   final int userId;
@@ -36,6 +38,8 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
   bool _searchMode = false;
   String _searchQuery = '';
   bool _showTrash = false;
+  bool _loadingArticles = true;
+
 
   static const List<String> _arriba = [
     'CAMISAS', 'CAMISETAS', 'JERSEYS', 'TRAJES'
@@ -78,6 +82,7 @@ class _LaboratorioScreenState extends State<LaboratorioScreen>
       } else {
         _articles.add(Map<String, dynamic>.from(event));
       }
+      if (_loadingArticles) _loadingArticles = false;
     });
   }
 
@@ -162,106 +167,104 @@ Future<void> _saveManualOutfit() async {
   }
 
   // 3) Diálogo de confirmación
-    final saved = await showDialog<bool>(
-    context: context,
-    builder: (context) {
-      String title = '';
-      List<OcasionEnum> selectedOcasiones = [];
+  final saved = await showDialog<bool>(
+  context: context,
+  barrierDismissible: false,
+  builder: (context) {
+    String title = '';
+    List<OcasionEnum> selectedOcasiones = [];
+    bool _saving = false;
 
-      return StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Guardar outfit'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Campo de título
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Título *',
+    return StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Guardar outfit'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: 'Título *'),
+                onChanged: (v) => setState(() => title = v.trim()),
+              ),
+              const SizedBox(height: 8),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Ocasión *', style: TextStyle(fontSize: 14)),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: OcasionEnum.values.map((o) {
+                  final isSelected = selectedOcasiones.contains(o);
+                  return ChoiceChip(
+                    label: Text(o.value, style: const TextStyle(fontSize: 12)),
+                    selected: isSelected,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                    showCheckmark: false,
+                    onSelected: (sel) {
+                      setState(() {
+                        if (sel) {
+                          selectedOcasiones.add(o);
+                        } else {
+                          selectedOcasiones.remove(o);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: 260,
+                height: 260,
+                color: Colors.white,
+                child: Center(
+                  child: Image.memory(
+                    pngBytes,
+                    width: 240,
+                    height: 240,
+                    fit: BoxFit.contain,
                   ),
-                  onChanged: (v) => setState(() => title = v.trim()),
                 ),
-                const SizedBox(height: 8),
-
-                // Ocasiones
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Ocasión *',
-                    style: TextStyle(fontSize: 14),
-                  ),
+              ),
+            ],
+          ),
+        ),
+        actions: _saving
+            ? [const Center(child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: CircularProgressIndicator(),
+              ))]
+            : [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancelar'),
                 ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: OcasionEnum.values.map((o) {
-                    final isSelected = selectedOcasiones.contains(o);
-                    return ChoiceChip(
-                      label: Text(o.value, style: const TextStyle(fontSize: 12)),
-                      selected: isSelected,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                      showCheckmark: false,
-                      onSelected: (sel) {
-                        setState(() {
-                          if (sel) {
-                            selectedOcasiones.add(o);
-                          } else {
-                            selectedOcasiones.remove(o);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-
-                // Previsualización
-                Container(
-                  width: 260,
-                  height: 260,
-                  color: Colors.white,
-                  child: Center(
-                    child: Image.memory(
-                      pngBytes,
-                      width: 240,
-                      height: 240,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+                ElevatedButton(
+                  onPressed: title.isNotEmpty && selectedOcasiones.isNotEmpty
+                      ? () async {
+                          setState(() => _saving = true);
+                          final ok = await _api.crearOutfitManual(
+                            titulo: title,
+                            ocasiones: selectedOcasiones,
+                            items: itemsPayload,
+                            imagenBase64: base64Encode(pngBytes),
+                          );
+                          Navigator.of(context).pop(ok);
+                        }
+                      : null,
+                  child: const Text('Guardar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              // sólo habilita si hay título y al menos una ocasión
-              onPressed: title.isNotEmpty && selectedOcasiones.isNotEmpty
-                  ? () async {
-                      final ok = await _api.crearOutfitManual(
-                        titulo: title,
-                        ocasiones: selectedOcasiones,
-                        items: itemsPayload,
-                        imagenBase64: base64Encode(pngBytes),
-                      );
-                      Navigator.of(context).pop(ok);
-                    }
-                  : null,
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      );
-    },
-  );
+      ),
+    );
+  },
+);
+
 
   // 4) Feedback
   if (saved == true) {
@@ -298,15 +301,22 @@ Future<void> _saveManualOutfit() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Laboratorio de Outfits'),
-        actions: [
-          TextButton(
+    appBar: AppBar(
+    title: Text(
+      'Laboratorio de Outfits',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  actions: [
+    TextButton(
             onPressed: _saveManualOutfit,
-            child: const Text(
-              'Guardar Outfit',
-              style:
-                  TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            child: const Icon(
+              Icons.check,
+              color: Colors.black54,
+              size: 30,
             ),
           ),
         ],
@@ -478,7 +488,7 @@ class _CollageItemState extends State<CollageItem> {
           _startFocal = details.focalPoint;
           _startPos = position;
           _startScale = scale;
-          _startRotation = rotation;        // <-- ROTACIÓN INICIAL
+          _startRotation = rotation;      
           _lastFocal = details.focalPoint;
         },
         onScaleUpdate: (details) {

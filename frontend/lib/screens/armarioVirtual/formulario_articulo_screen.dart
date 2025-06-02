@@ -4,6 +4,7 @@ import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/utils/carga_screen.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
   final File imagenOriginal;
@@ -153,7 +154,19 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Nueva Prenda")),
+      appBar: AppBar(leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+      'Nueva prenda',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+      ),
+    ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

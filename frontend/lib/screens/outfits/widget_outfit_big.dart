@@ -1,25 +1,17 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class WidgetOutfitBig extends StatelessWidget {
   final List<dynamic> outfits;
-
-Future<ImageProvider<Object>> _decodeImage(String? base64) async {
-  try {
-    if (base64 != null && base64.isNotEmpty) {
-      final bytes = base64Decode(base64);
-      return MemoryImage(bytes);
-    }
-  } catch (_) {}
-  return const AssetImage('assets/mock/ropa_mock.png');
-}
+  final void Function(BuildContext, Map<String, dynamic>) onTapOutfit;
 
 
   const WidgetOutfitBig({
     super.key,
     required this.outfits,
+    required this.onTapOutfit,
   });
 
   @override
@@ -30,13 +22,13 @@ Future<ImageProvider<Object>> _decodeImage(String? base64) async {
       itemCount: outfits.length,
       itemBuilder: (context, index) {
         final outfit = outfits[index];
-        final imagenPrincipalFuture = _decodeImage(outfit['imagen']);
+        final imagenUrl = outfit['imagen'] as String? ?? '';
+        final ocasiones = (outfit['ocasiones'] as List)
+            .map((o) => OcasionEnum.values.firstWhere((e) => e.name == o).value)
+            .join(', ');
 
         return GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => OutfitDetailScreen(outfit: outfit)),
-          ),
+          onTap: () => onTapOutfit(context, outfit),
           child: Column(
             children: [
               Expanded(
@@ -55,7 +47,7 @@ Future<ImageProvider<Object>> _decodeImage(String? base64) async {
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Center(
                         child: Text(
@@ -65,29 +57,20 @@ Future<ImageProvider<Object>> _decodeImage(String? base64) async {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        (outfit['ocasiones'] as List)
-                            .map((o) => OcasionEnum.values.firstWhere((e) => e.name == o).value)
-                            .join(', '),
+                        ocasiones,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
                       ),
                       const SizedBox(height: 12),
-                      FutureBuilder<ImageProvider<Object>>(
-                        future: imagenPrincipalFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image(
-                                image: snapshot.data!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: MediaQuery.of(context).size.height * 0.55,
-                              ),
-                            );
-                          } else {
-                            return const SizedBox();
-                          }
-                        },
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ImagenAjustada(
+                            url: imagenUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Align(
@@ -101,27 +84,22 @@ Future<ImageProvider<Object>> _decodeImage(String? base64) async {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: (outfit['articulos_propios'] as List).take(5).map((articulo) {
-                              final imagenMiniFuture = _decodeImage(articulo['imagen']);
-                              return FutureBuilder<ImageProvider<Object>>(
-                                future: imagenMiniFuture,
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                    return Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                                      height: 40,
-                                      width: 40,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.black12),
-                                        color: Colors.white,
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: Image(image: snapshot.data!, fit: BoxFit.cover),
-                                    );
-                                  } else {
-                                    return const SizedBox(height: 40, width: 40);
-                                  }
-                                },
+                              final miniUrl = articulo['urlFirmada'] as String? ?? '';
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.black12),
+                                  color: Colors.white,
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: ImagenAjustada(
+                                  url: miniUrl,
+                                  width: 40,
+                                  height: 40,
+                                ),
                               );
                             }).toList(),
                           ),

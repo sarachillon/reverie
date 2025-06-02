@@ -124,23 +124,24 @@ class RealApiService implements ApiService {
     }
   }
 
-  @override
-  Future<List<Map<String, dynamic>>> getAllUsers() async {
-    final token = await GoogleSignInService().getToken();
-    if (token == null) throw Exception('Token no disponible');
+@override
+Future<List<Map<String, dynamic>>> getAllUsers() async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) throw Exception('Token no disponible');
 
-    final response = await http.get(
-      Uri.parse('$_baseUrl/auth/users'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  final response = await http.get(
+    Uri.parse('$_baseUrl/auth/users'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception('Error al obtener todos los usuarios');
-    }
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    throw Exception('Error al obtener todos los usuarios: ${response.body}');
   }
+}
+
 
   @override
   Future<Map<String, dynamic>> getUserById({required int id}) async {
@@ -426,46 +427,72 @@ class RealApiService implements ApiService {
     }
   }
 
-
   @override
-  Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
-    final queryString = filtros != null
-        ? filtros.entries
-            .where((e) => e.value != null)
-            .expand((e) {
-              if (e.value is List) {
-                return (e.value as List).map((v) => '${e.key}=$v');
-              } else {
-                return ['${e.key}=${e.value}'];
-              }
-            })
-            .join('&')
-        : '';
-
+  Future<Map<String, dynamic>> getArticuloPropioPorId({
+    required int id,
+  }) async {
     final token = await GoogleSignInService().getToken();
-    if (token == null) {
-      throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
-    }
-
-    final request = http.Request(
-      'GET',
-      Uri.parse('$_baseUrl/articulos-propios/stream?$queryString'),
+    if (token == null) throw Exception('Usuario no autenticado');
+    final uri = Uri.parse('$_baseUrl/articulos-propios/$id');
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
     );
-    request.headers['Authorization'] = 'Bearer $token';
-
-    final response = await request.send();
-
     if (response.statusCode == 200) {
-      final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
-      await for (final line in utf8Stream) {
-        if (line.isNotEmpty) {
-          yield jsonDecode(line);
-        }
-      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 404) {
+      throw Exception('Artículo no encontrado');
     } else {
-      throw Exception('Error al cargar artículos (stream)');
+      throw Exception('Error al obtener artículo: ${response.body}');
     }
   }
+
+
+@override
+Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async* {
+  final queryParams = <String>[];
+
+  if (filtros != null) {
+    queryParams.addAll(
+      filtros.entries
+          .where((e) => e.value != null)
+          .expand((e) {
+            if (e.value is List) {
+              return (e.value as List).map((v) => '${e.key}=$v');
+            } else {
+              return ['${e.key}=${e.value}'];
+            }
+          }),
+    );
+  }
+
+  final queryString = queryParams.join('&');
+
+  final token = await GoogleSignInService().getToken();
+  if (token == null) {
+    throw Exception('No se pudo obtener el token. El usuario no está autenticado.');
+  }
+
+  final request = http.Request(
+    'GET',
+    Uri.parse('$_baseUrl/articulos-propios/stream?$queryString'),
+  );
+  request.headers['Authorization'] = 'Bearer $token';
+
+  final response = await request.send();
+
+  if (response.statusCode == 200) {
+    final utf8Stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+    await for (final line in utf8Stream) {
+      if (line.isNotEmpty) {
+        yield jsonDecode(line);
+      }
+    }
+  } else {
+    throw Exception('Error al cargar artículos (stream)');
+  }
+}
+
 
 
   @override
@@ -639,6 +666,13 @@ class RealApiService implements ApiService {
   }
 }
 
+
+Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
+  final response = await http.get(Uri.parse('$_baseUrl/articulos-propios/all-with-url'));
+  if (response.statusCode != 200) throw Exception('Error al obtener artículos');
+  final List data = jsonDecode(response.body);
+  return data.cast<Map<String, dynamic>>();
+}
 
  /*------------------------------------------------------------
  --------------------------------------------------------------
@@ -859,5 +893,102 @@ class RealApiService implements ApiService {
       throw Exception('Error al guardar outfit manual: $msg');
     }
   }
+
+@override
+@override
+Future<bool> editarCollageOutfitPropio({
+  required int outfitId,
+  required List<Map<String, dynamic>> items,
+  required String imagenBase64,
+}) async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) {
+    throw Exception('Usuario no autenticado');
+  }
+
+  // OJO: comillas dobles y sin barra invertida
+  final url = Uri.parse('$_baseUrl/outfits/editcollage/$outfitId');
+  final body = {
+    'items': items,
+    'imagen_base64': imagenBase64,
+  };
+
+  final response = await http.put(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token', // <- Correcto aquí
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode == 200) {
+    return true;
+  } else {
+    final msg = response.body.isNotEmpty ? response.body : response.statusCode.toString();
+    throw Exception('Error al editar collage outfit: $msg');
+  }
+}
+
+
+  
+  Future<Map<String, dynamic>> getOutfitById({required int id}) async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) {
+    throw Exception('Usuario no autenticado');
+  }
+
+  final url = Uri.parse('$_baseUrl/outfits/$id');
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    // El endpoint devuelve un JSON que se ajusta a OutfitPropioConUsuarioResponse
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  } else {
+    throw Exception('Error al obtener outfit: ${response.body}');
+  }
+}
+
+
+@override
+Future<void> editarOutfitPropio({
+  required int id,
+  String? titulo,
+  String? descripcion,
+  List<OcasionEnum>? ocasiones,
+  List<TemporadaEnum>? temporadas,
+  List<ColorEnum>? colores,
+}) async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) throw Exception('Usuario no autenticado');
+
+  final url = Uri.parse('$_baseUrl/outfits/$id');
+  final Map<String, dynamic> body = {};
+  if (titulo != null) body['titulo'] = titulo;
+  if (descripcion != null) body['descripcion'] = descripcion;
+  if (ocasiones != null) body['ocasiones'] = ocasiones.map((e) => e.name).toList();
+  if (temporadas != null) body['temporadas'] = temporadas.map((e) => e.name).toList();
+  if (colores != null) body['colores'] = colores.map((e) => e.name).toList();
+
+  final response = await http.patch(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Error al editar outfit: ${response.body}');
+  }
+}
+
 
 }
