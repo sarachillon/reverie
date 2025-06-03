@@ -1,6 +1,6 @@
 # backend/app/models/models.py
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Float, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy import Enum as SqlEnum, ARRAY
 from sqlalchemy.orm import relationship, validates
 from app.database.database import Base
@@ -15,6 +15,7 @@ class Usuario(Base):
     email = Column(String, unique=True, nullable=False)
     edad = Column(String, nullable=False)
     genero_pref = Column(SqlEnum(GeneroPrefEnum), nullable=False)
+    foto_perfil = Column(String, nullable=True)
 
     articulos_propios = relationship("ArticuloPropio", back_populates="usuario")
     outfits_propios = relationship("OutfitPropio", back_populates="usuario")
@@ -26,7 +27,7 @@ class ArticuloPropio(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    nombre = Column(String, nullable=False, unique=True)
+    nombre = Column(String, nullable=False)
     foto = Column(String, nullable=False)  # s3 key de la imagen del articulo
     categoria = Column(SqlEnum(CategoriaEnum), nullable=False)
     subcategoria = Column(String, nullable=False)
@@ -55,3 +56,23 @@ class OutfitPropio(Base):
 
     usuario = relationship("Usuario", back_populates="outfits_propios")
     articulos_propios = relationship("ArticuloPropio", secondary=outfitpropio_articulo, back_populates="outfits_propios")
+    items = relationship("OutfitItem", back_populates="outfit", cascade="all, delete-orphan")
+
+
+
+class OutfitItem(Base):
+    __tablename__ = "outfit_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    outfit_id = Column(Integer, ForeignKey("outfits_propios.id"), nullable=False)
+    articulo_id = Column(Integer, ForeignKey("articulos_propios.id"), nullable=False)
+
+    # Transformaciones en el lienzo
+    x = Column(Float, nullable=False, default=0.0)
+    y = Column(Float, nullable=False, default=0.0)
+    scale = Column(Float, nullable=False, default=1.0)
+    rotation = Column(Float, nullable=False, default=0.0)
+    z_index = Column(Integer, nullable=False, default=0)
+
+    articulo = relationship("ArticuloPropio")
+    outfit = relationship("OutfitPropio", back_populates="items")

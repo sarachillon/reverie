@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../services/api_manager.dart';
 import '../services/google_sign_in_service.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
+import 'welcome_screen.dart';
 
 class LauncherScreen extends StatefulWidget {
   const LauncherScreen({Key? key}) : super(key: key);
@@ -13,59 +15,54 @@ class LauncherScreen extends StatefulWidget {
 }
 
 class _LauncherScreenState extends State<LauncherScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _navigate();
-  }
+  /// Maneja el flujo de inicio de sesión con Google y navegación posterior.
+  Future<void> _handleGoogleSignIn() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  Future<void> _navigate() async {
-  final prefs = await SharedPreferences.getInstance();
-  String? email = prefs.getString('email'); // 1. Mira si ya hay sesión
-
-  if (email == null) {
-  //2. Si no hay sesión, inicia sesión con Google
+    // 1. Iniciar sesión con Google
     final googleSignInService = GoogleSignInService();
-    email = await googleSignInService.signInWithGoogle();
+    final String? email = await googleSignInService.signInWithGoogle();
     if (email == null) {
-      print('Inicio de sesión cancelado o fallido');
+      debugPrint('Inicio de sesión cancelado o fallido');
       return;
+    }
+    await prefs.setString('email', email);
+
+    // 2. Verificar existencia del usuario en la base de datos
+    final api = ApiManager.getInstance(email: email);
+    final userData = await api.loginWithEmail(email: email);
+
+    if (!mounted) return;
+
+    if (userData != null) {
+      // Usuario existe → navegar a HomeScreen
+      final accessToken = userData['access_token'] as String;
+      final userId = userData['id'];
+      final userIdString = userId.toString();
+      await prefs.setString('accessToken', accessToken);
+      await prefs.setString('userId', userIdString);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(userId: userId, userEmail: email),
+        ),
+      );
+    } else {
+      // Usuario NO existe → navegar a AuthScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AuthScreen(),
+        ),
+      );
     }
   }
 
-  // 3. Verifica si el usuario existe en la BD
-  final api = ApiManager.getInstance(email: email);
-  final userData = await api.loginWithEmail(email: email);
-  print('userData: $userData');
-
-  if (!mounted) return;
-
-  if (userData != null) {
-    // 4. Usuario existe → va a HomeScreen
-    final accessToken = userData['access_token'];
-    final userId = userData['id'].toString(); 
-
-    await prefs.setString('accessToken', accessToken);
-    await prefs.setString('userId', userId); 
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => HomeScreen(userEmail: email)),
-    );
-  } else {
-    // 5. Usuario NO existe → va a AuthScreen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
-    );
-  }
-}
-
-
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return WelcomeScreen(
+      onGoogleSignIn: _handleGoogleSignIn,
     );
   }
 }

@@ -1,100 +1,153 @@
-import 'dart:convert';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
+import 'package:frontend/screens/feed/buscador_usuarios_widget.dart';
+import 'package:frontend/screens/perfil/perfil_screen.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'package:frontend/screens/outfits/outfit_widget.dart';
+import 'package:frontend/screens/outfits/widget_outfit_feed_small.dart';
+import 'package:frontend/screens/outfits/widget_outfit_feed_big.dart';
 
 class FeedScreen extends StatefulWidget {
+  const FeedScreen({super.key});
+
   @override
-  _FeedScreenState createState() => _FeedScreenState();
+  State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> {
-  final ScrollController _scrollController = ScrollController();
+class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   final ApiManager _apiManager = ApiManager();
+  final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
 
-  List<Map<String, dynamic>> _outfits = [];
-  bool _isLoading = false;
-  bool _hasMore = true;
-  int _page = 0;
-  final int _pageSize = 5;
+
+  List<Map<String, dynamic>> _outfitsStreamed = [];
+  StreamSubscription<Map<String, dynamic>>? _subscription;
+
+  bool _modoCuadricula = true;
+  bool _isSearching = false;
+  String _busqueda = '';
+
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _fetchOutfits();
-    _scrollController.addListener(_onScroll);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+    _tabController.addListener(_onTabChanged);
+    _reiniciarStream();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _fetchOutfits();
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      _reiniciarStream();
     }
   }
 
-  Future<void> _fetchOutfits() async {
-    setState(() => _isLoading = true);
-    try {
-      final newOutfits = await _apiManager.getFeedOutfits(page: _page, pageSize: _pageSize);
-      setState(() {
-        _page++;
-        _outfits.addAll(newOutfits.cast<Map<String, dynamic>>());
-        if (newOutfits.length < _pageSize) _hasMore = false;
-      });
-    } catch (e) {
-      debugPrint("Error al cargar outfits del feed: $e");
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  void _reiniciarStream() {
+    _subscription?.cancel();
+    _outfitsStreamed.clear();
+    setState(() {});
+    final tipo = _tabController.index == 0 ? 'seguidos' : 'global';
+    _subscription = _apiManager.getFeedOutfitsStream(type: tipo).listen((outfit) {
+      setState(() => _outfitsStreamed.add(outfit));
+    }, onError: (e) {
+      debugPrint('Error en el stream: $e');
+    });
   }
 
-  Future<ImageProvider<Object>> decodeBase64OrMock(String? base64) async {
-    try {
-      if (base64 != null && base64.isNotEmpty) {
-        final bytes = base64Decode(base64);
-        return MemoryImage(bytes);
-      }
-    } catch (_) {}
-    return const AssetImage('assets/mock/ropa_mock.png');
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final outfitsFiltrados = _outfitsStreamed.where((outfit) {
+      final titulo = (outfit['titulo'] ?? '').toString().toLowerCase();
+      return titulo.contains(_busqueda.toLowerCase());
+    }).toList();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Feed')),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(8),
-            sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index < _outfits.length) {
-                    final outfit = _outfits[index];
-                    return OutfitWidget(
-                      outfit: outfit,
-                      decodeBase64OrMock: decodeBase64OrMock,
-                    );
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                },
-                childCount: _hasMore ? _outfits.length + 1 : _outfits.length,
-              ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 0.75,
-              ),
-            ),
+      appBar: AppBar(
+        centerTitle: true,
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() => _busqueda = value),
+                style: const TextStyle(color: Colors.black),
+                decoration: const InputDecoration(
+                  hintText: 'Buscar outfits...',
+                  border: InputBorder.none,
+                ),
+              )
+            : Image.asset('assets/logo_reverie_text.png', height: 30),
+        leading: IconButton(
+          icon: Icon(
+            _modoCuadricula ? Icons.auto_awesome_mosaic : Icons.crop_portrait,
+            color: const Color(0xFFD4AF37),
           ),
+          onPressed: () => setState(() => _modoCuadricula = !_modoCuadricula),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: const Color(0xFFD4AF37)),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  _busqueda = '';
+                }
+              });
+            },
+          ),
+            IconButton(
+              icon: const Icon(Icons.people_alt, color: Color(0xFFD4AF37)), // Social icon
+              onPressed: _abrirBuscadorUsuarios,
+              tooltip: "Buscar usuarios",
+            ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Seguidores'),
+            Tab(text: 'Global'),
+          ],
+        ),
       ),
+      body: _isSearching && outfitsFiltrados.isEmpty
+          ? const Center(child: Text('No hay resultados'))
+          : _modoCuadricula
+              ? WidgetOutfitFeedSmall(outfits: outfitsFiltrados)
+              : WidgetOutfitFeedBig(outfits: outfitsFiltrados),
     );
   }
+
+
+  void _abrirBuscadorUsuarios() async {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => SizedBox(
+      height: MediaQuery.of(context).size.height * 0.8,
+      child: BuscadorUsuariosWidget(
+        onUsuarioTap: (usuario) {
+          Navigator.of(context).pop(); // Cierra el modal
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PerfilScreen(userId: usuario['id'], armarioKey: armarioKey,),
+          ));
+        },
+      ),
+    ),
+  );
+}
+
 }

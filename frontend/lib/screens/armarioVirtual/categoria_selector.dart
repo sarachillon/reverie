@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 
 class CategoriaSelector extends StatelessWidget {
   const CategoriaSelector({super.key});
@@ -13,9 +14,24 @@ class CategoriaSelector extends StatelessWidget {
       body: ListView.builder(
         itemCount: categorias.length,
         itemBuilder: (_, index) {
+          final categoria = categorias[index];
           return ListTile(
-            title: Text(categorias[index]),
-            onTap: () => Navigator.pop(context, categorias[index]),
+            title: Text(categoria),
+            onTap: () async {
+              final subcategoria = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SubcategoriaSelector(categoria: categoria),
+                ),
+              );
+
+              if (subcategoria != null) {
+                Navigator.pop(context, {
+                  'categoria': categoria,
+                  'subcategoria': subcategoria,
+                });
+              }
+            },
           );
         },
       ),

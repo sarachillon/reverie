@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/armarioVirtual/articulo_propio_detail_screen.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/armarioVirtual/pantalla_ver_todos.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 
 class ArticuloPropioWidget extends StatelessWidget {
@@ -18,12 +18,12 @@ class ArticuloPropioWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    final imagenUrl = articulo['urlFirmada'] ?? '';
+
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
       orElse: () => CategoriaEnum.ROPA,
     );
-    final categoria = categoriaEnum.value;
 
     String subcategoria = '';
     switch (categoriaEnum) {
@@ -45,24 +45,20 @@ class ArticuloPropioWidget extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: () async {
-        final result = await Navigator.push(
+      onTap: () {
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ArticuloPropioDetailScreen(articulo: articulo),
+            builder: (_) => PantallaVerTodos(categoria: articulo['categoria']),
           ),
         );
-
-        if (result == true && onTap != null) {
-          onTap!();
-        }
       },
       child: Container(
         height: 210,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 6,
@@ -81,22 +77,14 @@ class ArticuloPropioWidget extends StatelessWidget {
               child: SizedBox(
                 height: 130,
                 width: double.infinity,
-                child: Image.memory(
-                        imagenBytes,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(child: Icon(Icons.broken_image)),
-                      )
+                child: ImagenAjustada(url: imagenUrl, width: 100, height:100)
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
               child: Text(
                 nombre,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -105,10 +93,7 @@ class ArticuloPropioWidget extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
               child: Text(
                 subcategoria,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -1,17 +1,18 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FormularioEdicionArticuloPropioScreen extends StatefulWidget {
-  final Uint8List imagenBytes;
+  final String imagenUrl;
   final dynamic articuloExistente;
 
   const FormularioEdicionArticuloPropioScreen({
     super.key,
-    required this.imagenBytes,
+    required this.imagenUrl,
     required this.articuloExistente,
   });
 
@@ -193,12 +194,24 @@ class _FormularioEdicionArticuloPropioScreenState extends State<FormularioEdicio
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Editar Prenda")),
+      appBar: AppBar(leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+      'Editar prenda',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+      ),
+    ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.memory(widget.imagenBytes, height: 250, fit: BoxFit.cover),
+            ImagenAjustada(url: widget.imagenUrl, width: 300, height:300),
             const SizedBox(height: 16),
             Form(
               key: _formKey,

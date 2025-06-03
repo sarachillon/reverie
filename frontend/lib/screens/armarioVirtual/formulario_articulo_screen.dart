@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/utils/carga_screen.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
-import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
 import 'package:frontend/services/api_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FormularioArticuloScreen extends StatefulWidget {
   final File imagenOriginal;
@@ -26,6 +27,15 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   List<OcasionEnum> _ocasiones = [];
   List<TemporadaEnum> _temporadas = [];
   List<ColorEnum> _colores = [];
+
+  // Campos de validacion
+  bool _categoriaValida = true;
+  bool _subcategoriaValida = true;
+  bool _ocasionesValidas = true;
+  bool _temporadasValidas = true;
+  bool _coloresValidos = true;
+  bool _imagenValida = true;
+
 
   final Map<CategoriaEnum, List<dynamic>> subcategoriasMap = {
     CategoriaEnum.ROPA: SubcategoriaRopaEnum.values,
@@ -56,54 +66,83 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   }
 
   Future<void> _guardarPrenda() async {
-    if (!_formKey.currentState!.validate() ||
-        _categoria == null ||
-        _subcategoria == null ||
-        _ocasiones.isEmpty ||
-        _temporadas.isEmpty ||
-        _colores.isEmpty ||
-        _imagenFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, completa todos los campos obligatorios.")),
-      );
-      return;
-    }
+  // 1. Validación local
+  setState(() {
+    _categoriaValida    = _categoria != null;
+    _subcategoriaValida = _subcategoria != null;
+    _ocasionesValidas   = _ocasiones.isNotEmpty;
+    _temporadasValidas  = _temporadas.isNotEmpty;
+    _coloresValidos     = _colores.isNotEmpty;
+    _imagenValida       = _imagenFile != null;
+  });
 
-    try {
-      SubcategoriaRopaEnum? subRopa;
-      SubcategoriaAccesoriosEnum? subAccesorio;
-      SubcategoriaCalzadoEnum? subCalzado;
-
-      if (_categoria == CategoriaEnum.ROPA && _subcategoria is SubcategoriaRopaEnum) {
-        subRopa = _subcategoria;
-      } else if (_categoria == CategoriaEnum.ACCESORIOS && _subcategoria is SubcategoriaAccesoriosEnum) {
-        subAccesorio = _subcategoria;
-      } else if (_categoria == CategoriaEnum.CALZADO && _subcategoria is SubcategoriaCalzadoEnum) {
-        subCalzado = _subcategoria;
-      }
-
-      await _apiManager.guardarArticuloPropio(
-        foto: Image.file(_imagenFile!),
-        nombre: _nombreController.text,
-        categoria: _categoria!,
-        subcategoriaRopa: subRopa,
-        subcategoriaAccesorios: subAccesorio,
-        subcategoriaCalzado: subCalzado,
-        ocasiones: _ocasiones,
-        temporadas: _temporadas,
-        colores: _colores,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Prenda guardada exitosamente.")),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar la prenda: $e")),
-      );
-    }
+  if (!_formKey.currentState!.validate()
+      || !_categoriaValida
+      || !_subcategoriaValida
+      || !_ocasionesValidas
+      || !_temporadasValidas
+      || !_coloresValidos
+      || !_imagenValida
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Por favor, completa todos los campos obligatorios."))
+    );
+    return;
   }
+
+  try {
+    // 2. Mostrar pantalla de carga para artículo
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CargandoScreen(type: CargandoType.articulo),
+      ),
+    );
+
+    // 3. Preparar subcategorías según categoría
+    SubcategoriaRopaEnum? subRopa;
+    SubcategoriaAccesoriosEnum? subAccesorio;
+    SubcategoriaCalzadoEnum? subCalzado;
+
+    if (_categoria == CategoriaEnum.ROPA && _subcategoria is SubcategoriaRopaEnum) {
+      subRopa = _subcategoria;
+    } else if (_categoria == CategoriaEnum.ACCESORIOS && _subcategoria is SubcategoriaAccesoriosEnum) {
+      subAccesorio = _subcategoria;
+    } else if (_categoria == CategoriaEnum.CALZADO && _subcategoria is SubcategoriaCalzadoEnum) {
+      subCalzado = _subcategoria;
+    }
+
+    // 4. Llamada al API
+    await _apiManager.guardarArticuloPropio(
+      foto: Image.file(_imagenFile!),
+      nombre: _nombreController.text,
+      categoria: _categoria!,
+      subcategoriaRopa: subRopa,
+      subcategoriaAccesorios: subAccesorio,
+      subcategoriaCalzado: subCalzado,
+      ocasiones: _ocasiones,
+      temporadas: _temporadas,
+      colores: _colores,
+    );
+
+    // 5. Cerrar pantalla de carga
+    Navigator.pop(context);
+
+    // 6. Avisar de éxito y volver pasando true
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Prenda guardada exitosamente.")),
+    );
+    Navigator.pop(context, true);
+
+  } catch (e) {
+    // 7. En caso de error, cerrar la pantalla de carga (si sigue abierta)
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error al guardar la prenda: $e")),
+    );
+  }
+}
+
 
   String _getSubcategoriaValue(dynamic sub) {
     if (sub is SubcategoriaRopaEnum) return sub.value;
@@ -115,7 +154,19 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Nueva Prenda")),
+      appBar: AppBar(leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+      'Nueva prenda',
+      style: GoogleFonts.dancingScript(
+        fontSize: 30,
+        color: Color(0xFFD4AF37),
+        fontWeight: FontWeight.w600,
+      ),
+      ),
+    ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -144,42 +195,38 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                       (_categoria == null)
                           ? "Selecciona una categoría y subcategoría"
                           : "${_categoria!.value}, ${_getSubcategoriaValue(_subcategoria)}",
+                      style: TextStyle(
+                        color: !_categoriaValida
+                          ? Colors.red.shade900
+                          : null,
+                      ),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () async {
-                      final categoriaSeleccionada = await Navigator.push(
+                      final seleccion = await Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const CategoriaSelector()),
                       );
 
-                      if (categoriaSeleccionada != null) {
-                        // Convierte el valor seleccionado a CategoriaEnum si es un String
-                        final categoria = categoriaSeleccionada is String
-                            ? CategoriaEnum.values.firstWhere(
-                                (e) => e.value == categoriaSeleccionada,
-                                orElse: () => throw Exception("Categoría no válida"),
-                              )
-                            : categoriaSeleccionada as CategoriaEnum;
+                      if (seleccion != null && seleccion is Map) {
+                        final categoriaValue = seleccion['categoria']!;
+                        final subcategoriaValue = seleccion['subcategoria']!;
 
-                        final subcategoriaSeleccionada = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SubcategoriaSelector(categoria: categoria.value),
-                          ),
+                        final categoria = CategoriaEnum.values.firstWhere(
+                          (e) => e.value == categoriaValue,
+                          orElse: () => throw Exception("Categoría no válida"),
                         );
 
-                        if (subcategoriaSeleccionada != null) {
-                          setState(() {
-                            _categoria = categoria;
-                            if (categoria == CategoriaEnum.ROPA) {
-                              _subcategoria = SubcategoriaRopaEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
-                            } else if (categoria == CategoriaEnum.ACCESORIOS) {
-                              _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
-                            } else if (categoria == CategoriaEnum.CALZADO) {
-                              _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere((e) => e.value == subcategoriaSeleccionada);
-                            }
-                          });
-                        }
+                        setState(() {
+                          _categoria = categoria;
+                          if (categoria == CategoriaEnum.ROPA) {
+                            _subcategoria = SubcategoriaRopaEnum.values.firstWhere((e) => e.value == subcategoriaValue);
+                          } else if (categoria == CategoriaEnum.ACCESORIOS) {
+                            _subcategoria = SubcategoriaAccesoriosEnum.values.firstWhere((e) => e.value == subcategoriaValue);
+                          } else if (categoria == CategoriaEnum.CALZADO) {
+                            _subcategoria = SubcategoriaCalzadoEnum.values.firstWhere((e) => e.value == subcategoriaValue);
+                          }
+                        });
                       }
                     },
                   ),
@@ -191,6 +238,11 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                       _ocasiones.isEmpty
                           ? "Selecciona una o varias ocasiones"
                           : _ocasiones.map((e) => e.value).join(", "),
+                      style: TextStyle(
+                        color: !_ocasionesValidas
+                          ? Colors.red.shade900
+                          : null,
+                      ),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () async {
@@ -253,6 +305,11 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
                       _temporadas.isEmpty
                           ? "Selecciona una o varias temporadas"
                           : _temporadas.map((e) => e.value).join(", "),
+                        style: TextStyle(
+                        color: !_temporadasValidas
+                          ? Colors.red.shade900
+                          : null,
+                      ),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () async {
@@ -308,86 +365,32 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
 
                   // Selección múltiple de colores
                   ListTile(
-                    title: const Text("Selecciona colores"),
+                    title: Text("Selecciona colores"),
                     subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          _colores.isEmpty
+                            ? "Selecciona los colores"
+                            : " ",  
+                          style: TextStyle(
+                            color: !_coloresValidos   
+                              ? Colors.red.shade900
+                              : null,                 
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: ColorEnum.values.take(6).map((color) {
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (_colores.contains(color)) {
-                                    _colores.remove(color);
-                                  } else {
-                                    _colores.add(color);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                width: 32, 
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _colores.contains(color)
-                                      ? _getColorFromEnum(color).withOpacity(0.7) 
-                                      : _getColorFromEnum(color),
-                                  border: Border.all(
-                                    color: Colors.black12,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: _colores.contains(color)
-                                    ? Center(
-                                        child: Icon(
-                                          Icons.check,
-                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
-                                          size: 18,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            );
+                            return _buildColorCircle(color);
                           }).toList(),
                         ),
-                        const SizedBox(height: 8), // Espaciado entre filas
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: ColorEnum.values.skip(6).map((color) {
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (_colores.contains(color)) {
-                                    _colores.remove(color);
-                                  } else {
-                                    _colores.add(color);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                width: 32, 
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _colores.contains(color)
-                                      ? _getColorFromEnum(color).withOpacity(0.7) 
-                                      : _getColorFromEnum(color),
-                                  border: Border.all(
-                                    color: Colors.black12,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: _colores.contains(color)
-                                    ? Center(
-                                        child: Icon(
-                                          Icons.check,
-                                          color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
-                                          size: 18,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            );
+                            return _buildColorCircle(color);
                           }).toList(),
                         ),
                       ],
@@ -409,6 +412,35 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
       ),
     );
   }
+
+  Widget _buildColorCircle(ColorEnum color) {
+  final seleccionado = _colores.contains(color);
+  return InkWell(
+    onTap: () => setState(() {
+      if (seleccionado) _colores.remove(color);
+      else _colores.add(color);
+      _coloresValidos = _colores.isNotEmpty;  
+    }),
+    child: Container(
+      width: 32, height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _getColorFromEnum(color).withOpacity(seleccionado ? 0.7 : 1),
+        border: Border.all(color: Colors.black12, width: 2),
+      ),
+      child: seleccionado
+        ? Center(
+            child: Icon(
+              Icons.check,
+              color: color == ColorEnum.BLANCO ? Colors.black : Colors.white,
+              size: 18,
+            ),
+          )
+        : null,
+    ),
+  );
+}
+
 
   // Método para obtener el color real desde el enum
   Color _getColorFromEnum(ColorEnum color) {

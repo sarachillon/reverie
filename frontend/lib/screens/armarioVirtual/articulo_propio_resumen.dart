@@ -1,16 +1,22 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
+import 'package:frontend/screens/armarioVirtual/formulario_articulo_propio_existente.dart';
 import 'package:frontend/services/api_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
+ 
 
 class ArticuloPropioResumen extends StatefulWidget {
   final dynamic articulo;
+  final Function? onActualizado;
+  final int? usuarioActual_id;
 
-  const ArticuloPropioResumen({super.key, required this.articulo});
+  const ArticuloPropioResumen({
+    super.key,
+    required this.articulo,
+    this.onActualizado, 
+    this.usuarioActual_id,
+  });
 
   @override
   State<ArticuloPropioResumen> createState() => _ArticuloPropioResumenState();
@@ -26,22 +32,23 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
     articulo = widget.articulo;
   }
 
+
+
+
   Future<void> eliminarArticulo(int id) async {
     try {
       await _apiManager.deleteArticuloPropio(id: id);
-      Navigator.pop(context, true);
+      if (widget.onActualizado != null) {
+        widget.onActualizado!();
+      }
     } catch (e) {
-      print('Error al eliminar el artículo: $e');
+      print('Error al eliminar artículo: $e');
     }
-  }
-
-  Future<String?> _getEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('email');
   }
 
   @override
   Widget build(BuildContext context) {
+
     final nombre = articulo['nombre'] ?? '';
     final categoriaEnum = CategoriaEnum.values.firstWhere(
       (e) => e.name == articulo['categoria'],
@@ -71,107 +78,122 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
         break;
     }
 
-    final ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e, orElse: () => OcasionEnum.CASUAL).value).join(', ') ?? '';
-    final temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
+    final ocasiones = (articulo['ocasiones'] as List?)?.map((e) =>
+        OcasionEnum.values.firstWhere((o) => o.name == e, orElse: () => OcasionEnum.CASUAL).value).join(', ') ?? '';
+    final temporadas = (articulo['temporadas'] as List?)?.map((e) =>
+        TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
     final colores = (articulo['colores'] as List?)?.cast<String>().toList() ?? [];
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    
+    final imagenUrl = articulo['urlFirmada'] ?? '';
+    print("URL IMAGEN: $imagenUrl");
     final id = articulo['id'];
 
-    return FutureBuilder<String?>(
-      future: _getEmail(),
-      builder: (context, snapshot) {
-        final email = snapshot.data ?? '';
+    final idUsuarioArticulo = articulo['usuario']['id'];
+    final esPropio = (widget.usuarioActual_id == idUsuarioArticulo);
+    print("ID USUARIO ACTUAL: ${widget.usuarioActual_id} , ID USUARIO ARTICULO: $idUsuarioArticulo, ES PROPIO: $esPropio");
 
-        return Container(
-          height: 120,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
           ),
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.memory(imagenBytes, width: 100, height: double.infinity, fit: BoxFit.cover),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: 0,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            iconSize: 18,
-                            icon: const Icon(Icons.edit, size: 18),
-                            color: Color(0xFFC9A86A),
-                            onPressed: () async {
-                              final updated = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => FormularioEdicionArticuloPropioScreen(
-                                    imagenBytes: imagenBytes,
-                                    articuloExistente: articulo,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 0,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: esPropio
+                        ? [
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              iconSize: 18,
+                              icon: const Icon(Icons.edit, size: 18),
+                              color: Color(0xFFC9A86A),
+                              onPressed: () async {
+                                final updated = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => FormularioEdicionArticuloPropioScreen(
+                                      imagenUrl: imagenUrl,
+                                      articuloExistente: articulo,
+                                    ),
                                   ),
-                                ),
-                              );
-                              if (updated != null) {
-                                setState(() => articulo = updated);
-                              }
-                            },
+                                );
+                                if (updated != null) {
+                                  setState(() => articulo = updated);
+                                }
+                              },
+                            ),
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              iconSize: 18,
+                              icon: const Icon(Icons.delete, size: 18),
+                              color: Color(0xFFC9A86A),
+                              onPressed: () => eliminarArticulo(id),
+                            ),
+                          ]
+                        : [
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              tooltip: "Añadir a mi armario",
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => FormularioArticuloDesdeExistenteScreen(articulo: articulo),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(nombre, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text("Categoría: $categoria", style: const TextStyle(fontSize: 12)),
+                    Text("Subcat.: $subcategoria", style: const TextStyle(fontSize: 12)),
+                    Text("Ocasión: $ocasiones", style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text("Temporada: $temporadas", style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: colores.map((c) {
+                        final colorEnum = ColorEnum.values.firstWhere(
+                          (ce) => ce.name.toUpperCase() == c.toUpperCase(),
+                          orElse: () => ColorEnum.BLANCO,
+                        );
+                        return Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: _getColorFromEnum(colorEnum),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color.fromARGB(239, 0, 0, 0)),
                           ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            iconSize: 18,
-                            icon: const Icon(Icons.delete, size: 18),
-                            onPressed: () => eliminarArticulo(id),
-                            color: Color(0xFFC9A86A)
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(nombre, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text("Categoría: $categoria", style: const TextStyle(fontSize: 12)),
-                        Text("Subcat.: $subcategoria", style: const TextStyle(fontSize: 12)),
-                        Text("Ocasión: $ocasiones", style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text("Temporada: $temporadas", style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 4),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: colores.map((c) {
-                            final colorEnum = ColorEnum.values.firstWhere(
-                              (ce) => ce.name.toUpperCase() == c.toUpperCase(),
-                              orElse: () => ColorEnum.BLANCO,
-                            );
-                            return Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: _getColorFromEnum(colorEnum),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color.fromARGB(239, 0, 0, 0)),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

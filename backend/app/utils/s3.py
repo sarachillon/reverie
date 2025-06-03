@@ -9,7 +9,7 @@ from datetime import datetime
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_S3_BUCKET_NAME = config("AWS_S3_BUCKET_NAME")
-AWS_REGION = config("AWS_REGION", default="eu-north-1")
+AWS_REGION = config("AWS_REGION")
 
 async def subir_imagen_s3(file: UploadFile, filename: str) -> str:
     s3 = boto3.client("s3",
@@ -69,3 +69,18 @@ def generar_nombre_unico(nombre_original):
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     nuevo_nombre = f"{nombre}_{timestamp}.{extension}"
     return nuevo_nombre
+
+
+
+def generar_url_firmada(key: str, expiration: int = 3600) -> str:
+    s3 = boto3.client("s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
+    return s3.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": key},
+        ExpiresIn=expiration,
+    )
+

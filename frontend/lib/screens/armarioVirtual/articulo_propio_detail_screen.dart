@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/formulario_edicion_articulo_propio_screen.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,13 +69,13 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
     final ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e, orElse: () => OcasionEnum.CASUAL).value).join(', ') ?? '';
     final temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e, orElse: () => TemporadaEnum.VERANO).value).join(', ') ?? '';
     final colores = (articulo['colores'] as List?)?.cast<String>().toList() ?? [];
-    final imagenBytes = base64Decode(articulo['imagen'] ?? '');
+    String imagenUrl = articulo['urlFirmada'] ?? '';
     final id = articulo['id'] ?? '';
 
     return FutureBuilder<String?>(
       future: _getEmail(),
       builder: (context, snapshot) {
-        final email = snapshot.data ?? '';
+        //final email = snapshot.data ?? '';
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -92,12 +92,12 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
-                  final imagenBytes = base64Decode(articulo['imagen']);
+                  final imagenUrl = articulo['urlFirmada'] ?? '';
                   final updatedArticulo = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => FormularioEdicionArticuloPropioScreen(
-                        imagenBytes: imagenBytes,
+                        imagenUrl: imagenUrl,
                         articuloExistente: articulo,
                       ),
                     ),
@@ -130,7 +130,7 @@ class _ArticuloPropioDetailScreenState extends State<ArticuloPropioDetailScreen>
               const SizedBox(height: 8),
               AspectRatio(
                 aspectRatio: 1,
-                child: Image.memory(imagenBytes, fit: BoxFit.cover),
+                child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
               ),
               Expanded(
                 child: SingleChildScrollView(
