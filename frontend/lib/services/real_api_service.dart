@@ -124,23 +124,23 @@ class RealApiService implements ApiService {
     }
   }
 
-@override
-Future<List<Map<String, dynamic>>> getAllUsers() async {
-  final token = await GoogleSignInService().getToken();
-  if (token == null) throw Exception('Token no disponible');
+  @override
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Token no disponible');
 
-  final response = await http.get(
-    Uri.parse('$_baseUrl/auth/users'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
+    final response = await http.get(
+      Uri.parse('$_baseUrl/auth/users'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.cast<Map<String, dynamic>>();
-  } else {
-    throw Exception('Error al obtener todos los usuarios: ${response.body}');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Error al obtener todos los usuarios: ${response.body}');
+    }
   }
-}
 
 
   @override
@@ -895,7 +895,6 @@ Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
   }
 
 @override
-@override
 Future<bool> editarCollageOutfitPropio({
   required int outfitId,
   required List<Map<String, dynamic>> items,
@@ -931,62 +930,189 @@ Future<bool> editarCollageOutfitPropio({
 }
 
 
-  
+  @override
   Future<Map<String, dynamic>> getOutfitById({required int id}) async {
-  final token = await GoogleSignInService().getToken();
-  if (token == null) {
-    throw Exception('Usuario no autenticado');
+    final token = await GoogleSignInService().getToken();
+    if (token == null) {
+      throw Exception('Usuario no autenticado');
+    }
+
+    final url = Uri.parse('$_baseUrl/outfits/$id');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // El endpoint devuelve un JSON que se ajusta a OutfitPropioConUsuarioResponse
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error al obtener outfit: ${response.body}');
+    }
   }
 
-  final url = Uri.parse('$_baseUrl/outfits/$id');
-  final response = await http.get(
+
+  @override
+  Future<void> editarOutfitPropio({
+    required int id,
+    String? titulo,
+    String? descripcion,
+    List<OcasionEnum>? ocasiones,
+    List<TemporadaEnum>? temporadas,
+    List<ColorEnum>? colores,
+  }) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Usuario no autenticado');
+
+    final url = Uri.parse('$_baseUrl/outfits/$id');
+    final Map<String, dynamic> body = {};
+    if (titulo != null) body['titulo'] = titulo;
+    if (descripcion != null) body['descripcion'] = descripcion;
+    if (ocasiones != null) body['ocasiones'] = ocasiones.map((e) => e.name).toList();
+    if (temporadas != null) body['temporadas'] = temporadas.map((e) => e.name).toList();
+    if (colores != null) body['colores'] = colores.map((e) => e.name).toList();
+
+    final response = await http.patch(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al editar outfit: ${response.body}');
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Colecciones
+
+
+  @override
+  Future<void> crearColeccion({
+    required String nombre,
+    required int userId,
+    int? outfitId, // <-- único outfitId opcional
+  }) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Usuario no autenticado');
+
+    final url = Uri.parse('$_baseUrl/colecciones/');
+    final request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['nombre'] = nombre
+      ..fields['userId'] = userId.toString();
+
+    if (outfitId != null) {
+      request.fields['outfitId'] = outfitId.toString();
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al crear colección: ${response.body}');
+    }
+  }
+
+
+  @override
+  Future<List<Map<String, dynamic>>> obtenerColeccionesDeUsuario(int userId) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Usuario no autenticado');
+
+    final url = Uri.parse('$_baseUrl/colecciones/usuario/$userId');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      return decoded.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Error al obtener colecciones: ${response.body}');
+    }
+  }
+
+
+  @override
+  Future<void> addOutfitColeccion({required int coleccionId, required int outfitId}) async {
+    final token = await GoogleSignInService().getToken();
+    if (token == null) throw Exception('Usuario no autenticado');
+
+    final url = Uri.parse('$_baseUrl/colecciones/$coleccionId/add_outfit');
+    final request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['outfit_id'] = outfitId.toString();
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al añadir outfit: ${response.body}');
+    }
+  }
+
+  @override
+Future<void> deleteColeccion({required int coleccionId}) async {
+  final token = await GoogleSignInService().getToken();
+  if (token == null) throw Exception('Usuario no autenticado');
+
+  final url = Uri.parse('$_baseUrl/colecciones/$coleccionId');
+  final response = await http.delete(
     url,
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     },
   );
 
-  if (response.statusCode == 200) {
-    // El endpoint devuelve un JSON que se ajusta a OutfitPropioConUsuarioResponse
-    return jsonDecode(response.body) as Map<String, dynamic>;
-  } else {
-    throw Exception('Error al obtener outfit: ${response.body}');
+  if (response.statusCode != 200) {
+    throw Exception('Error al eliminar colección: ${response.body}');
   }
 }
 
-
 @override
-Future<void> editarOutfitPropio({
-  required int id,
-  String? titulo,
-  String? descripcion,
-  List<OcasionEnum>? ocasiones,
-  List<TemporadaEnum>? temporadas,
-  List<ColorEnum>? colores,
+Future<void> removeOutfitDeColeccion({
+  required int coleccionId,
+  required int outfitId,
 }) async {
   final token = await GoogleSignInService().getToken();
   if (token == null) throw Exception('Usuario no autenticado');
 
-  final url = Uri.parse('$_baseUrl/outfits/$id');
-  final Map<String, dynamic> body = {};
-  if (titulo != null) body['titulo'] = titulo;
-  if (descripcion != null) body['descripcion'] = descripcion;
-  if (ocasiones != null) body['ocasiones'] = ocasiones.map((e) => e.name).toList();
-  if (temporadas != null) body['temporadas'] = temporadas.map((e) => e.name).toList();
-  if (colores != null) body['colores'] = colores.map((e) => e.name).toList();
+  final url = Uri.parse(
+    '$_baseUrl/colecciones/$coleccionId/remove_outfit?outfit_id=$outfitId',
+  );
 
-  final response = await http.patch(
+  final response = await http.delete(
     url,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode(body),
+    headers: {'Authorization': 'Bearer $token'},
   );
 
   if (response.statusCode != 200) {
-    throw Exception('Error al editar outfit: ${response.body}');
+    throw Exception('Error al eliminar outfit de colección: ${response.body}');
   }
 }
 

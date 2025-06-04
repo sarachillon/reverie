@@ -1,4 +1,5 @@
 from io import BytesIO
+import traceback
 from PIL import Image
 import json
 import base64
@@ -81,6 +82,7 @@ class ManualOutfitCreate(BaseModel):
     ocasiones: List[OcasionEnum]
     items: List[OutfitItemCreate]
     imagen_base64: str
+
 
 @router.post("/manual", response_model=OutfitPropioConUsuarioResponse, status_code=201)
 async def crear_outfit_manual(
@@ -168,9 +170,9 @@ from sqlalchemy.orm import joinedload
 async def obtener_outfits_stream(
     request: Request,
     user_id: Optional[int] = Query(None),
-    ocasiones: List[OcasionEnum] = Query(None),
-    temporadas: Optional[List[TemporadaEnum]] = Query(None),
-    colores: Optional[List[ColorEnum]] = Query(None),
+    ocasiones: Optional[List[OcasionEnum]] = Query(default=None),
+    temporadas: Optional[List[TemporadaEnum]] = Query(default=None),
+    colores: Optional[List[ColorEnum]] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     usuario_actual = await obtener_usuario_actual(request, db)
@@ -179,51 +181,25 @@ async def obtener_outfits_stream(
 
     id_usuario = user_id if user_id is not None else usuario_actual.id
 
-    # Base query sólo outfits del usuario
     query = db.query(OutfitPropio).filter(OutfitPropio.usuario_id == id_usuario)
 
-    # FILTRO DE OCASIONES (enum list)
     if ocasiones:
-        # Todos los outfits que tengan AL MENOS una de las ocasiones seleccionadas
-        query = query.filter(
-            OutfitPropio.ocasiones.overlap(ocasiones)
-        )
-
-    # FILTRO DE TEMPORADAS (enum list)
+        query = query.filter(OutfitPropio.ocasiones.overlap(ocasiones))
     if temporadas:
-        query = query.filter(
-            OutfitPropio.temporadas.overlap(temporadas)
-        )
-
-    # FILTRO DE COLORES (enum list)
+        query = query.filter(OutfitPropio.temporadas.overlap(temporadas))
     if colores:
-        query = query.filter(
-            OutfitPropio.colores.overlap(colores)
-        )
+        query = query.filter(OutfitPropio.colores.overlap(colores))
 
-    outfits = (
-        query
-        .options(
-            joinedload(OutfitPropio.articulos_propios)
-                .joinedload(ArticuloPropio.usuario),
-            joinedload(OutfitPropio.items),
-        )
-        .order_by(OutfitPropio.id.desc())
-        .all()
-    )
-    
+    outfits = query.options(
+        joinedload(OutfitPropio.articulos_propios).joinedload(ArticuloPropio.usuario),
+        joinedload(OutfitPropio.items),
+    ).order_by(OutfitPropio.id.desc()).all()
 
     async def streamer():
         for outfit in outfits:
-            # Firmar URLs de los artículos
             for art in outfit.articulos_propios:
                 art.urlFirmada = generar_url_firmada(art.foto)
-            # Firmar URL del collage
-            outfit.imagen = (
-                generar_url_firmada(outfit.collage_key)
-                if outfit.collage_key else ""
-            )
-            # Serializa con items incluidos
+            outfit.imagen = generar_url_firmada(outfit.collage_key) if outfit.collage_key else ""
             payload = OutfitPropioSimpleResponse.from_orm(outfit).dict()
             yield json.dumps(payload) + "\n"
 

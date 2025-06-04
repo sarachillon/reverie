@@ -57,6 +57,7 @@ class OutfitPropio(Base):
     usuario = relationship("Usuario", back_populates="outfits_propios")
     articulos_propios = relationship("ArticuloPropio", secondary=outfitpropio_articulo, back_populates="outfits_propios")
     items = relationship("OutfitItem", back_populates="outfit", cascade="all, delete-orphan")
+    colecciones = relationship("Coleccion", secondary=coleccion_outfit, back_populates="outfits")
 
 
 
@@ -76,3 +77,15 @@ class OutfitItem(Base):
 
     articulo = relationship("ArticuloPropio")
     outfit = relationship("OutfitPropio", back_populates="items")
+
+
+
+class Coleccion(Base):
+    __tablename__ = "colecciones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    propietario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+
+    propietario = relationship("Usuario", backref="colecciones")
+    outfits = relationship("OutfitPropio", secondary="coleccion_outfit", back_populates="colecciones")

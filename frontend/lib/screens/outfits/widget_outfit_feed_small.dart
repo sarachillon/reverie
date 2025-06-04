@@ -3,23 +3,68 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/outfits/selector_coleccion.dart';
 import 'package:frontend/screens/perfil/perfil_screen.dart';
-import 'package:frontend/services/share_utils.dart';
 import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
+import 'package:frontend/services/share_utils.dart';
+import 'package:frontend/services/api_manager.dart';
 
 class WidgetOutfitFeedSmall extends StatelessWidget {
   final List<dynamic> outfits;
 
-  WidgetOutfitFeedSmall({super.key, required this.outfits});
-  
-  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
+  final bool toEliminateFromColection;
+
+  final int? coleccionId;
+
+  final String? coleccionNombre;
+
+
+  final void Function(int outfitId)? onRemoved;
+
+  WidgetOutfitFeedSmall({
+    super.key,
+    required this.outfits,
+    this.toEliminateFromColection = false,
+    this.coleccionId,
+    this.coleccionNombre,
+    this.onRemoved,
+  }) : assert(!toEliminateFromColection || coleccionId != null,
+            'Se requiere coleccionId cuando toEliminateFromColection es true');
+
+  final GlobalKey<ArmarioScreenState> armarioKey =
+      GlobalKey<ArmarioScreenState>();
+
+  /* ────────────────────  HELPERS  ─────────────────── */
+  void _removeFromCollection(BuildContext context, int outfitId) async {
+    try {
+      await ApiManager().removeOutfitDeColeccion(
+        coleccionId: coleccionId!,
+        outfitId: outfitId,
+      );
+      Navigator.pop(context); // cerrar el bottom‑sheet
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Outfit eliminado de la colección')),
+      );
+    onRemoved?.call(outfitId);
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: GridView.builder(
+        shrinkWrap: true,
+        physics: const BouncingScrollPhysics(),
         itemCount: outfits.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -32,18 +77,79 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
           final imagenUrl = outfit['imagen'] as String? ?? '';
           final username = outfit['usuario']?['username'] ?? 'demo_user';
           final fotoPerfil = outfit['usuario']?['foto_perfil'];
-
           final ocasiones = (outfit['ocasiones'] as List)
-              .map((o) => OcasionEnum.values.firstWhere((e) => e.name == o).value)
+              .map((o) =>
+                  OcasionEnum.values.firstWhere((e) => e.name == o).value)
               .join(', ');
+
+          void _showMenuSheet() {
+            showModalBottomSheet(
+              context: context,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              backgroundColor: Colors.white,
+              builder: (_) {
+                return SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.bookmark_border),
+                        title: const Text('Guardar'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          showModalBottomSheet(
+                            context: context,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            builder: (_) =>
+                                SelectorColeccionBottomSheet(outfitId: outfit['id']),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.ios_share),
+                        title: const Text('Compartir'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final imagen = outfit['imagen'];
+                          if (imagen != null && imagen.isNotEmpty) {
+                            ShareUtils.compartirOutfitSinMarca(
+                              base64Imagen: imagen,
+                              username: username,
+                            );
+                          }
+                        },
+                      ),
+                      if (toEliminateFromColection)
+                        ListTile(
+                          leading: const Icon(Icons.delete_outline,
+                              color: Colors.grey),
+                          title: Text('Eliminar de "${coleccionNombre ?? ''}"'),
+                          onTap: () =>
+                              _removeFromCollection(context, outfit['id'] as int),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          }
 
           return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => OutfitDetailScreen(outfitId: outfit['id'] as int)),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      OutfitDetailScreen(outfitId: outfit['id'] as int),
+                ),
               );
             },
+            onLongPress: _showMenuSheet,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -60,63 +166,60 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Usuario + compartir
-                  GestureDetector(
-                    onTap: () {
-                      final userId = outfit['usuario']?['id'];
-                      if (userId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PerfilScreen(userId: userId, armarioKey: armarioKey),
-                          ),
-                        );
-                      }
-                    },
-                    child: Row(
-                      children: [
-                        CircleAvatar(
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          final userId = outfit['usuario']?['id'];
+                          if (userId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    PerfilScreen(userId: userId, armarioKey: armarioKey),
+                              ),
+                            );
+                          }
+                        },
+                        child: CircleAvatar(
                           radius: 20,
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty)
                               ? MemoryImage(base64Decode(
-                                  fotoPerfil.contains(',') ? fotoPerfil.split(',').last : fotoPerfil))
+                                  fotoPerfil.contains(',')
+                                      ? fotoPerfil.split(',').last
+                                      : fotoPerfil))
                               : null,
                           child: (fotoPerfil == null || fotoPerfil.isEmpty)
                               ? const Icon(Icons.person, color: Colors.white)
                               : null,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(username, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.ios_share, size: 16),
-                          onPressed: () {
-                            final imagen = outfit['imagen'];
-                            final nombre = outfit['usuario']?['username'] ?? 'usuario';
-                            if (imagen != null && imagen.isNotEmpty) {
-                              ShareUtils.compartirOutfitSinMarca(
-                                base64Imagen: outfit['imagen'],
-                                username: nombre,
-                              );
-                            }
-                          },
-                        ),                         
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(username,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.more_vert, size: 20),
+                        onPressed: _showMenuSheet,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     outfit['titulo'] ?? 'Sin título',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     ocasiones,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                    style: const TextStyle(
+                        fontSize: 11, fontStyle: FontStyle.italic),
                   ),
                   const SizedBox(height: 6),
                   Expanded(
@@ -124,8 +227,8 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       child: ImagenAjustada(
                         url: imagenUrl,
-                        width: 100,
-                        height: 100,
+                        width: double.infinity,
+                        height: double.infinity,
                       ),
                     ),
                   ),

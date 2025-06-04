@@ -1,8 +1,6 @@
 // frontend/lib/services/api_service.dart
 
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 
@@ -85,9 +83,9 @@ abstract class ApiService {
   
   Future<int> getNumeroArticulos({int? usuarioId, String? categoria}) ;
 
- Future<bool> crearOutfitManual({ required String titulo,required List<OcasionEnum> ocasiones,required List<Map<String, dynamic>> items,required String imagenBase64,});
+  Future<bool> crearOutfitManual({ required String titulo,required List<OcasionEnum> ocasiones,required List<Map<String, dynamic>> items,required String imagenBase64,});
 
-Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<String, dynamic>> items,required String imagenBase64,});
+  Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<String, dynamic>> items,required String imagenBase64,});
 
    Future<Map<String, dynamic>> getArticuloPropioPorId({required int id,});
 
@@ -96,4 +94,20 @@ Future<bool> editarCollageOutfitPropio({required int outfitId,required List<Map<
    Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD();
 
    Future<void> editarOutfitPropio({required int id,String? titulo,String? descripcion,List<OcasionEnum>? ocasiones,List<TemporadaEnum>? temporadas,List<ColorEnum>? colores,});
+
+
+
+
+   // Colecciones
+   Future<void> crearColeccion({required String nombre, required int userId, int? outfitId});
+
+   Future<List<Map<String, dynamic>>> obtenerColeccionesDeUsuario(int userId);
+
+   Future<void> addOutfitColeccion({required int coleccionId, required int outfitId});
+
+   Future<void> deleteColeccion({required int coleccionId});
+
+   Future<void> removeOutfitDeColeccion({required int coleccionId, required int outfitId});
+
+
 }

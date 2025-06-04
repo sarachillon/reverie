@@ -17,3 +17,10 @@ seguidores = Table(
     Column("seguido_id", Integer, ForeignKey("usuarios.id"), primary_key=True),
     Column("seguidor_id", Integer, ForeignKey("usuarios.id"), primary_key=True)
 )
+
+
+coleccion_outfit = Table(
+    "coleccion_outfit", Base.metadata,
+    Column("coleccion_id", Integer, ForeignKey("colecciones.id")),
+    Column("outfit_id", Integer, ForeignKey("outfits_propios.id"))
+)

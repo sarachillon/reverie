@@ -1,14 +1,63 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/outfits/outfit_detail_screen.dart';
+import 'package:frontend/screens/outfits/selector_coleccion.dart';
+import 'package:frontend/services/share_utils.dart';
 import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class WidgetOutfitFeedBig extends StatelessWidget {
   final List<dynamic> outfits;
 
   const WidgetOutfitFeedBig({super.key, required this.outfits});
+
+  void _mostrarModalOpciones(BuildContext context, dynamic outfit) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.bookmark_border),
+                title: const Text('Guardar'),
+                onTap: () {
+                  Navigator.pop(context);
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (_) => SelectorColeccionBottomSheet(outfitId: outfit['id']),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share),
+                title: const Text('Compartir'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final imagen = outfit['imagen'];
+                  final nombre = outfit['usuario']?['username'] ?? 'usuario';
+                  if (imagen != null && imagen.isNotEmpty) {
+                    ShareUtils.compartirOutfitSinMarca(
+                      base64Imagen: imagen,
+                      username: nombre,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +78,10 @@ class WidgetOutfitFeedBig extends StatelessWidget {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => OutfitDetailScreen(outfitId: outfit['id'] as int)),
+              builder: (_) => OutfitDetailScreen(outfitId: outfit['id'] as int),
+            ),
           ),
+          onLongPress: () => _mostrarModalOpciones(context, outfit),
           child: Column(
             children: [
               Expanded(
@@ -51,14 +102,13 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Usuario
+                      // Usuario + 3 puntos
                       Row(
                         children: [
                           fotoPerfil != null && fotoPerfil.isNotEmpty
                               ? CircleAvatar(
                                   radius: 20,
                                   backgroundImage: MemoryImage(
-                                    // Si viene con prefijo data:image...
                                     fotoPerfil.contains(',')
                                         ? base64Decode(fotoPerfil.split(',').last)
                                         : base64Decode(fotoPerfil),
@@ -71,8 +121,14 @@ class WidgetOutfitFeedBig extends StatelessWidget {
                                 ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(username,
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text(
+                              username,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert),
+                            onPressed: () => _mostrarModalOpciones(context, outfit),
                           ),
                         ],
                       ),
