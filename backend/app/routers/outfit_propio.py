@@ -21,7 +21,7 @@ from app.schemas.user import UserOut
 from datetime import datetime
 
 
-router = APIRouter(prefix="/outfits")
+router = APIRouter(prefix="/outfits", tags=["Outfits"])
 
 
 
@@ -248,7 +248,7 @@ async def feed_seguidos_stream(
              joinedload(OutfitPropio.items),
              joinedload(OutfitPropio.usuario),
           )
-          .order_by(OutfitPropio.fecha_creacion.desc())
+          .order_by(OutfitPropio.fecha_creacion.asc())
           .offset(page * page_size)
           .limit(page_size)
           .all()
@@ -328,7 +328,7 @@ async def feed_global_stream(
              joinedload(OutfitPropio.items),
              joinedload(OutfitPropio.usuario),
           )
-          .order_by(OutfitPropio.fecha_creacion.desc())
+          .order_by(OutfitPropio.fecha_creacion.asc())
           .offset(page * page_size)
           .limit(page_size)
           .all()

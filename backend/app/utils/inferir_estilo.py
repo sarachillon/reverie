@@ -7,7 +7,7 @@ model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 # Lista de estilos posibles
-estilos = ["boho", "street", "minimal", "elegant", "sporty", "punk", "formal", "casual"]
+estilos = ["boho", "beach", "street", "minimal", "elegant", "sporty", "punk", "formal", "casual"]
 
 def inferir_estilo_desde_imagen(image: Image.Image) -> str:
     inputs = processor(text=estilos, images=image, return_tensors="pt", padding=True)

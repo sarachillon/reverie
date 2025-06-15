@@ -92,7 +92,7 @@ async def generar_outfit_propio(
         imgs_bytes.append(await get_imagen_s3(elegido_z.foto))
         seleccion.append(elegido_z)
 
-    # ahora creamos collage + metadatos
+    # ahora creamos collage 
     collage_bytes, items_meta = _crear_collage_con_items(imgs_bytes, seleccion)
 
     # subimos a S3
@@ -128,14 +128,11 @@ async def generar_outfit_propio(
     return outfit
 
 
+
 def _crear_collage_con_items(
     imagenes: List[bytes],
     articulos: List[ArticuloPropio]
 ) -> Tuple[bytes, List[Dict[str, Any]]]:
-    """
-    Igual que crear_collage_outfit_v2 pero devuelve también
-    para cada imagen/metadato: artículo, x, y, scale, rotation, z_index
-    """
     pil_imgs = []
     for b in imagenes:
         im = Image.open(io.BytesIO(b)).convert("RGBA")

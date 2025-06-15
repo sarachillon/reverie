@@ -18,7 +18,6 @@ seguidores = Table(
     Column("seguidor_id", Integer, ForeignKey("usuarios.id"), primary_key=True)
 )
 
-
 coleccion_outfit = Table(
     "coleccion_outfit", Base.metadata,
     Column("coleccion_id", Integer, ForeignKey("colecciones.id")),

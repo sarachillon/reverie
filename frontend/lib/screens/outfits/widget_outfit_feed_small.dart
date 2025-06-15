@@ -184,12 +184,12 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                         child: CircleAvatar(
                           radius: 20,
                           backgroundColor: Colors.grey.shade300,
-                          backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty)
-                              ? MemoryImage(base64Decode(
-                                  fotoPerfil.contains(',')
-                                      ? fotoPerfil.split(',').last
-                                      : fotoPerfil))
-                              : null,
+                          backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty && !fotoPerfil.contains('http'))
+                            ? MemoryImage(base64Decode(
+                                fotoPerfil.contains(',') ? fotoPerfil.split(',').last : fotoPerfil))
+                            : (fotoPerfil != null && fotoPerfil.contains('http'))
+                                ? NetworkImage(fotoPerfil)
+                                : null,
                           child: (fotoPerfil == null || fotoPerfil.isEmpty)
                               ? const Icon(Icons.person, color: Colors.white)
                               : null,

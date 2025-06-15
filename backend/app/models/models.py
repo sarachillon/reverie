@@ -1,8 +1,8 @@
 # backend/app/models/models.py
 
-from sqlalchemy import Column, Float, Integer, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Float, Integer, String, ForeignKey, DateTime
 from sqlalchemy import Enum as SqlEnum, ARRAY
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship
 from app.database.database import Base
 from app.models.enummerations import *
 from app.models.associations import *
@@ -38,7 +38,8 @@ class ArticuloPropio(Base):
     formalidad = Column(Integer, nullable=True)
 
     usuario = relationship("Usuario", back_populates="articulos_propios")
-    outfits_propios = relationship("OutfitPropio", secondary=outfitpropio_articulo, back_populates="articulos_propios")
+    outfits_propios = relationship("OutfitPropio", secondary=outfitpropio_articulo, 
+                                   back_populates="articulos_propios")
 
 
 class OutfitPropio(Base):

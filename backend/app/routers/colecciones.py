@@ -9,7 +9,7 @@ from app.utils.s3 import *
 from app.schemas.outfit_propio import OutfitPropioConUsuarioResponse
 
 
-router = APIRouter(prefix="/colecciones")
+router = APIRouter(prefix="/colecciones", tags=["Colecciones"])
 
 
 @router.post("/")
