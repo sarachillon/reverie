@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
+import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
 
 class OutfitConfirmationScreen extends StatelessWidget {
   final Map<String, dynamic> outfit;
@@ -49,7 +50,7 @@ class OutfitConfirmationScreen extends StatelessWidget {
       SizedBox(
         width: double.infinity,
         height: MediaQuery.of(context).size.width * 1.5, 
-        child: Image.network(imagenUrl, fit: BoxFit.contain),
+        child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
       ),
 
     Align(

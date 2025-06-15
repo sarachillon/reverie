@@ -39,6 +39,7 @@ class SubcategoriaCalzadoEnum(str, Enum):
     ZAPATOS = "ZAPATOS"
 
 class SubcategoriaAccesoriosEnum(str, Enum):
+    BISUTERIA = "BISUTERIA"
     BUFANDAS = "BUFANDAS"
     CINTURONES = "CINTURONES"
     CORBATAS = "CORBATAS"
@@ -58,13 +59,15 @@ class ColorEnum(str, Enum):
     ROJO = "ROJO"
     ROSA = "ROSA"
     VIOLETA = "VIOLETA"
+    GRANATE = "GRANATE"
     AZUL = "AZUL"
     VERDE = "VERDE"
     MARRON = "MARRON"
     GRIS = "GRIS"
     BLANCO = "BLANCO"
     NEGRO = "NEGRO"
-
+    DORADO = "DORADO"
+    PLATEADO = "PLATEADO"
 
 class GeneroPrefEnum(str, Enum):
     HOMBRE = "HOMBRE"

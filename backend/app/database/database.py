@@ -15,7 +15,6 @@ engine = create_engine(
     pool_size=10,        # Número máximo de conexiones
     max_overflow=20,     # Conexiones adicionales permitidas
     pool_recycle=3600,    # Recicla conexiones después de 1 hora
-    echo=True,  # Muestra las consultas SQL en la consola
 )
 
 SessionLocal = sessionmaker(
