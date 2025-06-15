@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:frontend/services/fake_db.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
@@ -398,5 +397,59 @@ Future<void> editarArticuloPropio({
     if (ocasiones != null) print("Nuevas ocasiones: $ocasiones");
     if (temporadas != null) print("Nuevas temporadas: $temporadas");
     if (colores != null) print("Nuevos colores: $colores");
+  }
+
+  @override
+   Future<void> crearColeccion({required String nombre, required int userId, int? outfitId}) {
+    // Simulación de creación de una colección
+    print("Colección creada con nombre: $nombre");
+    print("ID de usuario: $userId");
+    if (outfitId != null) {
+      print("ID de outfit asociado: $outfitId");
+    } else {
+      print("No se ha asociado ningún outfit a la colección.");
+    }
+    return Future.value();
+   }
+
+
+  @override
+  Future<List<Map<String, dynamic>>> obtenerColeccionesDeUsuario(int userId) async {
+    print("Obteniendo colecciones para el usuario con ID: $userId");
+    return [
+      {
+        'id': 1,
+        'nombre': 'Colección de Verano',
+        'userId': userId,
+        'outfitId': null, // No asociado a ningún outfit
+      },
+      {
+        'id': 2,
+        'nombre': 'Colección de Invierno',
+        'userId': userId,
+        'outfitId': 3, // Asociado a un outfit específico
+      }
+    ];
+  }
+
+
+  @override
+  Future<void> addOutfitColeccion({required int coleccionId, required int outfitId}) async {
+    // Simulación de adición de un outfit a una colección
+    print("Outfit con ID $outfitId añadido a la colección con ID $coleccionId");
+  }
+
+  @override
+  Future<void> deleteColeccion({required int coleccionId}) {
+    // Simulación de eliminación de una colección
+    print("Colección con ID $coleccionId eliminada.");
+    return Future.value();
+  }
+
+  @override
+  Future<void> removeOutfitDeColeccion({required int coleccionId, required int outfitId}) {
+    // Simulación de eliminación de un outfit de una colección
+    print("Outfit con ID $outfitId eliminado de la colección con ID $coleccionId");
+    return Future.value();
   }
 }

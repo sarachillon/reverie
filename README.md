@@ -6,13 +6,11 @@ Este proyecto es un TRabajo de Fin de Grado de Ingeniería Informática sobre mo
 
 # Comandos útiles y recurrentes
 Frontend desde VisualStudio (en /frontend)
-    > cd frontend
     > flutter clean
     > flutter pub get
     > flutter run
 
 Backend desde terminal Ubuntu (en /backend)
-    > cd backend
     > uvicorn app.main:app --reload (para run en ubuntu WLS)
     > python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload (para run en windows)
 

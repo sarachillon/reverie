@@ -22,10 +22,10 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 600
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-router = APIRouter(prefix="/auth", tags=["users"])
+router = APIRouter(prefix="/auth", tags=["Users"])
 
 
 def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:

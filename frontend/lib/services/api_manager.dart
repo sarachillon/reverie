@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/widgets.dart';
 import 'package:frontend/enums/enums.dart';
 import 'real_api_service.dart';
@@ -315,4 +313,52 @@ Stream<Map<String, dynamic>> getFeedOutfitsStream({
     }
     return _instance!.editarOutfitPropio(id: id, titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores);
   }
+
+
+
+
+  // COLECCIONES
+  Future<void> crearColeccion({required String nombre, required int userId, int? outfitId}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.crearColeccion(nombre: nombre, userId: userId, outfitId: outfitId);
+  }
+
+
+  Future<List<Map<String, dynamic>>> obtenerColeccionesDeUsuario(int userId) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.obtenerColeccionesDeUsuario(userId);
+  }
+
+
+  Future<void> addOutfitColeccion({required int coleccionId, required int outfitId}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.addOutfitColeccion(coleccionId: coleccionId, outfitId: outfitId);
+  }
+
+  Future<void> deleteColeccion({required int coleccionId}) async {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.deleteColeccion(coleccionId: coleccionId);
+  }
+
+  Future<void> removeOutfitDeColeccion({required int coleccionId, required int outfitId}) {
+    if (_instance == null) {
+      throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
+    }
+    return _instance!.removeOutfitDeColeccion(coleccionId: coleccionId, outfitId: outfitId);
+  }
+
+
+
+
+
+
+
 }
