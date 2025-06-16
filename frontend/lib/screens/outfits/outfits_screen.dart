@@ -9,10 +9,10 @@ import 'package:frontend/services/api_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OutfitsScreen extends StatefulWidget {
-  const OutfitsScreen({super.key});
+  const OutfitsScreen({Key? key}) : super(key: key);
 
   @override
-  State<OutfitsScreen> createState() => _OutfitsScreenState();
+  State<OutfitsScreen> createState() => OutfitsScreenState();
 
   /// Utilidad estática para lanzar el formulario y, cuando vuelva con éxito,
   /// refrescar la pantalla completa.
@@ -39,7 +39,7 @@ class OutfitsScreen extends StatefulWidget {
   }
 }
 
-class _OutfitsScreenState extends State<OutfitsScreen>
+class OutfitsScreenState extends State<OutfitsScreen>
     with TickerProviderStateMixin {
   /* ────────────────────  STATE  ─────────────────── */
   final ApiManager _apiManager = ApiManager();
@@ -61,20 +61,27 @@ class _OutfitsScreenState extends State<OutfitsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this)
-      ..addListener(() => setState(() {}));
+      ..addListener(() {
+        if (!_tabController.indexIsChanging) return;
+        if (_tabController.index == 0) {
+          cargarOutfits();
+        } else if (_tabController.index == 1) {
+          cargarColecciones();
+        }
+        setState(() {});
+      });
     _inicializarPantalla();
   }
 
   Future<void> _inicializarPantalla() async {
-    await _cargarUsuarioActual();
+    await cargarUsuarioActual();
     await Future.wait([
-      _cargarOutfits(),
-      _cargarColecciones(),
+      cargarOutfits(),
     ]);
   }
 
   /* ────────────────────  API  ─────────────────── */
-  Future<void> _cargarUsuarioActual() async {
+  Future<void> cargarUsuarioActual() async {
     try {
       final user = await _apiManager.getUsuarioActual();
       setState(() => _usuarioActual = user);
@@ -83,7 +90,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
     }
   }
 
-  Future<void> _cargarOutfits() async {
+  Future<void> cargarOutfits() async {
     setState(() => _outfits.clear());
     try {
       final stream = _apiManager.getOutfitsPropiosStream(filtros: filtros);
@@ -96,7 +103,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
     }
   }
 
-  Future<void> _cargarColecciones() async {
+  Future<void> cargarColecciones() async {
     try {
       final userId = _usuarioActual?['id'];
       if (userId == null) return;
@@ -141,7 +148,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
       await _apiManager.deleteColeccion(coleccionId: coleccionId);
       if (!mounted) return;
       Navigator.pop(context); // cerrar el bottom‑sheet
-      await _cargarColecciones();
+      await cargarColecciones();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Colección eliminada')),
       );
@@ -219,7 +226,7 @@ void _mostrarModalColeccion(
                           outfits.removeWhere((o) => o['id'] == id);
                         });
                         // refrescamos la lista de colecciones del tab principal
-                        _cargarColecciones();
+                        cargarColecciones();
                       },
                     ),
                   ),
@@ -284,7 +291,7 @@ void _mostrarModalColeccion(
         unselectedLabelColor: Colors.black54,
         tabs: const [
           Tab(text: 'Mis Outfits'),
-          Tab(text: 'Guardados'),
+          Tab(text: 'Mis Colecciones'),
         ],
       ),
       leading: IconButton(
@@ -447,7 +454,7 @@ void _mostrarModalColeccion(
               filtros = nuevosFiltros;
               _mostrarFiltros = false;
             });
-            _cargarOutfits();
+            cargarOutfits();
           },
           onCerrar: _cerrarFiltros,
         ),
@@ -463,7 +470,7 @@ void _mostrarModalColeccion(
         builder: (_) => OutfitDetailScreen(outfitId: outfit['id']),
       ),
     );
-    if (eliminado == true) _cargarOutfits();
+    if (eliminado == true) cargarOutfits();
   }
 
   Future<void> _crearColeccion() async {
@@ -498,7 +505,7 @@ void _mostrarModalColeccion(
 
     if (nombre != null && nombre.isNotEmpty) {
       await _apiManager.crearColeccion(nombre: nombre, userId: userId);
-      await _cargarColecciones();
+      await cargarColecciones();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Colección creada')),

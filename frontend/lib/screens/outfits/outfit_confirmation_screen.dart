@@ -1,153 +1,202 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:frontend/enums/enums.dart';
-import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
+import 'package:frontend/services/api_manager.dart';
 
 class OutfitConfirmationScreen extends StatelessWidget {
   final Map<String, dynamic> outfit;
-  final bool mostrarAcciones;
   final VoidCallback? onAceptar;
   final VoidCallback? onRechazar;
 
   const OutfitConfirmationScreen({
-    super.key,
+    Key? key,
     required this.outfit,
-    this.mostrarAcciones = false,
     this.onAceptar,
     this.onRechazar,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final imagenUrl = outfit['imagen'] as String?;
+    final titulo = outfit['titulo'] as String? ?? '';
+    final ocasionesList = outfit['ocasiones'] as List<dynamic>?;
+    final ocasiones = ocasionesList != null ? ocasionesList.join(', ') : '';
 
-    final String? imagenUrl = outfit['imagen'];
-
-    try {
-      imagenUrl != null
-      ? Image.network(imagenUrl)
-      : Placeholder();
-    } catch (e) {
-      print("ERROR al decodificar imagen: $e");
-    }
-
+    // Colors
+    final borderGreen = Colors.green.shade400;
+    final borderRed = Colors.red.shade300;
+    final bgGreen = Colors.green.shade100;
+    final bgRed = Colors.red.shade100;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
         centerTitle: true,
         title: Image.asset('assets/logo_reverie_text.png', height: 32),
       ),
-      body: Stack(
-  children: [
-    if (imagenUrl != null)
-      SizedBox(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.width * 1.5, 
-        child: ImagenAjustada(url: imagenUrl, width: 100, height:100),
-      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Instruction arrows
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      SizedBox(width: 6),
+                      Text(
+                        'Rechazar',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_back, color: Colors.red),
 
-    Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  outfit['titulo'] ?? '',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
+                    ],
+                    
+                  ),
+                  Row(
+                    children: const [
+                      Icon(Icons.arrow_forward, color: Colors.green),
+                      SizedBox(width: 6),
+
+                      Text(
+                        'Guardar',
+                        style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      SizedBox(width: 6),
+                    ],
+                  ),
+                ],
               ),
-              if ((outfit['descripcion_generacion'] ?? '').toString().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Center(child: Text(outfit['descripcion_generacion'])),
-              ],
-              if (mostrarAcciones) ...[
-                const SizedBox(height: 24),
-                Row(
+            ),
+            // Image area
+            Expanded(
+              child: imagenUrl == null
+                  ? Center(
+                      child: Text(
+                        'No hay imagen disponible',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      ),
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: borderGreen, width: 2),
+                          right: BorderSide(color: borderRed, width: 2),
+                        ),
+                      ),
+                      child: Dismissible(
+                        key: Key(imagenUrl),
+                        direction: DismissDirection.horizontal,
+                        background: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              left: BorderSide(color: borderGreen, width: 6),
+                            ),
+                            color: bgGreen,
+                          ),
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 16),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.check, color: Colors.green),
+                              SizedBox(width: 6),
+                              Text(
+                                'Guardando...',
+                                style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        secondaryBackground: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              right: BorderSide(color: borderRed, width: 6),
+                            ),
+                            color: bgRed,
+                          ),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: const [
+                              Text(
+                                'Rechazando...',
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.delete, color: Colors.red),
+                            ],
+                          ),
+                        ),
+                        onDismissed: (direction) async {
+                          if (direction == DismissDirection.startToEnd) {
+                            onAceptar?.call();
+                          } else {    
+                            onRechazar?.call();
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 32),
+                          child: Center(
+                            child: Image.network(
+                              imagenUrl,
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (c, _, __) => const Icon(
+                                Icons.broken_image,
+                                size: 100,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+            // Title and occasion
+            if (titulo.isNotEmpty || ocasiones.isNotEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, textStyle: const TextStyle(color: Colors.white)),
-                        onPressed: onAceptar,
-                        child: const Text("Aceptar", style: TextStyle(color: Colors.white)),
+                    if (titulo.isNotEmpty)
+                      Text(
+                        titulo,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, textStyle: const TextStyle(color: Colors.white)),
-                        onPressed: onRechazar,
-                        child: const Text("Rechazar", style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
+                    
                   ],
                 ),
-              ],
-            ],
-          ),
+              ),
+          ],
         ),
       ),
-    ),
-  ],
-),
-
     );
-  }
-
-  Widget _buildPrettyRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 16))),
-        ],
-      ),
-    );
-  }
-
-  Color _getColorFromEnum(ColorEnum color) {
-    switch (color) {
-      case ColorEnum.AMARILLO:
-        return Colors.yellow;
-      case ColorEnum.NARANJA:
-        return Colors.orange;
-      case ColorEnum.ROJO:
-        return Colors.red;
-      case ColorEnum.ROSA:
-        return Colors.pink;
-      case ColorEnum.VIOLETA:
-        return Colors.purple;
-      case ColorEnum.AZUL:
-        return Colors.blue;
-      case ColorEnum.VERDE:
-        return Colors.green;
-      case ColorEnum.MARRON:
-        return Colors.brown;
-      case ColorEnum.GRIS:
-        return Colors.grey;
-      case ColorEnum.BLANCO:
-        return Colors.white;
-      case ColorEnum.NEGRO:
-        return Colors.black;
-    }
   }
 }

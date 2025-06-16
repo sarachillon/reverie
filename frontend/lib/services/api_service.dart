@@ -64,7 +64,7 @@ abstract class ApiService {
 
   Future<File?> procesarImagen({required File imagenOriginal});
 
-  Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required List<OcasionEnum> ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores});
+  Future<Map<String, dynamic>> generarOutfitPropio({required String titulo, String? descripcion, required List<OcasionEnum> ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores, int? articulo_fijo_id,});
 
   Future<void> editarArticuloPropio({required int id, Image? foto, String? nombre, CategoriaEnum? categoria, SubcategoriaRopaEnum? subcategoriaRopa, SubcategoriaAccesoriosEnum? subcategoriaAccesorios, SubcategoriaCalzadoEnum? subcategoriaCalzado, List<OcasionEnum>? ocasiones, List<TemporadaEnum>? temporadas, List<ColorEnum>? colores });
 

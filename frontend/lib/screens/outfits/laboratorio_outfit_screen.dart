@@ -13,7 +13,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class LaboratorioScreen extends StatefulWidget {
   final int userId;
-  const LaboratorioScreen({Key? key, required this.userId}) : super(key: key);
+  final VoidCallback? onOutfitSaved;
+  const LaboratorioScreen({Key? key, required this.userId, this.onOutfitSaved}) : super(key: key);
 
   @override
   _LaboratorioScreenState createState() => _LaboratorioScreenState();
@@ -270,6 +271,7 @@ Future<void> _saveManualOutfit() async {
   if (saved == true) {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Outfit guardado')));
+    widget.onOutfitSaved?.call();  // dispara el cambio de pestaña
   } else if (saved == false) {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Error al guardar')));

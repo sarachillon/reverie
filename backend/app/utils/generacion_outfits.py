@@ -1,7 +1,7 @@
 from PIL import Image
 import io
 import random
-from typing import List, Optional, Tuple, Dict, Any
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from datetime import datetime
 from app.models.models import ArticuloPropio, OutfitPropio, Usuario, OutfitItem
 from app.models.enummerations import (
@@ -85,13 +85,18 @@ def _hue(color: ColorEnum) -> Optional[int]:
     return _COLOR_HUE.get(color)
 
 
+def _to_seq(c: Union[ColorEnum, Sequence[ColorEnum]]) -> Sequence[ColorEnum]:
+    """Convierte un solo color o secuencia en secuencia."""
+    return [c] if isinstance(c, ColorEnum) else list(c)
+
+
 def _delta_deg(a: int, b: int) -> int:
     """Diferencia mínima entre dos ángulos (°)."""
     d = abs(a - b) % 360
     return min(d, 360 - d)
 
 
-def colores_compatibles(c1: ColorEnum, c2: ColorEnum) -> bool:
+def _compat_pair(c1: ColorEnum, c2: ColorEnum) -> bool:
     """Evalúa si **dos colores** combinan según las normas básicas.
 
     Reglas aplicadas (en orden):
@@ -127,6 +132,24 @@ def colores_compatibles(c1: ColorEnum, c2: ColorEnum) -> bool:
         return True
 
     return False
+
+def colores_compatibles(
+    colores1: Union[ColorEnum, Sequence[ColorEnum]],
+    colores2: Union[ColorEnum, Sequence[ColorEnum]],
+) -> bool:
+    """Evalúa si **dos conjuntos** de colores son compatibles.
+
+    Acepta tanto valores individuales (`ColorEnum`) como listas/tuplas. Devuelve
+    *True* si **algún** par de colores (uno de cada conjunto) cumple las reglas.
+    """
+    seq1, seq2 = _to_seq(colores1), _to_seq(colores2)
+    return any(_compat_pair(a, b) for a in seq1 for b in seq2)
+
+
+def colores_en_comun(a: ArticuloPropio, b: ArticuloPropio) -> bool:
+    """`True` si los dos artículos comparten *al menos* un color exacto."""
+    return bool(set(a.colores) & set(b.colores))
+
 
 
 def prendas_compatibles(a: ArticuloPropio, b: ArticuloPropio) -> bool:
@@ -165,81 +188,35 @@ def _should_include_belt(bottom: ArticuloPropio) -> bool:
     return False
 
 
+
 def _seleccionar_accesorios(
-    posibles: List[ArticuloPropio],
-    bottom: ArticuloPropio,
-    regla: str,
-    color_top: ColorEnum,
-    color_bottom: ColorEnum,
+    posibles: List[ArticuloPropio], bottom: ArticuloPropio,
+    regla: str, color_top: ColorEnum, color_bottom: ColorEnum,
 ) -> List[ArticuloPropio]:
     unicos: Dict[str, ArticuloPropio] = {}
-    for acc in posibles:
-        if acc.subcategoria not in unicos:
-            unicos[acc.subcategoria] = acc
+    for a in posibles:
+        unicos.setdefault(a.subcategoria, a)
 
-    seleccion: List[ArticuloPropio] = []
-
+    sel: List[ArticuloPropio] = []
     if regla == "MONOCROMO":
-        # accesorio contraste + resto top‑color (implementado antes)
+        # 1 contraste distinto + resto color top
         contraste = next((a for a in unicos.values() if color_top not in a.colores), None)
         if contraste:
-            seleccion.append(contraste)
-            unicos.pop(contraste.subcategoria, None)
-        for cat in _ACCES_PRIORIDAD:
-            if cat not in unicos or len(seleccion) >= _MAX_ACC:
-                continue
-            acc = unicos[cat]
-            if color_top in acc.colores and not (
-                cat == SubcategoriaAccesoriosEnum.CINTURONES.value and not _should_include_belt(bottom)
-            ):
-                seleccion.append(acc)
-    elif regla == "SANDWICH":
-        # solo colores del top o bottom
-        for cat in _ACCES_PRIORIDAD:
-            if cat not in unicos:
-                continue
-            acc = unicos[cat]
-            if not (
-                color_top in acc.colores or color_bottom in acc.colores
-            ):
-                continue
-            if cat == SubcategoriaAccesoriosEnum.CINTURONES.value and not _should_include_belt(bottom):
-                continue
-            seleccion.append(acc)
-            if len(seleccion) >= _MAX_ACC:
-                break
-    else:
-        # libre / 60‑30‑10
-        for cat in _ACCES_PRIORIDAD:
-            if cat not in unicos:
-                continue
-            acc = unicos[cat]
-            if cat == SubcategoriaAccesoriosEnum.CINTURONES.value and not _should_include_belt(bottom):
-                continue
-            seleccion.append(acc)
-            if len(seleccion) >= _MAX_ACC:
-                break
-    return seleccion
+            sel.append(contraste)
+            unicos.pop(contraste.subcategoria)
+    for cat in _ACCES_PRIORIDAD:
+        if cat not in unicos or len(sel) >= _MAX_ACC:
+            continue
+        a = unicos[cat]
+        if regla == "SANDWICH" and not (color_top in a.colores or color_bottom in a.colores):
+            continue
+        if cat == SubcategoriaAccesoriosEnum.CINTURONES and not _should_include_belt(bottom):
+            continue
+        if regla == "MONOCROMO" and color_top not in a.colores:
+            continue
+        sel.append(a)
+    return sel
 
-
-def _seleccionar_zapatos(
-    zapatos: List[ArticuloPropio],
-    base_color: ColorEnum,
-    regla: str,
-) -> Optional[ArticuloPropio]:
-    if not zapatos:
-        return None
-    if regla == "SANDWICH":
-        solo_base = [z for z in zapatos if base_color in z.colores]
-        if solo_base:
-            return random.choice(solo_base)
-        return None  # si no hay zapato que cumpla, mejor abortar
-    # regla libre / mono etc → priorizar pero no obligar
-    candidatos = [
-        *[z for z in zapatos if base_color in z.colores],
-        *[z for z in zapatos if base_color not in z.colores],
-    ]
-    return random.choice(candidatos[:3])
 
 
 ###############################################################################
@@ -247,7 +224,7 @@ def _seleccionar_zapatos(
 ###############################################################################
 def _elegir_regla() -> str:
     """Devuelve aleatoriamente la regla a aplicar en el outfit."""
-    return random.choice(["MONOCROMO", "SANDWICH", "60-30-10", "LIBRE"])
+    return random.choice(["MONOCROMO", "SANDWICH", "603010", "LIBRE"])
 
 def _es_monocromatico(top: ArticuloPropio, bottom: ArticuloPropio) -> bool:
     """True si top y bottom comparten prácticamente el mismo color."""
@@ -262,6 +239,209 @@ def _es_monocromatico(top: ArticuloPropio, bottom: ArticuloPropio) -> bool:
 
 
 
+def generar_outfit_monocromo(
+    tops: List[ArticuloPropio],
+    bottoms: List[ArticuloPropio],
+    zapatos: List[ArticuloPropio],
+    accesorios: List[ArticuloPropio],
+) -> Optional[Tuple[ArticuloPropio, ArticuloPropio, Optional[ArticuloPropio], List[ArticuloPropio]]]:
+    # Parejas top‑bottom monocromáticas
+    parejas = [
+        (t, b) for t in tops for b in bottoms if _es_monocromatico(t, b)
+    ]
+    if not parejas:
+        return None
+
+    arriba, abajo = random.choice(parejas)
+    base_color = arriba.colores[0]
+
+    # Zapato con el color del outfit
+    zap_cands = [z for z in zapatos if base_color in z.colores]
+    zapatos = random.choice(zap_cands) if zap_cands else None
+
+    # Accesorios
+    #     – Unicidad por subcategoría
+    unicos: Dict[str, ArticuloPropio] = {}
+    for acc in accesorios:
+        if acc.subcategoria not in unicos:
+            unicos[acc.subcategoria] = acc
+
+    accesorios: List[ArticuloPropio] = []
+
+    # Accesorio contraste (primero que NO lleve el color base)
+    contraste = next((a for a in unicos.values() if base_color not in a.colores), None)
+    if contraste:
+        accesorios.append(contraste)
+        unicos.pop(contraste.subcategoria)
+
+    # Resto accesorios con color base
+    for cat in _ACCES_PRIORIDAD:
+        if cat not in unicos or len(accesorios) >= _MAX_ACC:
+            continue
+        acc = unicos[cat]
+        if base_color not in acc.colores:
+            continue
+        if cat == SubcategoriaAccesoriosEnum.CINTURONES and not _should_include_belt(abajo):
+            continue
+        accesorios.append(acc)
+        if len(accesorios) >= _MAX_ACC:
+            break
+
+    return arriba, abajo, zapatos, accesorios
+
+
+
+def generar_outfit_sandwich(
+    tops: List[ArticuloPropio],
+    bottoms: List[ArticuloPropio],
+    zapatos: List[ArticuloPropio],
+    accesorios: List[ArticuloPropio],
+) -> Optional[Tuple[ArticuloPropio, ArticuloPropio, Optional[ArticuloPropio], List[ArticuloPropio]]]:
+    # Parejas top-bottom compatibles (libre)
+    parejas = [(t, b) for t in tops for b in bottoms if prendas_compatibles(t, b)]
+    if not parejas:
+        return None
+
+    arriba, abajo = random.choice(parejas)
+    color_top = arriba.colores[0]
+    color_bottom = abajo.colores[0]
+
+    # Zapato que incluya color_top
+    zap_cands = [z for z in zapatos if color_top in z.colores]
+    if not zap_cands:
+        return None  # no se puede cumplir sandwich
+    zap = random.choice(zap_cands)
+
+    # Accesorios que tengan color_top o color_bottom
+    unicos: Dict[str, ArticuloPropio] = {}
+    for a in accesorios:
+        if a.subcategoria not in unicos and (
+            color_top in a.colores or color_bottom in a.colores
+        ):
+            unicos[a.subcategoria] = a
+
+    sel: List[ArticuloPropio] = []
+    for cat in _ACCES_PRIORIDAD:
+        if cat not in unicos or len(sel) >= _MAX_ACC:
+            continue
+        a = unicos[cat]
+        if cat == SubcategoriaAccesoriosEnum.CINTURONES and not _should_include_belt(abajo):
+            continue
+        sel.append(a)
+        if len(sel) >= _MAX_ACC:
+            break
+
+    return arriba, abajo, zap, sel
+
+
+
+
+def generar_outfit_603010(
+    tops: List[ArticuloPropio],
+    bottoms: List[ArticuloPropio],
+    zapatos: List[ArticuloPropio],
+    accesorios: List[ArticuloPropio],
+) -> Optional[Tuple[ArticuloPropio, ArticuloPropio, Optional[ArticuloPropio], List[ArticuloPropio]]]:
+
+    if not tops or not bottoms:
+        return None
+
+    # ---------------- pareja top/bottom ----------------
+    random.shuffle(tops)
+    random.shuffle(bottoms)
+    pair = None
+    for top in tops:
+        for bot in bottoms:
+            if colores_en_comun(top, bot):
+                continue  # deben ser colores distintos
+            if prendas_compatibles(top, bot):
+                pair = (top, bot)
+                break
+        if pair:
+            break
+    if pair is None:
+        return None
+    top_sel, bot_sel = pair
+
+    # ---------------- zapatos: 3er color ----------------
+    random.shuffle(zapatos)
+    shoe_sel: Optional[ArticuloPropio] = None
+    for sh in zapatos:
+        if colores_en_comun(sh, top_sel) or colores_en_comun(sh, bot_sel):
+            continue  # debe aportar un 3er color único
+        if (
+            colores_compatibles(sh.colores, top_sel.colores)
+            and colores_compatibles(sh.colores, bot_sel.colores)
+        ):
+            shoe_sel = sh
+            break
+    if shoe_sel is None:
+        return None  # no hay 3er color válido compatible
+
+    # ---------------- accesorios dentro de la paleta ----------------
+    palette = {
+        top_sel.colores[0],
+        bot_sel.colores[0],
+        shoe_sel.colores[0],
+    }
+    acc_candidates = [a for a in accesorios if a.colores[0] in palette]
+    accesorios_sel = _seleccionar_accesorios(acc_candidates, bot_sel, "603010", top_sel.colores[0], bot_sel.colores[0])
+
+    return top_sel, bot_sel, shoe_sel, accesorios_sel
+
+
+
+def generar_outfit_libre(
+    tops: List[ArticuloPropio],
+    bottoms: List[ArticuloPropio],
+    zapatos: List[ArticuloPropio],
+    accesorios: List[ArticuloPropio],
+) -> Optional[Tuple[ArticuloPropio, ArticuloPropio, Optional[ArticuloPropio], List[ArticuloPropio]]]:
+    # Parejas top‑bottom monocromáticas
+    parejas = [
+        (t, b) for t in tops for b in bottoms if _es_monocromatico(t, b)
+    ]
+    if not parejas:
+        return None
+
+    arriba, abajo = random.choice(parejas)
+    base_color = arriba.colores[0]
+
+    # Zapato con el color del outfit
+    zap_cands = [z for z in zapatos if base_color in z.colores]
+    zapatos = random.choice(zap_cands) if zap_cands else None
+
+    # Accesorios
+    #     – Unicidad por subcategoría
+    unicos: Dict[str, ArticuloPropio] = {}
+    for acc in accesorios:
+        if acc.subcategoria not in unicos:
+            unicos[acc.subcategoria] = acc
+
+    accesorios: List[ArticuloPropio] = []
+
+    # Accesorio contraste (primero que NO lleve el color base)
+    contraste = next((a for a in unicos.values() if base_color not in a.colores), None)
+    if contraste:
+        accesorios.append(contraste)
+        unicos.pop(contraste.subcategoria)
+
+    # Resto accesorios con color base
+    for cat in _ACCES_PRIORIDAD:
+        if cat not in unicos or len(accesorios) >= _MAX_ACC:
+            continue
+        acc = unicos[cat]
+        if base_color not in acc.colores:
+            continue
+        if cat == SubcategoriaAccesoriosEnum.CINTURONES and not _should_include_belt(abajo):
+            continue
+        accesorios.append(acc)
+        if len(accesorios) >= _MAX_ACC:
+            break
+
+    return arriba, abajo, zapatos, accesorios
+
+
 
 ###############################################################################
 # Lógica principal
@@ -273,103 +453,111 @@ async def generar_outfit_propio(
     descripcion_generacion: Optional[str] = None,
     temporadas: Optional[List[TemporadaEnum]] = None,
     ocasiones: Optional[List[OcasionEnum]] = None,
-    colores: Optional[List[ColorEnum]] = None
+    colores: Optional[List[ColorEnum]] = None,
+    articulo_fijo: Optional[ArticuloPropio] = None, 
 ) -> Optional[OutfitPropio]:
+    """Genera un outfit y collage.
+
+    Si se pasa `articulo_fijo`, la función obligará a que dicha prenda forme
+    parte del outfit ajustando las listas de búsqueda.
+    """
+
     articulos = usuario.articulos_propios
+    print(f"articulo fijo: {articulo_fijo}")
 
-    # ---------------------------------------------------------------------
-    # 1. Filtros de usuario (temporada, ocasión, colores)
-    # ---------------------------------------------------------------------
-
-    def cumple_filtros(a: ArticuloPropio) -> bool:
-        if temporadas and not any(t in a.temporadas for t in temporadas): return False
-        if ocasiones and not any(o in a.ocasiones for o in ocasiones): return False
-        if colores and not any(c in a.colores for c in colores): return False
+    # ----------------- 1. filtros -----------------
+    def _filtros(a: ArticuloPropio) -> bool:
+        if temporadas and not any(t in a.temporadas for t in temporadas):
+            return False
+        if ocasiones and not any(o in a.ocasiones for o in ocasiones):
+            return False
+        if colores and not any(c in a.colores for c in colores):
+            return False
         return True
 
-    tops = [a for a in articulos if a.subcategoria in PARTES_ARRIBA and cumple_filtros(a)]
-    bottoms = [a for a in articulos if a.subcategoria in PARTES_ABAJO and cumple_filtros(a)]
-    if not tops or not bottoms:
+    # separar categorías
+    tops_all = [a for a in articulos if a.subcategoria in PARTES_ARRIBA and _filtros(a)]
+    bots_all = [a for a in articulos if a.subcategoria in PARTES_ABAJO and _filtros(a)]
+    shoes_all = [a for a in articulos if a.subcategoria in [e.value for e in SubcategoriaCalzadoEnum] and _filtros(a)]
+    acc_all = [a for a in articulos if a.subcategoria in [e.value for e in SubcategoriaAccesoriosEnum] and _filtros(a)]
+    
+    random.shuffle(tops_all)
+    random.shuffle(bots_all)
+    random.shuffle(shoes_all)
+    random.shuffle(acc_all)
+
+    # ----------------- 2. aplicar prenda fija -----------------
+    top_fixed: Optional[ArticuloPropio] = None
+    bot_fixed: Optional[ArticuloPropio] = None
+    shoe_fixed: Optional[ArticuloPropio] = None
+    acc_fixed: Optional[ArticuloPropio] = None
+
+    if articulo_fijo:
+        if articulo_fijo not in articulos:
+            return None  # prenda no pertenece al usuario
+        if articulo_fijo.subcategoria in PARTES_ARRIBA:
+            top_fixed = articulo_fijo
+            tops_all = [articulo_fijo]
+        elif articulo_fijo.subcategoria in PARTES_ABAJO:
+            bot_fixed = articulo_fijo
+            bots_all = [articulo_fijo]
+        elif articulo_fijo.subcategoria in [e.value for e in SubcategoriaCalzadoEnum]:
+            shoe_fixed = articulo_fijo
+            shoes_all = [articulo_fijo]
+        elif articulo_fijo.subcategoria in [e.value for e in SubcategoriaAccesoriosEnum]:
+            acc_fixed = articulo_fijo
+            # lo retiramos de la lista para evitar duplicados
+            acc_all = [a for a in acc_all if a.id != articulo_fijo.id]
+        else:
+            # Categoría no soportada (p. ej. cuerpo entero) – se descarta
+            return None
+
+    if not tops_all or not bots_all:
         return None
 
 
-    # ---------------------------------------------------------------------
-    # 2. Combinaciones top/bottom con criterios cromáticos
-    # ---------------------------------------------------------------------
+    # ----------------- 3. aplicar reglas de outfit -----------------
+    regla = _elegir_regla()
+    print(f"Aplicando regla {regla}")
 
-    combinaciones: list[tuple[ArticuloPropio, ArticuloPropio]] = [
-        (t, b)
-        for t in tops
-        for b in bottoms
-        if prendas_compatibles(t, b)
-    ]
-
-    #regla = _elegir_regla()
-    regla = "MONOCROMO"
     if regla == "MONOCROMO":
-        combinaciones = [(t, b) for t, b in combinaciones if _es_monocromatico(t, b)]
-        if not combinaciones:           # si no hay, volvemos a libre
-            print("No hay combinaciones monocromáticas, cambiando a libre")
-            regla = "LIBRE"
-    
-    arriba, abajo = random.choice(combinaciones)
-    seleccion: list[ArticuloPropio] = [arriba, abajo]
-    print(f"Seleccionados: {arriba.nombre} y {abajo.nombre}")
+        arriba, abajo, zap, acc_sel = generar_outfit_monocromo(tops_all, bots_all, shoes_all, acc_all)
+    elif regla == "SANDWICH":
+        arriba, abajo, zap, acc_sel = generar_outfit_sandwich(tops_all, bots_all, shoes_all, acc_all)
+    elif regla == "603010":
+        arriba, abajo, zap, acc_sel = generar_outfit_603010(tops_all, bots_all, shoes_all, acc_all)
+    else:
+        arriba, abajo, zap, acc_sel = generar_outfit_libre(tops_all, bots_all, shoes_all, acc_all)
 
+    # fallback si regla inicial falla
+    if not arriba or not abajo:
+        arriba, abajo, zap, acc_sel = generar_outfit_libre(tops_all, bots_all, shoes_all, acc_all)
+        if not arriba or not abajo:
+            return None
 
-    # ---------------------------------------------------------------------
-    # 3. Selección de zapatos y accesorios compatibles
-    # ---------------------------------------------------------------------
-    zapatos = [
-        a
-        for a in articulos
-        if a.subcategoria in [e.value for e in SubcategoriaCalzadoEnum] and cumple_filtros(a) 
-    ]
-    accesorios = [
-        a
-        for a in articulos
-        if a.subcategoria in [e.value for e in SubcategoriaAccesoriosEnum] and cumple_filtros(a) 
-    ]
+    # ----------------- 4. inyectar prendas fijas que falten -----------------
+    if top_fixed and arriba.id != top_fixed.id:
+        arriba = top_fixed  # forzamos
+    if bot_fixed and abajo.id != bot_fixed.id:
+        abajo = bot_fixed
+    if shoe_fixed:
+        zap = shoe_fixed
+    if acc_fixed and all(a.id != acc_fixed.id for a in acc_sel):
+        acc_sel.append(acc_fixed)
 
-    def filtrar_items(items: List[ArticuloPropio]) -> List[ArticuloPropio]:
-        base_colors = (arriba.colores[0], abajo.colores[0])
-        res = []
-        for it in items:
-            if any(colores_compatibles(c, base) for base in base_colors for c in it.colores):
-                res.append(it)
-        return res
+    items = [arriba, abajo] + acc_sel + ([zap] if zap else [])
 
-    buenos_acc = filtrar_items(accesorios)
-    buenos_zap = filtrar_items(zapatos)
-
-    elegidos_acc = _seleccionar_accesorios(buenos_acc, abajo, regla, arriba.colores[0], abajo.colores[0])
-
-    # ---------------------------------------------------------------------
-    # 4. Collage
-    # ---------------------------------------------------------------------
-    imgs_bytes = [await get_imagen_s3(arriba.foto), await get_imagen_s3(abajo.foto)]
-    for acc in elegidos_acc:
+    # ----------------- 5. collage (sin cambios) -----------------
+    imgs_bytes: List[bytes] = [await get_imagen_s3(arriba.foto), await get_imagen_s3(abajo.foto)]
+    for acc in acc_sel:
         imgs_bytes.append(await get_imagen_s3(acc.foto))
-        seleccion.append(acc)
-    if buenos_zap:
-        elegido_z = random.choice(buenos_zap)
-        imgs_bytes.append(await get_imagen_s3(elegido_z.foto))
-        seleccion.append(elegido_z)
+    if zap:
+        imgs_bytes.append(await get_imagen_s3(zap.foto))
 
-    # ahora creamos collage 
-    collage_bytes, items_meta = _crear_collage_con_items(imgs_bytes, seleccion)
+    collage_bytes, items_meta = _crear_collage_con_items(imgs_bytes, items)
 
+    key = await subir_imagen_s3_bytes(collage_bytes, f"collage_{usuario.id}_{datetime.utcnow().timestamp()}.png")
 
-    # ---------------------------------------------------------------------
-    # 5. Guardar 
-    # ---------------------------------------------------------------------
-    # subimos a S3
-    key = await subir_imagen_s3_bytes(
-        collage_bytes,
-        f"collage_{usuario.id}_{datetime.utcnow().timestamp()}.png"
-    )
-
-    # persistimos OutfitPropio + OutfitItem
     outfit = OutfitPropio(
         usuario=usuario,
         titulo=titulo,
@@ -378,21 +566,15 @@ async def generar_outfit_propio(
         ocasiones=ocasiones or [],
         temporadas=temporadas or [],
         colores=colores or [],
-        collage_key=key
+        collage_key=key,
     )
-    # añadimos items con meta
+
     for meta in items_meta:
         outfit.items.append(OutfitItem(
             articulo_id=meta["articulo_id"],
-            x=meta["x"],
-            y=meta["y"],
-            scale=meta["scale"],
-            rotation=0.0,
-            z_index=meta["z_index"]
+            x=meta["x"], y=meta["y"], scale=meta["scale"], rotation=0.0, z_index=meta["z_index"],
         ))
-
-    outfit.articulos_propios = seleccion
-
+    outfit.articulos_propios = items
     return outfit
 
 
@@ -471,8 +653,8 @@ def _crear_collage_con_items(
     items_r = [
         itm.resize(
             (
-                int(itm.width * max(0.6, min(item_target_w / itm.width, 1.0))),
-                int(itm.height * max(0.6, min(item_target_w / itm.width, 1.0))),
+                int(itm.width * max(0.5, min(item_target_w / itm.width, 1.0))),
+                int(itm.height * max(0.5, min(item_target_w / itm.width, 1.0))),
             ),
             Image.Resampling.LANCZOS,
         )

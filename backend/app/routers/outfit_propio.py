@@ -19,6 +19,8 @@ from app.utils.s3 import *
 from app.schemas.outfit_propio import OutfitPropioConUsuarioResponse, OutfitPropioSimpleResponse, OutfitItemResponse
 from app.schemas.user import UserOut
 from datetime import datetime
+from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
 
 
 router = APIRouter(prefix="/outfits", tags=["Outfits"])
@@ -33,11 +35,21 @@ async def generar_outfit(
     ocasiones: List[OcasionEnum] = Form(..., alias="ocasiones[]"),
     temporadas: Optional[List[TemporadaEnum]] = Form([], alias="temporadas[]"),
     colores: Optional[List[ColorEnum]] = Form([], alias="colores[]"),
-    db: Session = Depends(get_db)
+    articulo_fijo_id: Optional[int] = Form(None, alias="articuloFijoId"),
+    db: Session = Depends(get_db),
 ):
     user = await obtener_usuario_actual(request, db)
     if not user:
         raise HTTPException(401, "Usuario no autenticado")
+
+    articulo_fijo = None
+    print(f"articulo_fijo_id: {articulo_fijo_id}")
+    if articulo_fijo_id is not None:
+        articulo_fijo = next(
+            (a for a in user.articulos_propios if a.id == articulo_fijo_id), None
+        )
+        if not articulo_fijo:
+            raise HTTPException(404, "La prenda fija no pertenece al usuario")
 
     outfit = await generar_outfit_propio(
         usuario=user,
@@ -46,9 +58,12 @@ async def generar_outfit(
         temporadas=temporadas,
         ocasiones=ocasiones,
         colores=colores,
+        articulo_fijo=articulo_fijo,            # ← se pasa
     )
     if not outfit:
         raise HTTPException(404, "No se pudo generar outfit con esos filtros")
+
+    # ... resto igual (persistencia y URLs firmadas)
 
     db.add(outfit)
     db.commit()
@@ -164,7 +179,8 @@ async def crear_outfit_manual(
 
 
     
-from sqlalchemy.orm import joinedload
+
+
 
 @router.get("/stream", response_class=StreamingResponse)
 async def obtener_outfits_stream(
@@ -184,11 +200,21 @@ async def obtener_outfits_stream(
     query = db.query(OutfitPropio).filter(OutfitPropio.usuario_id == id_usuario)
 
     if ocasiones:
-        query = query.filter(OutfitPropio.ocasiones.overlap(ocasiones))
+        query = query.filter(OutfitPropio.ocasiones.op("&&")(ocasiones))
     if temporadas:
-        query = query.filter(OutfitPropio.temporadas.overlap(temporadas))
+        query = query.filter(OutfitPropio.temporadas.op("&&")(temporadas))
     if colores:
-        query = query.filter(OutfitPropio.colores.overlap(colores))
+        # expr para overlap en cualquier array
+        overlap = lambda col_attr: col_attr.op("&&")(colores)
+
+        query = query.filter(
+            or_(
+                overlap(OutfitPropio.colores),
+                OutfitPropio.articulos_propios.any(
+                    overlap(ArticuloPropio.colores)
+                )
+            )
+        )
 
     outfits = query.options(
         joinedload(OutfitPropio.articulos_propios).joinedload(ArticuloPropio.usuario),

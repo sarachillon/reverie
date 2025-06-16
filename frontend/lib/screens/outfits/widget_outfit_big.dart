@@ -14,53 +14,7 @@ class WidgetOutfitBig extends StatelessWidget {
     required this.onTapOutfit,
   });
 
-  void _mostrarModalOpciones(BuildContext context, dynamic outfit) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.white,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.bookmark_border),
-                title: const Text('Guardar'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (_) => SelectorColeccionBottomSheet(outfitId: outfit['id']),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.ios_share),
-                title: const Text('Compartir'),
-                onTap: () {
-                  Navigator.pop(context);
-                  final imagen = outfit['imagen'];
-                  if (imagen != null && imagen.isNotEmpty) {
-                    ShareUtils.compartirOutfitSinMarca(
-                      base64Imagen: imagen,
-                      username: 'usuario',
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -76,7 +30,6 @@ class WidgetOutfitBig extends StatelessWidget {
 
         return GestureDetector(
           onTap: () => onTapOutfit(context, outfit),
-          onLongPress: () => _mostrarModalOpciones(context, outfit),
           child: Column(
             children: [
               Expanded(
@@ -97,16 +50,7 @@ class WidgetOutfitBig extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Parte superior con botón de opciones
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () => _mostrarModalOpciones(context, outfit),
-                          ),
-                        ],
-                      ),
+                      // Título centrado
                       Center(
                         child: Text(
                           outfit['titulo'] ?? 'Sin título',
@@ -114,10 +58,41 @@ class WidgetOutfitBig extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        ocasiones,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+
+                      // Ocasiones con icono de guardar a la derecha
+                      SizedBox(
+                        height: 28,
+                        child: Stack(
+                          children: [
+                            Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                ocasiones,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                icon: const Icon(Icons.bookmark_border),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                    ),
+                                    builder: (_) => SelectorColeccionBottomSheet(
+                                      outfitId: outfit['id'],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Expanded(

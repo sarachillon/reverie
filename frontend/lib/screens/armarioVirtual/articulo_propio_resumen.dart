@@ -130,9 +130,6 @@ class _ArticuloPropioResumenState extends State<ArticuloPropioResumen> {
                                     ),
                                   ),
                                 );
-                                if (updated != null) {
-                                  setState(() => articulo = updated);
-                                }
                               },
                             ),
                             IconButton(

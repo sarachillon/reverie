@@ -113,12 +113,15 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
             ),
         ],
         bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Seguidores'),
-            Tab(text: 'Global'),
-          ],
-        ),
+        controller: _tabController,
+        indicatorColor: const Color(0xFFD4AF37),
+        labelColor: const Color(0xFFD4AF37),
+        unselectedLabelColor: Colors.black54,
+        tabs: const [
+          Tab(text: 'Seguidos'),
+          Tab(text: 'Descubrir'),
+        ],
+      ),
       ),
       body: _isSearching && outfitsFiltrados.isEmpty
           ? const Center(child: Text('No hay resultados'))

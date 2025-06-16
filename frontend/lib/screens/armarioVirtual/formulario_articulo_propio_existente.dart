@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/enums/enums.dart';
 import 'package:frontend/screens/armarioVirtual/categoria_selector.dart';
 import 'package:frontend/screens/armarioVirtual/subcategoria_selector.dart';
+import 'package:frontend/screens/utils/carga_screen.dart';
 import 'package:frontend/services/api_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -41,7 +42,7 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
     super.initState();
     final articulo = widget.articulo;
     _nombreController.text = articulo['nombre'] ?? '';
-    _categoria = CategoriaEnum.values.firstWhere((e) => e.name == articulo['categoria'], orElse: () => CategoriaEnum.ROPA);
+    _categoria = CategoriaEnum.values.firstWhere((e) => e.value == articulo['categoria'], orElse: () => CategoriaEnum.ROPA);
     _subcategoria = articulo['subcategoria'];
     _ocasiones = (articulo['ocasiones'] as List?)?.map((e) => OcasionEnum.values.firstWhere((o) => o.name == e)).toList() ?? [];
     _temporadas = (articulo['temporadas'] as List?)?.map((e) => TemporadaEnum.values.firstWhere((t) => t.name == e)).toList() ?? [];
@@ -66,6 +67,13 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
   }
 
   try {
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CargandoScreen(type: CargandoType.articulo),
+      ),
+    );
     // 1. Descargar imagen de la URL y guardarla como File temporal
     final response = await http.get(Uri.parse(_imagenUrl!));
     final tempDir = await getTemporaryDirectory();
@@ -97,8 +105,14 @@ class _FormularioArticuloDesdeExistenteScreenState extends State<FormularioArtic
       temporadas: _temporadas,
       colores: _colores,
     );
+    
+    Navigator.pop(context);
 
-    if (mounted) Navigator.pop(context, true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Prenda guardada exitosamente.")),
+    );
+    Navigator.pop(context, true);
+
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Error al guardar la prenda: $e")),

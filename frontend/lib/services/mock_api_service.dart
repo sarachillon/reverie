@@ -204,6 +204,7 @@ Future<List<Map<String, dynamic>>> obtenerSeguidores(int idUsuario) async {
     required List<OcasionEnum> ocasiones,
     List<TemporadaEnum>? temporadas,
     List<ColorEnum>? colores,
+    int? articulo_fijo_id,
   }) async {
 
     return {

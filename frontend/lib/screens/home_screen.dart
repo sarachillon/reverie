@@ -31,17 +31,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String? username;
 
  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
+ final GlobalKey<OutfitsScreenState> outfitsKey = GlobalKey<OutfitsScreenState>();
+
+
 
 
   List<Widget> get _screens => [
-    OutfitsScreen(),
+    OutfitsScreen(key: outfitsKey),
     FeedScreen(),
     Container(),
-    LaboratorioScreen(userId: widget.userId ?? 6),   
+    LaboratorioScreen(
+      userId: widget.userId ?? 6,
+      onOutfitSaved: () {
+        setState(() => _selectedIndex = 0);
+        outfitsKey.currentState?.cargarOutfits();
+      },
+    ),   
     PerfilScreen(
       key: const ValueKey('PerfilScreen'),
       userId: widget.userId,
       armarioKey: armarioKey,
+      onProfileUpdated: () {
+      _loadProfileImage();
+    },
     ),
   ];
   
@@ -85,7 +97,7 @@ void _onAddPressed() async {
                   MaterialPageRoute(builder: (_) => const SubirFotoScreen()),
                 );
                 if (result == true) {
-                  setState(() => _selectedIndex = previousIndex);
+                  setState(() => _selectedIndex = 4);
                   armarioKey.currentState?.cargarArticulosPropios();
                 }
               },
@@ -101,8 +113,13 @@ void _onAddPressed() async {
                   MaterialPageRoute(builder: (_) => FormularioOutfitScreen(userId: widget.userId,)),
                 );
                 if (result == true) {
-                  setState(() => _selectedIndex = previousIndex);
-                }
+                  if (_selectedIndex != 0) {
+                      setState(() => _selectedIndex = 0);
+                  } else {
+                        setState(() {});
+                  }
+                  outfitsKey.currentState?.cargarOutfits();
+               }
               },
             ),
           ],

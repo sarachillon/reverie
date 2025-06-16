@@ -112,6 +112,7 @@ class _FormularioArticuloScreenState extends State<FormularioArticuloScreen> {
       subCalzado = _subcategoria;
     }
 
+
     // 4. Llamada al API
     await _apiManager.guardarArticuloPropio(
       foto: Image.file(_imagenFile!),

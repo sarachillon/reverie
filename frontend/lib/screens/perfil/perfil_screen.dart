@@ -13,10 +13,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PerfilScreen extends StatefulWidget {
   final int? userId;
   final GlobalKey<ArmarioScreenState> armarioKey;
+  final VoidCallback? onProfileUpdated;
+
+
   const PerfilScreen({
     Key? key,
     this.userId,
     required this.armarioKey,
+    this.onProfileUpdated,  
+
   }) : super(key: key);
 
   @override
@@ -44,6 +49,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   void didUpdateWidget(covariant PerfilScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     _cargarPerfil();
+    
   }
 
   Future<void> _logout() async {
@@ -67,7 +73,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final actual = await _apiManager.getUsuarioActual();
     final token = await GoogleSignInService().getToken();
     print("Token de usuario actual: $token");
-    setState(() => usuarioActual = actual);
+    
 
     Map<String, dynamic> usuarioPerfil;
     bool esPropio = true;
@@ -140,8 +146,9 @@ Widget build(BuildContext context) {
                 ),
               );
               if (actualizado == true) {
-                _cargarPerfil();
-              }
+                  await _cargarPerfil();
+                  widget.onProfileUpdated?.call();  // <—
+                }
             },
           ),
           IconButton(
@@ -312,6 +319,9 @@ Widget build(BuildContext context) {
           ),
           const SizedBox(height: 10),
           TabBar(
+            indicatorColor: const Color(0xFFD4AF37),
+            labelColor: const Color(0xFFD4AF37),
+            unselectedLabelColor: Colors.black54,
             tabs: [
               Tab(
                 child: Row(

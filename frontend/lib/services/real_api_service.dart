@@ -692,7 +692,9 @@ Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
     required List<OcasionEnum> ocasiones,
     List<TemporadaEnum>? temporadas,
     List<ColorEnum>? colores,
+    int? articulo_fijo_id,
   }) async {
+    
     final url = Uri.parse('$_baseUrl/outfits/generar');
 
     final token = await GoogleSignInService().getToken();
@@ -728,6 +730,11 @@ Future<List<Map<String, dynamic>>> getTodosLosArticulosDeBD() async {
           await http.MultipartFile.fromString('colores[]', c.name),
         );
       }
+    }
+
+    print('articulo_fijo_id: $articulo_fijo_id');
+    if (articulo_fijo_id != null) {
+      request.fields['articuloFijoId'] = articulo_fijo_id.toString();
     }
 
     final response = await request.send();

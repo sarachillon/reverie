@@ -65,6 +65,7 @@ class FormularioOutfitScreen extends StatefulWidget {
         ),
       );
 
+      int id = prendasFijadas[0]['id'];
       try {
         final outfit = await _apiManager.generarOutfitPropio(
           titulo: _tituloController.text,
@@ -72,6 +73,7 @@ class FormularioOutfitScreen extends StatefulWidget {
           ocasiones: _ocasiones,
           temporadas: _temporadas,
           colores: _colores,
+          articulo_fijo_id: id,
         );
 
         // Cerrar loader
@@ -83,7 +85,6 @@ class FormularioOutfitScreen extends StatefulWidget {
           MaterialPageRoute(
             builder: (_) => OutfitConfirmationScreen(
               outfit: outfit,
-              mostrarAcciones: true,
               onAceptar: () => Navigator.pop(context, true),
               onRechazar: () async {
                 await _apiManager.deleteOutfitPropio(id: outfit['id']);
@@ -102,7 +103,7 @@ class FormularioOutfitScreen extends StatefulWidget {
         // Cerrar loader en caso de error
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al generar outfit: $e')),
+          SnackBar(content: Text('No se ha podido generar un outfit de estas caracteristicas. Por favor, completa tu armario para poder hacerlo')),
         );
         return false;
       }
@@ -233,34 +234,39 @@ class FormularioOutfitScreen extends StatefulWidget {
               _buildTitulo("Escoge una prenda para fijar"),
               const SizedBox(height: 12),
               MiniArmarioFijar(
-                  prendasFijadas: prendasFijadas,
-                  onAddPressed: () async {
-                    // Espera a que termine de cargar si sigue vacío
-                    if (articulosUsuario.isEmpty) await cargarArticulosUsuario();
+                prendasFijadas: prendasFijadas,
+                onAddPressed: () async {
+                  // Espera a que termine de cargar si sigue vacío
+                  if (articulosUsuario.isEmpty) await cargarArticulosUsuario();
 
-                    final seleccionados = await showModalBottomSheet<List<Map<String, dynamic>>>(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      builder: (_) => SeleccionarPrendasUsuarioWidget(
-                        articulosUsuario: articulosUsuario,
-                        yaSeleccionados: prendasFijadas,
-                      ),
-                    );
-                    if (seleccionados != null) {
-                      setState(() {
-                        prendasFijadas = seleccionados;
-                      });
-                    }
-                  },
-                  onRemove: (index) {
+                  final seleccionados = await showModalBottomSheet<List<Map<String, dynamic>>>(
+                    context: context,
+                    isScrollControlled: true,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (_) => SeleccionarPrendasUsuarioWidget(
+                      articulosUsuario: articulosUsuario,
+                      yaSeleccionados: prendasFijadas,
+                      // si tu widget admite parámetro para limitar a 1 selección,
+                      // también puedes pasarle aquí maxSeleccion: 1
+                    ),
+                  );
+
+                  if (seleccionados != null && seleccionados.isNotEmpty) {
                     setState(() {
-                      prendasFijadas.removeAt(index);
+                      // ⇒ Nos quedamos sólo con la primera prenda elegida
+                      prendasFijadas = [seleccionados.first];
                     });
-                  },
-                ),
+                  }
+                },
+                onRemove: (index) {
+                  setState(() {
+                    prendasFijadas.removeAt(index);
+                  });
+                },
+              ),
+
 
                 _buildTitulo("Información básica"),
                 const SizedBox(height: 12),

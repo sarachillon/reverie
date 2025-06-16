@@ -7,19 +7,13 @@ import 'package:frontend/screens/outfits/selector_coleccion.dart';
 import 'package:frontend/screens/perfil/perfil_screen.dart';
 import 'package:frontend/screens/armarioVirtual/armario_screen.dart';
 import 'package:frontend/screens/utils/imagen_ajustada_widget.dart';
-import 'package:frontend/services/share_utils.dart';
 import 'package:frontend/services/api_manager.dart';
 
 class WidgetOutfitFeedSmall extends StatelessWidget {
   final List<dynamic> outfits;
-
   final bool toEliminateFromColection;
-
   final int? coleccionId;
-
   final String? coleccionNombre;
-
-
   final void Function(int outfitId)? onRemoved;
 
   WidgetOutfitFeedSmall({
@@ -29,29 +23,29 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
     this.coleccionId,
     this.coleccionNombre,
     this.onRemoved,
-  }) : assert(!toEliminateFromColection || coleccionId != null,
-            'Se requiere coleccionId cuando toEliminateFromColection es true');
+  }) : assert(
+          !toEliminateFromColection || coleccionId != null,
+          'Se requiere coleccionId cuando toEliminateFromColection es true',
+        );
 
-  final GlobalKey<ArmarioScreenState> armarioKey =
-      GlobalKey<ArmarioScreenState>();
+  final GlobalKey<ArmarioScreenState> armarioKey = GlobalKey<ArmarioScreenState>();
 
-  /* ────────────────────  HELPERS  ─────────────────── */
   void _removeFromCollection(BuildContext context, int outfitId) async {
     try {
       await ApiManager().removeOutfitDeColeccion(
         coleccionId: coleccionId!,
         outfitId: outfitId,
       );
-      Navigator.pop(context); // cerrar el bottom‑sheet
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Outfit eliminado de la colección')),
       );
-    onRemoved?.call(outfitId);
+      onRemoved?.call(outfitId);
     } catch (e) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al eliminar: $e'),
+          content: Text('Error al eliminar: \$e'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -78,9 +72,18 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
           final username = outfit['usuario']?['username'] ?? 'demo_user';
           final fotoPerfil = outfit['usuario']?['foto_perfil'];
           final ocasiones = (outfit['ocasiones'] as List)
-              .map((o) =>
-                  OcasionEnum.values.firstWhere((e) => e.name == o).value)
+              .map((o) => OcasionEnum.values.firstWhere((e) => e.name == o).value)
               .join(', ');
+
+          void _showSaveSheet() {
+            showModalBottomSheet(
+              context: context,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (_) => SelectorColeccionBottomSheet(outfitId: outfit['id']),
+            );
+          }
 
           void _showMenuSheet() {
             showModalBottomSheet(
@@ -99,36 +102,14 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                         title: const Text('Guardar'),
                         onTap: () {
                           Navigator.pop(context);
-                          showModalBottomSheet(
-                            context: context,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.vertical(top: Radius.circular(20)),
-                            ),
-                            builder: (_) =>
-                                SelectorColeccionBottomSheet(outfitId: outfit['id']),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.ios_share),
-                        title: const Text('Compartir'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          final imagen = outfit['imagen'];
-                          if (imagen != null && imagen.isNotEmpty) {
-                            ShareUtils.compartirOutfitSinMarca(
-                              base64Imagen: imagen,
-                              username: username,
-                            );
-                          }
+                          _showSaveSheet();
                         },
                       ),
                       if (toEliminateFromColection)
                         ListTile(
-                          leading: const Icon(Icons.delete_outline,
-                              color: Colors.grey),
-                          title: Text('Eliminar de "${coleccionNombre ?? ''}"'),
+                          leading:
+                              const Icon(Icons.delete_outline),
+                          title: Text('Eliminar de la colección ${coleccionNombre ?? ''}'),
                           onTap: () =>
                               _removeFromCollection(context, outfit['id'] as int),
                         ),
@@ -149,7 +130,6 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                 ),
               );
             },
-            onLongPress: _showMenuSheet,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -175,8 +155,9 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    PerfilScreen(userId: userId, armarioKey: armarioKey),
+                                builder: (_) => PerfilScreen(
+                                    userId: userId,
+                                    armarioKey: armarioKey),
                               ),
                             );
                           }
@@ -185,11 +166,11 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                           radius: 20,
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty && !fotoPerfil.contains('http'))
-                            ? MemoryImage(base64Decode(
-                                fotoPerfil.contains(',') ? fotoPerfil.split(',').last : fotoPerfil))
-                            : (fotoPerfil != null && fotoPerfil.contains('http'))
-                                ? NetworkImage(fotoPerfil)
-                                : null,
+                              ? MemoryImage(base64Decode(
+                                  fotoPerfil.contains(',') ? fotoPerfil.split(',').last : fotoPerfil))
+                              : (fotoPerfil != null && fotoPerfil.contains('http'))
+                                  ? NetworkImage(fotoPerfil)
+                                  : null,
                           child: (fotoPerfil == null || fotoPerfil.isEmpty)
                               ? const Icon(Icons.person, color: Colors.white)
                               : null,
@@ -197,14 +178,22 @@ class WidgetOutfitFeedSmall extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(username,
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          username,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert, size: 20),
-                        onPressed: _showMenuSheet,
-                      ),
+                      if (toEliminateFromColection)
+                        IconButton(
+                          icon: const Icon(Icons.more_vert, size: 20),
+                          onPressed: _showMenuSheet,
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.bookmark_border, size: 20),
+                          onPressed: _showSaveSheet,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),

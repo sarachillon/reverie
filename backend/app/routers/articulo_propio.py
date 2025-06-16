@@ -18,6 +18,8 @@ import json
 import base64
 from PIL import Image
 from sqlalchemy.orm import joinedload
+import uuid
+
 
 
 router = APIRouter(prefix="/articulos-propios", tags=["Artículos Propios"])
@@ -146,7 +148,9 @@ async def crear_articulo(
     # Subir imagen a S3
     try:
         original_bytes = await foto.read()
-        imagen_key = await subir_imagen_s3_bytes(original_bytes, f"{foto.filename.split('.')[0]}.png")
+        base = foto.filename.rsplit(".", 1)[0]
+        unique_name = f"{base}_{uuid.uuid4().hex}.png"
+        imagen_key = await subir_imagen_s3_bytes(original_bytes, unique_name)
 
         imagen_pil = Image.open(io.BytesIO(original_bytes)).convert("RGB")
         estilo_inferido = inferir_estilo_desde_imagen(imagen_pil)

@@ -118,11 +118,12 @@ Stream<dynamic> getArticulosPropiosStream({Map<String, dynamic>? filtros}) async
     required List<OcasionEnum> ocasiones,
     List<TemporadaEnum>? temporadas,
     List<ColorEnum>? colores,
+    int? articulo_fijo_id,
   }) async {
     if (_instance == null) {
       throw Exception("ApiManager no ha sido inicializado. Llama a getInstance primero.");
     }
-    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores); 
+    return _instance!.generarOutfitPropio(titulo: titulo, descripcion: descripcion, ocasiones: ocasiones, temporadas: temporadas, colores: colores, articulo_fijo_id: articulo_fijo_id); 
   }
 
 
